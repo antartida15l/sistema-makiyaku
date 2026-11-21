@@ -487,7 +487,9 @@
     <div class="login-container">
         <div class="login-card">
             <div class="login-header">
-                <div class="login-logo">🌱</div>
+                <div class="login-logo">
+                    <img src="{{ asset('images/portada.png') }}" alt="MAKIYAKU" style="width: 100%; height: 100%; object-fit: contain;">
+                </div>
                 <h1 class="login-title">MAKIYAKU</h1>
                 <p class="login-subtitle">Sistema de Riego Inteligente</p>
             </div>
@@ -599,11 +601,11 @@
                 </div>
                 <div class="feature-item">
                     <div class="feature-icon">🌡️</div>
-                    <span>Control de temperatura automático</span>
+                    <span>Control de clima>
                 </div>
                 <div class="feature-item">
                     <div class="feature-icon">📊</div>
-                    <span>Reportes y estadísticas detalladas</span>
+                    <span>Alertas y recomendaciones</span>
                 </div>
             </div>
         </div>

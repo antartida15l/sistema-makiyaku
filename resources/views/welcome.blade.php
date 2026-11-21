@@ -466,7 +466,7 @@
     <!-- Hero Section -->
     <section class="hero">
        <div class="logo">
-            <img src="{{ asset('images/logoF.png') }}" alt="MAKIYAKU" style="width: 100%; height: 100%; object-fit: contain;">
+            <img src="{{ asset('images/portada.png') }}" alt="MAKIYAKU" style="width: 100%; height: 100%; object-fit: contain;">
          </div>
 
         <h1 class="hero-title">MAKIYAKU</h1>
@@ -493,15 +493,15 @@
                 <div class="feature-icon">💧</div>
                 <h3 class="feature-title">Monitoreo en Tiempo Real</h3>
                 <p class="feature-description">
-                    Supervisa la humedad del suelo y las condiciones ambientales de tus cultivos en tiempo real desde cualquier lugar
+                    Supervisa la humedad y las condiciones ambientales en tiempo real desde cualquier lugar
                 </p>
             </div>
 
             <div class="feature-card">
                 <div class="feature-icon">🌡️</div>
-                <h3 class="feature-title">Control Automático</h3>
+                <h3 class="feature-title">Control</h3>
                 <p class="feature-description">
-                    Sistema inteligente que ajusta automáticamente el riego según las necesidades específicas de cada parcela
+                    Sistema inteligente que ajusta el riego según las necesidades específicas de cada parcela
                 </p>
             </div>
 
@@ -525,15 +525,15 @@
                 <div class="feature-icon">⚡</div>
                 <h3 class="feature-title">Ahorro de Recursos</h3>
                 <p class="feature-description">
-                    Optimiza el uso de agua y energía con decisiones basadas en datos precisos y análisis predictivo
+                    Optimiza el uso de agua con decisiones basadas en datos precisos y análisis predictivo
                 </p>
             </div>
 
             <div class="feature-card">
                 <div class="feature-icon">📱</div>
-                <h3 class="feature-title">Acceso Remoto</h3>
+                <h3 class="feature-title">Acceso completo</h3>
                 <p class="feature-description">
-                    Gestiona tus parcelas desde cualquier dispositivo con nuestra plataforma web intuitiva y responsive
+                    Gestiona tus parcelas con un catalogo amplio de cultivos a nivel nacional, y si no lo encuentras simplemente añadelo
                 </p>
             </div>
         </div>

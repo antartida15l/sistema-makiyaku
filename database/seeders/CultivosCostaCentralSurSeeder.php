@@ -1,0 +1,286 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+
+class CultivosCostaCentralSurSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $cultivos = [
+            // LIMA - PAPA COSTA
+            [
+                'nombreCultivo' => 'Papa (Costa)',
+                'nombreCientifico' => 'Solanum tuberosum',
+                'tipo' => 'Tubérculos',
+                'region' => 'Costa Central y Sur',
+                'frecuenciaRiegoMin' => 5,
+                'frecuenciaRiegoMax' => 7,
+                'litrosPorM2Dia' => 3.00,
+                'humedadOptimaMin' => 65.00,
+                'humedadOptimaMax' => 75.00,
+                'sensibilidadSequia' => 'Alta',
+                'diasCriticosSinAgua' => 7,
+                'etapaMayorConsumo' => 'Tuberización plena',
+                'diasEtapaConsumoMin' => 70,
+                'diasEtapaConsumoMax' => 110,
+                'reduccionConHidrogel' => 27.50,
+                'tempCriticaMinima' => 0.00,
+                'tempCriticaMaxima' => 30.00,
+                'sensibilidadHeladas' => 'Alta',
+                'efectoTempMinima' => 'Daño al follaje',
+                'efectoTempMaxima' => 'Reduce tuberización',
+                'cicloProductivo' => 120,
+                'descripcion' => 'Tubérculo de consumo nacional',
+                'observaciones' => 'Crítico durante tuberización'
+            ],
+
+            // LIMA - MAÍZ CHOCLO
+            [
+                'nombreCultivo' => 'Maíz Choclo',
+                'nombreCientifico' => 'Zea mays',
+                'tipo' => 'Cereales',
+                'region' => 'Costa Central y Sur',
+                'frecuenciaRiegoMin' => 4,
+                'frecuenciaRiegoMax' => 6,
+                'litrosPorM2Dia' => 4.00,
+                'humedadOptimaMin' => 70.00,
+                'humedadOptimaMax' => 80.00,
+                'sensibilidadSequia' => 'Alta',
+                'diasCriticosSinAgua' => 6,
+                'etapaMayorConsumo' => 'Floración y grano lechoso',
+                'diasEtapaConsumoMin' => 45,
+                'diasEtapaConsumoMax' => 75,
+                'reduccionConHidrogel' => 27.50,
+                'tempCriticaMinima' => 5.00,
+                'tempCriticaMaxima' => 38.00,
+                'sensibilidadHeladas' => 'Alta',
+                'efectoTempMinima' => 'Detiene crecimiento',
+                'efectoTempMaxima' => 'Esterilidad del polen',
+                'cicloProductivo' => 90,
+                'descripcion' => 'Maíz tierno para consumo fresco',
+                'observaciones' => 'Crítico en floración'
+            ],
+
+            // LIMA - MANZANA
+            [
+                'nombreCultivo' => 'Manzana',
+                'nombreCientifico' => 'Malus domestica',
+                'tipo' => 'Frutales',
+                'region' => 'Costa Central y Sur',
+                'frecuenciaRiegoMin' => 7,
+                'frecuenciaRiegoMax' => 10,
+                'litrosPorM2Dia' => 2.50,
+                'humedadOptimaMin' => 60.00,
+                'humedadOptimaMax' => 70.00,
+                'sensibilidadSequia' => 'Media',
+                'diasCriticosSinAgua' => 12,
+                'etapaMayorConsumo' => 'Crecimiento del fruto',
+                'diasEtapaConsumoMin' => 305,
+                'diasEtapaConsumoMax' => 365,
+                'reduccionConHidrogel' => 22.50,
+                'tempCriticaMinima' => -15.00,
+                'tempCriticaMaxima' => 35.00,
+                'sensibilidadHeladas' => 'Baja',
+                'efectoTempMinima' => 'Daño a madera',
+                'efectoTempMaxima' => 'Quemadura de frutos',
+                'cicloProductivo' => 365,
+                'descripcion' => 'Frutal de clima templado',
+                'observaciones' => 'Requiere frío invernal. Nov-feb mayor consumo'
+            ],
+
+            // LIMA - PERA
+            [
+                'nombreCultivo' => 'Pera',
+                'nombreCientifico' => 'Pyrus communis',
+                'tipo' => 'Frutales',
+                'region' => 'Costa Central y Sur',
+                'frecuenciaRiegoMin' => 7,
+                'frecuenciaRiegoMax' => 10,
+                'litrosPorM2Dia' => 2.50,
+                'humedadOptimaMin' => 60.00,
+                'humedadOptimaMax' => 70.00,
+                'sensibilidadSequia' => 'Media',
+                'diasCriticosSinAgua' => 12,
+                'etapaMayorConsumo' => 'Crecimiento del fruto',
+                'diasEtapaConsumoMin' => 305,
+                'diasEtapaConsumoMax' => 365,
+                'reduccionConHidrogel' => 22.50,
+                'tempCriticaMinima' => -15.00,
+                'tempCriticaMaxima' => 35.00,
+                'sensibilidadHeladas' => 'Baja',
+                'efectoTempMinima' => 'Daño a madera',
+                'efectoTempMaxima' => 'Quemadura de frutos',
+                'cicloProductivo' => 365,
+                'descripcion' => 'Frutal de clima templado',
+                'observaciones' => 'Requiere frío invernal. Nov-feb mayor consumo'
+            ],
+
+            // LIMA - DURAZNO
+            [
+                'nombreCultivo' => 'Durazno',
+                'nombreCientifico' => 'Prunus persica',
+                'tipo' => 'Frutales',
+                'region' => 'Costa Central y Sur',
+                'frecuenciaRiegoMin' => 5,
+                'frecuenciaRiegoMax' => 7,
+                'litrosPorM2Dia' => 3.00,
+                'humedadOptimaMin' => 65.00,
+                'humedadOptimaMax' => 75.00,
+                'sensibilidadSequia' => 'Media-Alta',
+                'diasCriticosSinAgua' => 8,
+                'etapaMayorConsumo' => 'Crecimiento del fruto',
+                'diasEtapaConsumoMin' => 350,
+                'diasEtapaConsumoMax' => 365,
+                'reduccionConHidrogel' => 22.50,
+                'tempCriticaMinima' => -12.00,
+                'tempCriticaMaxima' => 38.00,
+                'sensibilidadHeladas' => 'Media',
+                'efectoTempMinima' => 'Daño a yemas florales',
+                'efectoTempMaxima' => 'Quemadura de frutos',
+                'cicloProductivo' => 365,
+                'descripcion' => 'Frutal de clima templado',
+                'observaciones' => 'Dic-feb mayor consumo'
+            ],
+
+            // ICA - ACEITUNA
+            [
+                'nombreCultivo' => 'Aceituna',
+                'nombreCientifico' => 'Olea europaea',
+                'tipo' => 'Frutales',
+                'region' => 'Costa Central y Sur',
+                'frecuenciaRiegoMin' => 12,
+                'frecuenciaRiegoMax' => 20,
+                'litrosPorM2Dia' => 2.00,
+                'humedadOptimaMin' => 50.00,
+                'humedadOptimaMax' => 60.00,
+                'sensibilidadSequia' => 'Baja',
+                'diasCriticosSinAgua' => 30,
+                'etapaMayorConsumo' => 'Crecimiento del fruto',
+                'diasEtapaConsumoMin' => 350,
+                'diasEtapaConsumoMax' => 365,
+                'reduccionConHidrogel' => 17.50,
+                'tempCriticaMinima' => -10.00,
+                'tempCriticaMaxima' => 42.00,
+                'sensibilidadHeladas' => 'Baja',
+                'efectoTempMinima' => 'Daño a madera',
+                'efectoTempMaxima' => 'Caída de frutos',
+                'cicloProductivo' => 365,
+                'descripcion' => 'Frutal muy resistente a sequía',
+                'observaciones' => 'Muy resistente. Dic-marzo mayor consumo'
+            ],
+
+            // AREQUIPA - AJO
+            [
+                'nombreCultivo' => 'Ajo',
+                'nombreCientifico' => 'Allium sativum',
+                'tipo' => 'Hortalizas',
+                'region' => 'Costa Central y Sur',
+                'frecuenciaRiegoMin' => 7,
+                'frecuenciaRiegoMax' => 10,
+                'litrosPorM2Dia' => 2.50,
+                'humedadOptimaMin' => 60.00,
+                'humedadOptimaMax' => 70.00,
+                'sensibilidadSequia' => 'Media',
+                'diasCriticosSinAgua' => 10,
+                'etapaMayorConsumo' => 'Engrosamiento de bulbos',
+                'diasEtapaConsumoMin' => 90,
+                'diasEtapaConsumoMax' => 150,
+                'reduccionConHidrogel' => 27.50,
+                'tempCriticaMinima' => -3.00,
+                'tempCriticaMaxima' => 32.00,
+                'sensibilidadHeladas' => 'Media',
+                'efectoTempMinima' => 'Daño al follaje',
+                'efectoTempMaxima' => 'Bulbos pequeños',
+                'cicloProductivo' => 180,
+                'descripcion' => 'Bulbo aromático de Arequipa',
+                'observaciones' => 'Crítico en bulbificación'
+            ],
+
+            // AREQUIPA - ALFALFA
+            [
+                'nombreCultivo' => 'Alfalfa',
+                'nombreCientifico' => 'Medicago sativa',
+                'tipo' => 'Otros',
+                'region' => 'Costa Central y Sur',
+                'frecuenciaRiegoMin' => 3,
+                'frecuenciaRiegoMax' => 7,
+                'litrosPorM2Dia' => 4.50,
+                'humedadOptimaMin' => 70.00,
+                'humedadOptimaMax' => 80.00,
+                'sensibilidadSequia' => 'Alta',
+                'diasCriticosSinAgua' => 7,
+                'etapaMayorConsumo' => 'Después de cada corte',
+                'diasEtapaConsumoMin' => null,
+                'diasEtapaConsumoMax' => null,
+                'reduccionConHidrogel' => 22.50,
+                'tempCriticaMinima' => -10.00,
+                'tempCriticaMaxima' => 38.00,
+                'sensibilidadHeladas' => 'Baja',
+                'efectoTempMinima' => 'Daño a corona',
+                'efectoTempMaxima' => 'Reduce crecimiento',
+                'cicloProductivo' => 365,
+                'descripcion' => 'Forraje perenne de alta calidad',
+                'observaciones' => 'Riego superficial: 5-7 días. Goteo: 3-5 días. Entra en dormancia con heladas'
+            ],
+
+            // AREQUIPA - CEBOLLA
+            [
+                'nombreCultivo' => 'Cebolla',
+                'nombreCientifico' => 'Allium cepa',
+                'tipo' => 'Hortalizas',
+                'region' => 'Costa Central y Sur',
+                'frecuenciaRiegoMin' => 5,
+                'frecuenciaRiegoMax' => 7,
+                'litrosPorM2Dia' => 3.00,
+                'humedadOptimaMin' => 65.00,
+                'humedadOptimaMax' => 75.00,
+                'sensibilidadSequia' => 'Alta',
+                'diasCriticosSinAgua' => 7,
+                'etapaMayorConsumo' => 'Bulbificación',
+                'diasEtapaConsumoMin' => 90,
+                'diasEtapaConsumoMax' => 130,
+                'reduccionConHidrogel' => 27.50,
+                'tempCriticaMinima' => -2.00,
+                'tempCriticaMaxima' => 35.00,
+                'sensibilidadHeladas' => 'Media-Alta',
+                'efectoTempMinima' => 'Daño al follaje',
+                'efectoTempMaxima' => 'Bulbos pequeños',
+                'cicloProductivo' => 150,
+                'descripcion' => 'Bulbo de consumo nacional',
+                'observaciones' => 'Crítico en bulbificación'
+            ],
+
+            // AREQUIPA - ORÉGANO
+            [
+                'nombreCultivo' => 'Orégano',
+                'nombreCientifico' => 'Origanum vulgare',
+                'tipo' => 'Aromáticas',
+                'region' => 'Costa Central y Sur',
+                'frecuenciaRiegoMin' => 10,
+                'frecuenciaRiegoMax' => 15,
+                'litrosPorM2Dia' => 1.50,
+                'humedadOptimaMin' => 50.00,
+                'humedadOptimaMax' => 60.00,
+                'sensibilidadSequia' => 'Baja',
+                'diasCriticosSinAgua' => 20,
+                'etapaMayorConsumo' => 'Después de cada corte',
+                'diasEtapaConsumoMin' => null,
+                'diasEtapaConsumoMax' => null,
+                'reduccionConHidrogel' => 22.50,
+                'tempCriticaMinima' => -5.00,
+                'tempCriticaMaxima' => 38.00,
+                'sensibilidadHeladas' => 'Media',
+                'efectoTempMinima' => 'Daño al follaje',
+                'efectoTempMaxima' => 'Reduce aceites esenciales',
+                'cicloProductivo' => 365,
+                'descripcion' => 'Hierba aromática muy resistente',
+                'observaciones' => 'Muy resistente a sequía'
+            ],
+        ];
+
+        DB::table('cultivos')->insert($cultivos);
+    }
+}

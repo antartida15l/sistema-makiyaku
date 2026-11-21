@@ -5,293 +5,169 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Parcela;
 use App\Models\Alerta;
+use App\Models\Cultivo;
+use App\Models\ClimaHistorial;
+use App\Services\AlertaService;
+use App\Services\OpenWeatherService;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
+    protected AlertaService $alertaService;
+    protected OpenWeatherService $weatherService;
+
+    public function __construct(AlertaService $alertaService, OpenWeatherService $weatherService)
+    {
+        $this->alertaService = $alertaService;
+        $this->weatherService = $weatherService;
+    }
+
     public function index()
     {
         $userId = auth()->id();
 
-        // ═══════════════════════════════════════════════════════════
-        // ESTADÍSTICAS DE PARCELAS
-        // ═══════════════════════════════════════════════════════════
-        $totalParcelas = Parcela::where('user_id', $userId)->count();
+        // Generar alertas automáticamente
+        $this->alertaService->generarAlertasUsuario($userId);
+
+        // Estadísticas de parcelas
+        $totalParcelas = Parcela::where('user_id', $userId)
+            ->activas()
+            ->count();
         
         $parcelasNuevas = Parcela::where('user_id', $userId)
             ->whereMonth('created_at', Carbon::now()->month)
             ->whereYear('created_at', Carbon::now()->year)
             ->count();
 
-        // ═══════════════════════════════════════════════════════════
-        // HUMEDAD - Con variación realista
-        // ═══════════════════════════════════════════════════════════
-        $humedadBase = 78;
-        $variacion = rand(-8, 12);
-        $humedadPromedio = max(60, min(95, $humedadBase + $variacion));
-        $cambioHumedad = rand(-7, 10);
+        // Clima promedio en tiempo real
+        $climaPromedio = $this->obtenerClimaPromedioRealTime($userId);
 
-        // ═══════════════════════════════════════════════════════════
-        // CONSUMO DE AGUA - Basado en número de parcelas
-        // ═══════════════════════════════════════════════════════════
-        $aguaPorParcela = 200; // Litros promedio por parcela
-        $aguaBase = $totalParcelas * $aguaPorParcela;
-        $variacionAgua = rand(-300, 500);
-        $aguaHoy = max(0, $aguaBase + $variacionAgua);
-        $cambioAgua = rand(-20, 15);
+        // Alertas
+        $alertasResumen = Alerta::resumenPorUsuario($userId);
+        $alertasActivas = $alertasResumen['total'];
+        $nuevasAlertas = $alertasResumen['nuevas_hoy'];
 
-        // ═══════════════════════════════════════════════════════════
-        // ALERTAS
-        // ═══════════════════════════════════════════════════════════
-        $alertasActivas = 0;
-        $nuevasAlertas = 0;
-        
-        try {
-            if (class_exists('App\Models\Alerta')) {
-                $alertasActivas = Alerta::where('user_id', $userId)
-                    ->where('leida', false)
-                    ->count();
-                
-                $nuevasAlertas = Alerta::where('user_id', $userId)
-                    ->where('leida', false)
-                    ->whereDate('created_at', Carbon::today())
-                    ->count();
-            } else {
-                // Simulación si no existe el modelo
-                $alertasActivas = rand(0, 5);
-                $nuevasAlertas = rand(0, 2);
-            }
-        } catch (\Exception $e) {
-            $alertasActivas = 0;
-            $nuevasAlertas = 0;
-        }
-
-        // ═══════════════════════════════════════════════════════════
-        // PARCELAS PARA FILTRO
-        // ═══════════════════════════════════════════════════════════
+        // Parcelas para filtros
         $parcelas = Parcela::where('user_id', $userId)
+            ->activas()
+            ->with('ubicacion')
             ->select('id', 'nombre')
             ->orderBy('nombre')
             ->get();
 
-        // ═══════════════════════════════════════════════════════════
-        // ACTIVIDADES RECIENTES - Dinámicas y realistas
-        // ═══════════════════════════════════════════════════════════
-        $actividadesRecientes = $this->generarActividadesRecientes($totalParcelas);
+        // Actividades recientes
+        $actividadesRecientes = $this->obtenerActividadesReales($userId);
 
-        // ═══════════════════════════════════════════════════════════
-        // RETORNAR VISTA CON TODOS LOS DATOS
-        // ═══════════════════════════════════════════════════════════
-       return view('dashboard', compact(
+        // Distribución por cultivo
+        $distribucionCultivos = $this->obtenerDistribucionCultivos($userId);
+
+        return view('dashboard', compact(
             'totalParcelas',
             'parcelasNuevas',
-            'humedadPromedio',
-            'cambioHumedad',
-            'aguaHoy',
-            'cambioAgua',
+            'climaPromedio',
             'alertasActivas',
             'nuevasAlertas',
+            'alertasResumen',
             'parcelas',
-            'actividadesRecientes'
+            'actividadesRecientes',
+            'distribucionCultivos'
         ));
-
     }
 
-    /**
-     * Genera actividades recientes dinámicas y realistas
-     * 
-     * @param int $totalParcelas
-     * @return array
-     */
-    private function generarActividadesRecientes($totalParcelas)
+    private function obtenerClimaPromedioRealTime(int $userId): array
     {
-        $actividades = [];
+        $parcelas = Parcela::where('user_id', $userId)
+            ->activas()
+            ->with('ubicacion')
+            ->get();
 
-        // Si no hay parcelas, mostrar actividades predeterminadas
-        if ($totalParcelas == 0) {
+        if ($parcelas->isEmpty()) {
             return [
-                [
-                    'icon' => '🌱',
-                    'titulo' => 'Bienvenido al sistema MAKIYAKU',
-                    'tiempo' => 'Hace unos momentos',
-                    'color' => 'rgba(40, 167, 69, 0.1)',
-                    'iconColor' => '#28a745'
-                ],
-                [
-                    'icon' => '📊',
-                    'titulo' => 'Sistema iniciado correctamente',
-                    'tiempo' => 'Hace 1 minuto',
-                    'color' => 'rgba(0, 123, 255, 0.1)',
-                    'iconColor' => '#007bff'
-                ],
-                [
-                    'icon' => '✓',
-                    'titulo' => 'Todos los sensores funcionando',
-                    'tiempo' => 'Hace 5 minutos',
-                    'color' => 'rgba(40, 167, 69, 0.1)',
-                    'iconColor' => '#28a745'
-                ],
-                [
-                    'icon' => '➕',
-                    'titulo' => 'Crea tu primera parcela para comenzar',
-                    'tiempo' => 'Hoy',
-                    'color' => 'rgba(255, 193, 7, 0.1)',
-                    'iconColor' => '#ffc107'
-                ]
+                'temperatura' => 0,
+                'humedad' => 0,
+                'hay_datos' => false,
             ];
         }
 
-        // Pool de actividades posibles con diferentes tipos
-        $tiposActividades = [
-            // Actividades de riego
-            [
-                'icon' => '💧',
-                'titulo' => 'Riego automático completado en Parcela {{parcela}}',
-                'color' => 'rgba(32, 201, 151, 0.1)',
-                'iconColor' => '#20c997'
-            ],
-            [
-                'icon' => '🚿',
-                'titulo' => 'Sistema de riego iniciado en Parcela {{parcela}}',
-                'color' => 'rgba(0, 123, 255, 0.1)',
-                'iconColor' => '#007bff'
-            ],
-            
-            // Monitoreo de sensores
-            [
-                'icon' => '📡',
-                'titulo' => 'Datos de sensores actualizados en Parcela {{parcela}}',
-                'color' => 'rgba(108, 117, 125, 0.1)',
-                'iconColor' => '#6c757d'
-            ],
-            [
-                'icon' => '✓',
-                'titulo' => 'Sensores de humedad calibrados en Parcela {{parcela}}',
-                'color' => 'rgba(40, 167, 69, 0.1)',
-                'iconColor' => '#28a745'
-            ],
-            
-            // Alertas y notificaciones
-            [
-                'icon' => '⚠️',
-                'titulo' => 'Nivel de humedad bajo detectado en Parcela {{parcela}}',
-                'color' => 'rgba(255, 193, 7, 0.1)',
-                'iconColor' => '#ffc107'
-            ],
-            [
-                'icon' => '🔔',
-                'titulo' => 'Alerta de mantenimiento para Parcela {{parcela}}',
-                'color' => 'rgba(255, 193, 7, 0.1)',
-                'iconColor' => '#ffc107'
-            ],
-            
-            // Análisis y reportes
-            [
-                'icon' => '📊',
-                'titulo' => 'Reporte semanal generado para Parcela {{parcela}}',
-                'color' => 'rgba(111, 66, 193, 0.1)',
-                'iconColor' => '#6f42c1'
-            ],
-            [
-                'icon' => '📈',
-                'titulo' => 'Análisis de eficiencia completado en Parcela {{parcela}}',
-                'color' => 'rgba(0, 123, 255, 0.1)',
-                'iconColor' => '#007bff'
-            ],
-            
-            // Mantenimiento
-            [
-                'icon' => '🔧',
-                'titulo' => 'Mantenimiento preventivo realizado en Parcela {{parcela}}',
-                'color' => 'rgba(23, 162, 184, 0.1)',
-                'iconColor' => '#17a2b8'
-            ],
-            [
-                'icon' => '⚙️',
-                'titulo' => 'Configuración actualizada en Parcela {{parcela}}',
-                'color' => 'rgba(108, 117, 125, 0.1)',
-                'iconColor' => '#6c757d'
-            ],
-            
-            // Optimización
-            [
-                'icon' => '🎯',
-                'titulo' => 'Optimización de riego aplicada en Parcela {{parcela}}',
-                'color' => 'rgba(40, 167, 69, 0.1)',
-                'iconColor' => '#28a745'
-            ],
-            [
-                'icon' => '💡',
-                'titulo' => 'Sugerencia de mejora disponible para Parcela {{parcela}}',
-                'color' => 'rgba(255, 193, 7, 0.1)',
-                'iconColor' => '#ffc107'
-            ]
-        ];
+        $temperaturas = [];
+        $humedades = [];
 
-        // Generar tiempo aleatorio realista
-        $tiemposDisponibles = [
-            'Hace unos momentos',
-            'Hace 5 minutos',
-            'Hace 15 minutos',
-            'Hace 30 minutos',
-            'Hace 1 hora',
-            'Hace 2 horas',
-            'Hace 3 horas',
-            'Hoy a las ' . Carbon::now()->subHours(rand(4, 8))->format('H:i'),
-            'Ayer a las ' . Carbon::now()->subDay()->format('H:i')
-        ];
+        foreach ($parcelas as $parcela) {
+            if ($parcela->ubicacion && $parcela->ubicacion->coordenadaLatitud) {
+                $clima = $this->weatherService->getCurrentWeatherByCoordinates(
+                    $parcela->ubicacion->coordenadaLatitud,
+                    $parcela->ubicacion->coordenadaLongitud
+                );
 
-        // Generar 5-8 actividades aleatorias
-        $numActividades = rand(5, 8);
-        $indicesUsados = [];
+                if ($clima) {
+                    $temperaturas[] = $clima['temp'];
+                    $humedades[] = $clima['humidity'];
+                }
+            }
+        }
 
-        for ($i = 0; $i < $numActividades; $i++) {
-            // Seleccionar una actividad aleatoria sin repetir
-            do {
-                $indiceActividad = array_rand($tiposActividades);
-            } while (in_array($indiceActividad, $indicesUsados) && count($indicesUsados) < count($tiposActividades));
-            
-            $indicesUsados[] = $indiceActividad;
-            $actividad = $tiposActividades[$indiceActividad];
-
-            // Reemplazar {{parcela}} con un número de parcela
-            $numeroParcela = rand(1, max(1, $totalParcelas));
-            $titulo = str_replace('{{parcela}}', $numeroParcela, $actividad['titulo']);
-
-            // Asignar tiempo aleatorio
-            $tiempo = $tiemposDisponibles[array_rand($tiemposDisponibles)];
-
-            $actividades[] = [
-                'icon' => $actividad['icon'],
-                'titulo' => $titulo,
-                'tiempo' => $tiempo,
-                'color' => $actividad['color'],
-                'iconColor' => $actividad['iconColor']
+        if (empty($temperaturas)) {
+            return [
+                'temperatura' => 0,
+                'humedad' => 0,
+                'hay_datos' => false,
             ];
         }
 
-        return $actividades;
+        return [
+            'temperatura' => round(array_sum($temperaturas) / count($temperaturas), 1),
+            'humedad' => round(array_sum($humedades) / count($humedades), 0),
+            'hay_datos' => true,
+        ];
     }
 
-    /**
-     * Obtiene datos de humedad para gráficos (AJAX)
-     * 
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function getHumedadData(Request $request)
+    public function getComparativaClima(Request $request)
     {
         $userId = auth()->id();
-        $parcelaId = $request->input('parcela_id', 'all');
+        $parcelasIds = $request->input('parcelas', []);
 
-        // Generar datos simulados de los últimos 7 días
+        if (empty($parcelasIds) || $parcelasIds[0] === 'all') {
+            $parcelas = Parcela::where('user_id', $userId)
+                ->activas()
+                ->with('ubicacion')
+                ->limit(5)
+                ->get();
+        } else {
+            $parcelas = Parcela::whereIn('id', $parcelasIds)
+                ->where('user_id', $userId)
+                ->with('ubicacion')
+                ->get();
+        }
+
         $datos = [];
-        for ($i = 6; $i >= 0; $i--) {
-            $fecha = Carbon::now()->subDays($i);
-            $datos[] = [
-                'fecha' => $fecha->format('d/m'),
-                'humedad' => rand(65, 90)
-            ];
+
+        foreach ($parcelas as $parcela) {
+            if ($parcela->ubicacion && $parcela->ubicacion->coordenadaLatitud) {
+                $clima = $this->weatherService->getCurrentWeatherByCoordinates(
+                    $parcela->ubicacion->coordenadaLatitud,
+                    $parcela->ubicacion->coordenadaLongitud
+                );
+
+                if ($clima) {
+                    $datos[] = [
+                        'parcela' => $parcela->nombre,
+                        'temperatura' => round($clima['temp'], 1),
+                        'humedad' => round($clima['humidity'], 0),
+                        'viento' => round($clima['wind_speed'], 1),
+                        'descripcion' => $clima['weather_description'],
+                        'emoji' => $this->getEmojiClima($clima['weather_main']),
+                    ];
+                }
+            }
+        }
+
+        if (empty($datos)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo obtener datos climáticos. Verifica que las parcelas tengan ubicación.',
+                'data' => []
+            ]);
         }
 
         return response()->json([
@@ -300,26 +176,264 @@ class DashboardController extends Controller
         ]);
     }
 
-    /**
-     * Obtiene estadísticas en tiempo real (AJAX)
-     * 
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function getRealtimeStats()
+      public function getPronostico(Request $request)
     {
         $userId = auth()->id();
+        $parcelaId = $request->input('parcela_id');
 
-        $stats = [
-            'humedad' => rand(70, 90),
-            'temperatura' => rand(18, 28),
-            'agua_hoy' => rand(800, 2500),
-            'alertas' => rand(0, 3)
-        ];
+        // Obtener parcela
+        if (!$parcelaId || $parcelaId === 'all') {
+            $parcela = Parcela::where('user_id', $userId)
+                ->activas()
+                ->with('ubicacion')
+                ->first();
+        } else {
+            $parcela = Parcela::where('id', $parcelaId)
+                ->where('user_id', $userId)
+                ->with('ubicacion')
+                ->first();
+        }
+
+        if (!$parcela || !$parcela->ubicacion || !$parcela->ubicacion->coordenadaLatitud) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se encontró ubicación para obtener pronóstico',
+                'data' => []
+            ]);
+        }
+
+        // Obtener pronóstico usando el servicio
+        $forecast = $this->weatherService->getForecastByCoordinates(
+            $parcela->ubicacion->coordenadaLatitud,
+            $parcela->ubicacion->coordenadaLongitud
+        );
+
+        if (!$forecast || !isset($forecast['list']) || empty($forecast['list'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo obtener el pronóstico',
+                'data' => []
+            ]);
+        }
+
+        // Agrupar por día
+        $datosPorDia = [];
+        
+        foreach ($forecast['list'] as $item) {
+            // Tu servicio devuelve 'datetime' ya formateado
+            $fecha = Carbon::parse($item['datetime']);
+            $dia = $fecha->format('Y-m-d');
+            
+            if (!isset($datosPorDia[$dia])) {
+                $datosPorDia[$dia] = [
+                    'fecha_obj' => $fecha,
+                    'temperaturas' => [],
+                    'humedades' => [],
+                    'lluvias' => [],
+                    'descripciones' => [],
+                    'weather_mains' => []
+                ];
+            }
+            
+            // Usar los campos que tu servicio YA formateó
+            $datosPorDia[$dia]['temperaturas'][] = $item['temp'];
+            $datosPorDia[$dia]['humedades'][] = $item['humidity'];
+            $datosPorDia[$dia]['lluvias'][] = $item['pop']; // Ya viene en porcentaje 0-100
+            $datosPorDia[$dia]['descripciones'][] = $item['weather_description'];
+            $datosPorDia[$dia]['weather_mains'][] = $item['weather_main'];
+        }
+
+        // Procesar 5 días
+        $pronosticoDias = [];
+        $contador = 0;
+        
+        foreach ($datosPorDia as $dia => $datos) {
+            if ($contador >= 5) break;
+            
+            $temps = $datos['temperaturas'];
+            $fecha = $datos['fecha_obj'];
+            
+            // Descripción más frecuente
+            $descripciones = array_count_values($datos['descripciones']);
+            arsort($descripciones);
+            $descripcion = array_key_first($descripciones);
+            
+            // Weather main más frecuente
+            $mains = array_count_values($datos['weather_mains']);
+            arsort($mains);
+            $weatherMain = array_key_first($mains);
+            
+            $pronosticoDias[] = [
+                'fecha' => $fecha->format('d/m'),
+                'dia_semana' => $fecha->locale('es')->isoFormat('ddd'),
+                'temp_max' => round(max($temps), 1),
+                'temp_min' => round(min($temps), 1),
+                'humedad' => round(array_sum($datos['humedades']) / count($datos['humedades']), 0),
+                'lluvia_prob' => round(array_sum($datos['lluvias']) / count($datos['lluvias']), 0), // Ya es porcentaje
+                'descripcion' => $descripcion,
+                'emoji' => $this->getEmojiClima($weatherMain),
+            ];
+            
+            $contador++;
+        }
+
+        if (empty($pronosticoDias)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se encontraron datos de pronóstico',
+                'data' => []
+            ]);
+        }
 
         return response()->json([
             'success' => true,
-            'stats' => $stats,
-            'timestamp' => Carbon::now()->toIso8601String()
+            'parcela' => $parcela->nombre,
+            'data' => $pronosticoDias
         ]);
+    }
+
+
+    private function obtenerActividadesReales(int $userId): array
+    {
+        $actividades = [];
+
+        // Alertas recientes
+        $alertasRecientes = Alerta::where('user_id', $userId)
+            ->activas()
+            ->with('parcela')
+            ->orderBy('created_at', 'desc')
+            ->limit(3)
+            ->get();
+
+        foreach ($alertasRecientes as $alerta) {
+            $actividades[] = [
+                'icon' => $alerta->icono,
+                'titulo' => "{$alerta->titulo} - {$alerta->parcela->nombre}",
+                'tiempo' => $alerta->tiempo_transcurrido,
+                'color' => $this->getColorByNivel($alerta->nivel),
+                'iconColor' => $alerta->color_hex,
+            ];
+        }
+
+        // Riegos recientes
+        $riegosRecientes = DB::table('eventos_riego')
+            ->join('parcelas', 'eventos_riego.parcela_id', '=', 'parcelas.id')
+            ->where('parcelas.user_id', $userId)
+            ->select(
+                'parcelas.nombre',
+                'eventos_riego.fecha_riego',
+                'eventos_riego.cantidad_agua',
+                'eventos_riego.tipo_riego'
+            )
+            ->orderBy('eventos_riego.fecha_riego', 'desc')
+            ->limit(3)
+            ->get();
+
+        foreach ($riegosRecientes as $riego) {
+            $actividades[] = [
+                'icon' => $riego->tipo_riego === 'automatico' ? '🤖' : '💧',
+                'titulo' => "Riego {$riego->tipo_riego} en {$riego->nombre} - " . 
+                           number_format($riego->cantidad_agua, 0) . " litros",
+                'tiempo' => Carbon::parse($riego->fecha_riego)->diffForHumans(),
+                'color' => 'rgba(32, 201, 151, 0.1)',
+                'iconColor' => '#20c997',
+            ];
+        }
+
+        // Parcelas nuevas
+        $parcelasNuevas = Parcela::where('user_id', $userId)
+            ->where('created_at', '>=', Carbon::now()->subDays(7))
+            ->orderBy('created_at', 'desc')
+            ->limit(2)
+            ->get();
+
+        foreach ($parcelasNuevas as $parcela) {
+            $actividades[] = [
+                'icon' => '🌱',
+                'titulo' => "Nueva parcela creada: {$parcela->nombre}",
+                'tiempo' => $parcela->created_at->diffForHumans(),
+                'color' => 'rgba(40, 167, 69, 0.1)',
+                'iconColor' => '#28a745',
+            ];
+        }
+
+        usort($actividades, function($a, $b) {
+            return strcmp($b['tiempo'], $a['tiempo']);
+        });
+
+        return array_slice($actividades, 0, 6);
+    }
+
+    private function obtenerDistribucionCultivos(int $userId): array
+    {
+        $distribucion = Parcela::where('user_id', $userId)
+            ->activas()
+            ->join('cultivos', 'parcelas.idCultivo', '=', 'cultivos.idCultivo')
+            ->select(
+                'cultivos.nombreCultivo',
+                'cultivos.idCultivo',
+                DB::raw('COUNT(*) as cantidad'),
+                DB::raw('SUM(parcelas.area) as area_total')
+            )
+            ->groupBy('cultivos.nombreCultivo', 'cultivos.idCultivo')
+            ->orderBy('area_total', 'desc')
+            ->get();
+
+        $totalArea = $distribucion->sum('area_total');
+
+        // Mapeo de emojis por cultivo
+        $emojis = [
+            'Maíz' => '🌽',
+            'Trigo' => '🌾',
+            'Arroz' => '🌾',
+            'Papa' => '🥔',
+            'Tomate' => '🍅',
+            'Lechuga' => '🥬',
+            'Zanahoria' => '🥕',
+            'Cebolla' => '🧅',
+            'Fresa' => '🍓',
+            'Uva' => '🍇',
+            'Manzana' => '🍎',
+            'Naranja' => '🍊',
+            'Café' => '☕',
+            'Cacao' => '🍫',
+            'Caña de azúcar' => '🎋',
+            'Algodón' => '☁️',
+        ];
+
+        return $distribucion->map(function($item) use ($totalArea, $emojis) {
+            return [
+                'nombre' => $item->nombreCultivo,
+                'emoji' => $emojis[$item->nombreCultivo] ?? '🌱',
+                'cantidad' => $item->cantidad,
+                'area' => round($item->area_total, 2),
+                'porcentaje' => $totalArea > 0 ? round(($item->area_total / $totalArea) * 100, 1) : 0,
+            ];
+        })->toArray();
+    }
+
+    private function getEmojiClima(string $condition): string
+    {
+        return match($condition) {
+            'Clear' => '☀️',
+            'Clouds' => '☁️',
+            'Rain' => '🌧️',
+            'Drizzle' => '🌦️',
+            'Thunderstorm' => '⛈️',
+            'Snow' => '❄️',
+            'Mist', 'Fog' => '🌫️',
+            default => '🌤️',
+        };
+    }
+
+    private function getColorByNivel(string $nivel): string
+    {
+        return match($nivel) {
+            'critico' => 'rgba(220, 53, 69, 0.1)',
+            'alto' => 'rgba(255, 193, 7, 0.1)',
+            'medio' => 'rgba(23, 162, 184, 0.1)',
+            'info' => 'rgba(0, 123, 255, 0.1)',
+            default => 'rgba(108, 117, 125, 0.1)',
+        };
     }
 }

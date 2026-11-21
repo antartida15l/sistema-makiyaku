@@ -15,6 +15,11 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
+                    <!-- Link de Alertas con Badge -->
+                    <x-nav-link :href="route('alertas.index')" :active="request()->routeIs('alertas.*')" style="position: relative;">
+                            {{ __('Alertas') }}
+                            <span id="badge-alertas" class="badge-alertas" style="display: none;">0</span>
+                    </x-nav-link>
                 </div>
             </div>
 
@@ -97,4 +102,62 @@
             </div>
         </div>
     </div>
+
+    <style>
+    .badge-alertas {
+        position: absolute;
+        top: 8px;
+        right: -10px;
+        background: #dc3545;
+        color: white;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 10px;
+        min-width: 18px;
+        text-align: center;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+    }
+    </style>
+
+    <script>
+    // ════════════════════════════════════════════════════════════
+    // ACTUALIZAR BADGE DE ALERTAS AUTOMÁTICAMENTE
+    // ════════════════════════════════════════════════════════════
+    function actualizarBadgeAlertas() {
+        fetch('{{ route("alertas.contador") }}')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const badge = document.getElementById('badge-alertas');
+                    if (data.total > 0) {
+                        badge.textContent = data.total;
+                        badge.style.display = 'inline-block';
+                        
+                        // Color según criticidad
+                        if (data.criticas > 0) {
+                            badge.style.background = '#dc3545'; // Rojo
+                        } else {
+                            badge.style.background = '#ffc107'; // Amarillo
+                        }
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            })
+            .catch(error => console.error('Error actualizando badge:', error));
+    }
+
+    // Actualizar al cargar la página
+    document.addEventListener('DOMContentLoaded', actualizarBadgeAlertas);
+
+    // Actualizar cada 60 segundos
+    setInterval(actualizarBadgeAlertas, 60000);
+    </script>
+
 </nav>

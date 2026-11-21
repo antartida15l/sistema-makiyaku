@@ -6,8 +6,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Dashboard') - MAKIYAKU</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>">
-    
-    <!-- Estilos embebidos optimizados -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
     <style>
         :root {
             --primary: #28a745;
@@ -49,7 +49,7 @@
         }
 
         /* ═══════════════════════════════════════════════════════════
-           SIDEBAR - Mejorado con más efectos
+           SIDEBAR
            ═══════════════════════════════════════════════════════════ */
         .sidebar {
             width: var(--sidebar-width);
@@ -265,6 +265,12 @@
             font-weight: 700;
             position: relative;
             z-index: 1;
+            animation: pulsoBadge 2s infinite;
+        }
+
+        @keyframes pulsoBadge {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
         }
 
         .sidebar-footer {
@@ -372,6 +378,9 @@
             transform: translateY(-1px);
         }
 
+        /* ═══════════════════════════════════════════════════════════
+           MAIN CONTENT
+           ═══════════════════════════════════════════════════════════ */
         .main-content {
             flex: 1;
             margin-left: var(--sidebar-width);
@@ -392,7 +401,7 @@
             top: 0;
             z-index: 100;
             backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            border-bottom: 1px solid #e9ecef;
         }
 
         .topbar-left {
@@ -436,82 +445,50 @@
             color: var(--primary-dark);
         }
 
-        .topbar-actions {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .search-box {
-            position: relative;
+        .mobile-menu-toggle {
             display: none;
-        }
-
-        .search-box.active {
-            display: block;
-        }
-
-        .search-input {
-            padding: 10px 40px 10px 15px;
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
-            outline: none;
-            transition: var(--transition);
-            width: 250px;
-        }
-
-        .search-input:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(40, 167, 69, 0.1);
-        }
-
-        .btn-icon {
-            width: 42px;
-            height: 42px;
-            border-radius: 11px;
-            border: none;
-            background: var(--light);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: var(--transition);
-            position: relative;
-            font-size: 18px;
-        }
-
-        .btn-icon:hover {
-            background: #e9ecef;
-            transform: translateY(-2px) scale(1.05);
-            box-shadow: var(--shadow-sm);
-        }
-
-        .btn-icon:active {
-            transform: translateY(0) scale(0.95);
-        }
-
-        .notification-badge {
-            position: absolute;
-            top: -4px;
-            right: -4px;
-            background: linear-gradient(135deg, var(--danger), #c82333);
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: var(--white);
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            font-size: 10px;
-            display: flex;
+            border: none;
+            border-radius: 12px;
+            font-size: 22px;
+            cursor: pointer;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1100;
             align-items: center;
             justify-content: center;
-            font-weight: 800;
-            border: 2px solid var(--white);
-            animation: bounceIn 0.5s;
+            box-shadow: var(--shadow-md);
+            transition: var(--transition);
         }
 
-        @keyframes bounceIn {
-            0% { transform: scale(0); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
+        .mobile-menu-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .mobile-menu-toggle:active {
+            transform: scale(0.95);
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 999;
+            backdrop-filter: blur(4px);
+            animation: fadeIn 0.3s;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
         }
 
         .content-area {
@@ -524,6 +501,9 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* ═══════════════════════════════════════════════════════════
+           ALERTS
+           ═══════════════════════════════════════════════════════════ */
         .alert {
             padding: 16px 20px;
             border-radius: var(--border-radius);
@@ -618,52 +598,119 @@
             border-left-color: var(--info);
         }
 
-        .mobile-menu-toggle {
-            display: none;
-            width: 45px;
-            height: 45px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: var(--white);
-            border: none;
-            border-radius: 12px;
-            font-size: 22px;
-            cursor: pointer;
+        /* ═══════════════════════════════════════════════════════════
+           TOAST NOTIFICATIONS
+           ═══════════════════════════════════════════════════════════ */
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
+        .alerta-toast {
             position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 1100;
+            top: 80px;
+            right: 20px;
+            width: 350px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            overflow: hidden;
+            animation: slideInRight 0.4s ease;
+            z-index: 9999;
+            border-left: 5px solid;
+        }
+
+        .alerta-toast:hover {
+            transform: translateX(-4px);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.25);
+        }
+
+        .alerta-toast-critico { border-left-color: #dc3545; }
+        .alerta-toast-alto { border-left-color: #ffc107; }
+        .alerta-toast-medio { border-left-color: #17a2b8; }
+        .alerta-toast-info { border-left-color: #007bff; }
+
+        .toast-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 15px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .toast-icon {
+            font-size: 24px;
+        }
+
+        .toast-header strong {
+            flex: 1;
+            font-size: 15px;
+            color: #212529;
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #6c757d;
+            cursor: pointer;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: var(--shadow-md);
-            transition: var(--transition);
+            transition: all 0.2s;
         }
 
-        .mobile-menu-toggle:hover {
-            transform: scale(1.1);
-            box-shadow: var(--shadow-lg);
+        .toast-close:hover {
+            color: #dc3545;
+            transform: rotate(90deg);
         }
 
-        .mobile-menu-toggle:active {
-            transform: scale(0.95);
+        .toast-body {
+            padding: 15px;
         }
 
-        .sidebar-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.6);
-            z-index: 999;
-            backdrop-filter: blur(4px);
-            animation: fadeIn 0.3s;
+        .toast-mensaje {
+            font-size: 14px;
+            color: #495057;
+            margin-bottom: 10px;
+            line-height: 1.4;
         }
 
-        .sidebar-overlay.active {
-            display: block;
+        .toast-parcela {
+            font-size: 12px;
+            color: #6c757d;
+            margin-bottom: 10px;
         }
 
+        .toast-link {
+            display: inline-block;
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .toast-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+
+        /* ═══════════════════════════════════════════════════════════
+           LOADING
+           ═══════════════════════════════════════════════════════════ */
         .loading {
             display: inline-block;
             width: 20px;
@@ -701,6 +748,9 @@
             animation: spin 1s linear infinite;
         }
 
+        /* ═══════════════════════════════════════════════════════════
+           RESPONSIVE
+           ═══════════════════════════════════════════════════════════ */
         @media (max-width: 768px) {
             :root {
                 --sidebar-width: 100%;
@@ -749,28 +799,22 @@
                 display: block !important;
             }
 
-            .search-box {
-                display: none !important;
+            .alerta-toast {
+                width: calc(100% - 40px);
+                right: 20px;
             }
         }
 
         @media (max-width: 480px) {
-            .topbar-actions {
-                gap: 8px;
-            }
-
-            .btn-icon {
-                width: 38px;
-                height: 38px;
-                font-size: 16px;
-            }
-
             .alert {
                 padding: 12px 15px;
                 font-size: 14px;
             }
         }
 
+        /* ═══════════════════════════════════════════════════════════
+           UTILITY CLASSES
+           ═══════════════════════════════════════════════════════════ */
         .text-center { text-align: center; }
         .text-right { text-align: right; }
         .mb-0 { margin-bottom: 0; }
@@ -796,11 +840,14 @@
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
 
     <div class="app-container">
+        <!-- ═══════════════════════════════════════════════════════════
+             SIDEBAR
+             ═══════════════════════════════════════════════════════════ -->
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <a href="{{ route('dashboard') }}" class="sidebar-logo">
-                    <div class="sidebar-logo">
-                        <img src="{{ asset('images/logoF.png') }}" alt="MAKIYAKU" style="width: 100%; height: 100%; object-fit: contain;">
+                    <div class="sidebar-logo-icon">
+                        <img src="{{ asset('images/portada.png') }}" alt="MAKIYAKU" style="width: 100%; height: 100%; object-fit: contain;">
                     </div>
                     <div class="sidebar-logo-text">MAKIYAKU</div>
                 </a>
@@ -818,31 +865,15 @@
                         <span class="nav-icon">🌾</span>
                         <span>Mis Parcelas</span>
                     </a>
-                </div>
-
-                <div class="nav-section">
-                    <div class="nav-section-title">Monitoreo</div>
-                    <a href="#" class="nav-item">
-                        <span class="nav-icon">💧</span>
-                        <span>Humedad</span>
+                    <a href="{{ route('cultivos.index') }}" class="nav-item {{ request()->routeIs('cultivos.*') ? 'active' : '' }}">
+                        <span class="nav-icon">🌿</span>
+                        <span>Cultivos</span>
                     </a>
-                    <a href="#" class="nav-item">
-                        <span class="nav-icon">🌡️</span>
-                        <span>Temperatura</span>
+                    <a href="{{ route('clima.index') }}" class="nav-item {{ request()->routeIs('clima.*') ? 'active' : '' }}">
+                        <span class="nav-icon">☁️</span>
+                        <span>Clima</span>
                     </a>
-                    <a href="#" class="nav-item">
-                        <span class="nav-icon">🚿</span>
-                        <span>Control de Riego</span>
-                    </a>
-                </div>
-
-                <div class="nav-section">
-                    <div class="nav-section-title">Gestión</div>
-                    <a href="#" class="nav-item">
-                        <span class="nav-icon">📋</span>
-                        <span>Reportes</span>
-                    </a>
-                    <a href="#" class="nav-item">
+                    <a href="{{ route('alertas.index') }}" class="nav-item {{ request()->routeIs('alertas.*') ? 'active' : '' }}">
                         <span class="nav-icon">🔔</span>
                         <span>Alertas</span>
                         @php
@@ -859,21 +890,26 @@
                             <span class="nav-badge">{{ $alertasNoLeidas }}</span>
                         @endif
                     </a>
-                    <a href="#" class="nav-item">
-                        <span class="nav-icon">📈</span>
-                        <span>Estadísticas</span>
+
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Contacto y soporte</div>
+                    <a href="https://wa.me/51963075106?text=Hola%20necesito%20ayuda%20con%20el%20sistema"
+                       target="_blank"
+                       class="nav-item">
+                        <span class="nav-icon">
+                            <i class="fab fa-whatsapp"></i>
+                        </span>
+                        <span>Comunícate conmigo</span>
                     </a>
                 </div>
 
                 <div class="nav-section">
-                    <div class="nav-section-title">Sistema</div>
-                    <a href="#" class="nav-item">
-                        <span class="nav-icon">⚙️</span>
-                        <span>Configuración</span>
-                    </a>
-                    <a href="#" class="nav-item">
-                        <span class="nav-icon">❓</span>
-                        <span>Ayuda</span>
+                    <div class="nav-section-title">Configuración</div>
+                    <a href="#" class="nav-item" onclick="event.preventDefault(); toggleSonidoAlertas();">
+                        <span class="nav-icon" id="iconoSonido">🔔</span>
+                        <span id="textoSonido">Sonido de Alertas</span>
                     </a>
                 </div>
             </nav>
@@ -900,6 +936,9 @@
             </div>
         </div>
 
+        <!-- ═══════════════════════════════════════════════════════════
+             MAIN CONTENT
+             ═══════════════════════════════════════════════════════════ -->
         <div class="main-content">
             <div class="topbar">
                 <div class="topbar-left">
@@ -912,27 +951,10 @@
                         </div>
                     </div>
                 </div>
-
-                <div class="topbar-actions">
-                    <div class="search-box" id="searchBox">
-                        <input type="text" class="search-input" placeholder="Buscar...">
-                    </div>
-                    <button class="btn-icon" onclick="toggleSearch()" title="Buscar">
-                        🔍
-                    </button>
-                    <button class="btn-icon" title="Notificaciones">
-                        🔔
-                        @if($alertasNoLeidas > 0)
-                            <span class="notification-badge">{{ $alertasNoLeidas }}</span>
-                        @endif
-                    </button>
-                    <button class="btn-icon" title="Configuración">
-                        ⚙️
-                    </button>
-                </div>
             </div>
 
             <div class="content-area">
+                {{-- Flash Messages --}}
                 @if(session('success'))
                     <div class="alert alert-success" role="alert">
                         <span class="alert-icon">✅</span>
@@ -980,12 +1002,19 @@
                     </div>
                 @endif
 
+                {{-- Contenido de la página --}}
                 @yield('content')
             </div>
         </div>
     </div>
 
+    <!-- ═══════════════════════════════════════════════════════════
+         SCRIPTS BASE
+         ═══════════════════════════════════════════════════════════ -->
     <script>
+        // ═══════════════════════════════════════════════════════════
+        // FUNCIONES DE NAVEGACIÓN
+        // ═══════════════════════════════════════════════════════════
         function toggleMobileMenu() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
@@ -997,14 +1026,6 @@
             menuIcon.textContent = sidebar.classList.contains('mobile-open') ? '✕' : '☰';
         }
 
-        function toggleSearch() {
-            const searchBox = document.getElementById('searchBox');
-            searchBox.classList.toggle('active');
-            if (searchBox.classList.contains('active')) {
-                searchBox.querySelector('.search-input').focus();
-            }
-        }
-
         function showLoading() {
             document.getElementById('pageLoading').style.display = 'flex';
         }
@@ -1013,10 +1034,9 @@
             document.getElementById('pageLoading').style.display = 'none';
         }
 
-        document.getElementById('logoutForm')?.addEventListener('submit', function() {
-            showLoading();
-        });
-
+        // ═══════════════════════════════════════════════════════════
+        // MANEJO DE ALERTAS AUTO-DISMISS
+        // ═══════════════════════════════════════════════════════════
         document.addEventListener('DOMContentLoaded', function() {
             hideLoading();
             
@@ -1029,8 +1049,385 @@
             });
         });
 
+        // ═══════════════════════════════════════════════════════════
+        // LOADING EN FORMULARIO DE LOGOUT
+        // ═══════════════════════════════════════════════════════════
+        document.getElementById('logoutForm')?.addEventListener('submit', function() {
+            showLoading();
+        });
+
         window.addEventListener('beforeunload', function() {
             showLoading();
+        });
+
+        window.addEventListener("pageshow", function (event) {
+            if (event.persisted) {
+                hideLoading();
+                window.location.reload();
+            }
+        });
+    </script>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SISTEMA DE SONIDO PARA ALERTAS CON RECORDATORIOS
+         ═══════════════════════════════════════════════════════════ -->
+    <script>
+        // ═══════════════════════════════════════════════════════════
+        // VARIABLES GLOBALES
+        // ═══════════════════════════════════════════════════════════
+        let audioContext = null;
+        let sonidosHabilitados = localStorage.getItem('alertas_sonido') !== 'false';
+        let ultimasAlertas = [];
+        let intervaloChequeo = null;
+        let tiemposRecordatorio = {}; // Guarda cuándo sonó cada alerta
+
+        // Inicializar Audio Context al primer click
+        document.addEventListener('click', function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                console.log('✅ Audio Context inicializado');
+            }
+            document.removeEventListener('click', initAudio);
+        }, { once: true });
+
+        // ═══════════════════════════════════════════════════════════
+        // CONFIGURACIÓN DE RECORDATORIOS POR NIVEL
+        // ═══════════════════════════════════════════════════════════
+        const CONFIGURACION_RECORDATORIOS = {
+            critico: {
+                habilitado: true,
+                intervalos: [0, 10, 30], // minutos: inmediato, 10min, 30min
+                repetirHasta: 3 // máximo 3 recordatorios
+            },
+            alto: {
+                habilitado: true,
+                intervalos: [0, 30], // inmediato y a los 30min
+                repetirHasta: 2
+            },
+            medio: {
+                habilitado: true,
+                intervalos: [0], // solo una vez
+                repetirHasta: 1
+            },
+            info: {
+                habilitado: true,
+                intervalos: [0], // solo una vez
+                repetirHasta: 1
+            }
+        };
+
+        // ═══════════════════════════════════════════════════════════
+        // GENERADOR DE SONIDOS WEB AUDIO API
+        // ═══════════════════════════════════════════════════════════
+        function reproducirSonidoAlerta(tipo = 'info', esRecordatorio = false) {
+            if (!sonidosHabilitados || !audioContext) {
+                console.log('🔇 Sonidos deshabilitados o AudioContext no disponible');
+                return;
+            }
+
+            const configuraciones = {
+                'critico': { 
+                    frecuencia: esRecordatorio ? 800 : 880, 
+                    duracion: esRecordatorio ? 0.15 : 0.2, 
+                    repeticiones: esRecordatorio ? 2 : 3, 
+                    volumen: esRecordatorio ? 0.25 : 0.3 
+                },
+                'alto': { 
+                    frecuencia: 660, 
+                    duracion: 0.15, 
+                    repeticiones: esRecordatorio ? 1 : 2, 
+                    volumen: 0.25 
+                },
+                'medio': { 
+                    frecuencia: 440, 
+                    duracion: 0.1, 
+                    repeticiones: 1, 
+                    volumen: 0.2 
+                },
+                'info': { 
+                    frecuencia: 330, 
+                    duracion: 0.1, 
+                    repeticiones: 1, 
+                    volumen: 0.15 
+                }
+            };
+
+            const config = configuraciones[tipo] || configuraciones['info'];
+            let tiempoActual = audioContext.currentTime;
+
+            for (let i = 0; i < config.repeticiones; i++) {
+                const oscilador = audioContext.createOscillator();
+                const ganancia = audioContext.createGain();
+
+                oscilador.connect(ganancia);
+                ganancia.connect(audioContext.destination);
+
+                oscilador.frequency.value = config.frecuencia;
+                oscilador.type = 'sine';
+
+                ganancia.gain.setValueAtTime(0, tiempoActual);
+                ganancia.gain.linearRampToValueAtTime(config.volumen, tiempoActual + 0.01);
+                ganancia.gain.exponentialRampToValueAtTime(0.01, tiempoActual + config.duracion);
+
+                oscilador.start(tiempoActual);
+                oscilador.stop(tiempoActual + config.duracion);
+
+                tiempoActual += config.duracion + 0.1;
+            }
+
+            console.log(`🔊 Sonido ${esRecordatorio ? 'RECORDATORIO' : 'INICIAL'} - Nivel: ${tipo}`);
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // GESTIÓN DE RECORDATORIOS
+        // ═══════════════════════════════════════════════════════════
+        function procesarRecordatorios(alertasActuales) {
+            const ahora = Date.now();
+
+            alertasActuales.forEach(alerta => {
+                const config = CONFIGURACION_RECORDATORIOS[alerta.nivel];
+                if (!config || !config.habilitado) return;
+
+                // Inicializar tracking si no existe
+                if (!tiemposRecordatorio[alerta.id]) {
+                    tiemposRecordatorio[alerta.id] = {
+                        primeraSonada: ahora,
+                        vecesRepetido: 0,
+                        ultimaVez: ahora
+                    };
+                    
+                    // Sonido inicial
+                    reproducirSonidoAlerta(alerta.nivel, false);
+                    mostrarNotificacionToast(alerta, false);
+                    return;
+                }
+
+                const tracking = tiemposRecordatorio[alerta.id];
+                const minutosDesdeInicio = (ahora - tracking.primeraSonada) / (1000 * 60);
+
+                // Verificar si debe sonar según intervalos configurados
+                for (let i = tracking.vecesRepetido; i < config.intervalos.length; i++) {
+                    const intervaloEsperado = config.intervalos[i];
+                    
+                    if (minutosDesdeInicio >= intervaloEsperado && tracking.vecesRepetido < config.repetirHasta) {
+                        // Es momento de recordar
+                        reproducirSonidoAlerta(alerta.nivel, true);
+                        mostrarNotificacionToast(alerta, true);
+                        
+                        tracking.vecesRepetido++;
+                        tracking.ultimaVez = ahora;
+                        
+                        console.log(`⏰ Recordatorio ${tracking.vecesRepetido} para alerta #${alerta.id} (${alerta.titulo})`);
+                        break;
+                    }
+                }
+            });
+
+            // Limpiar tracking de alertas que ya no existen
+            Object.keys(tiemposRecordatorio).forEach(alertaId => {
+                const existe = alertasActuales.some(a => a.id == alertaId);
+                if (!existe) {
+                    console.log(`✅ Alerta #${alertaId} resuelta - eliminando recordatorios`);
+                    delete tiemposRecordatorio[alertaId];
+                }
+            });
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // MONITOREO DE ALERTAS (cada 30 segundos)
+        // ═══════════════════════════════════════════════════════════
+        function iniciarMonitoreoAlertas() {
+            intervaloChequeo = setInterval(async () => {
+                try {
+                    const response = await fetch('/alertas/recientes', {
+                        method: 'GET',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        }
+                    });
+
+                    if (!response.ok) return;
+
+                    const data = await response.json();
+                    
+                    if (data.success && data.alertas) {
+                        // Procesar recordatorios para alertas actuales
+                        procesarRecordatorios(data.alertas);
+
+                        // Actualizar lista
+                        ultimasAlertas = data.alertas;
+                        actualizarBadgeAlertas(data.alertas.length);
+                    }
+                } catch (error) {
+                    console.error('❌ Error al verificar alertas:', error);
+                }
+            }, 30000); // 30 segundos
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // NOTIFICACIÓN TOAST
+        // ═══════════════════════════════════════════════════════════
+        function mostrarNotificacionToast(alerta, esRecordatorio = false) {
+            // Remover toasts anteriores
+            const toastsAnteriores = document.querySelectorAll('.alerta-toast');
+            toastsAnteriores.forEach(t => {
+                if (t.dataset.alertaId == alerta.id) {
+                    t.remove();
+                }
+            });
+
+            const toast = document.createElement('div');
+            toast.className = `alerta-toast alerta-toast-${alerta.nivel}`;
+            toast.dataset.alertaId = alerta.id;
+            
+            const etiquetaRecordatorio = esRecordatorio 
+                ? '<span style="background: #ffc107; color: #000; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; margin-left: 8px;">RECORDATORIO</span>' 
+                : '';
+            
+            toast.innerHTML = `
+                <div class="toast-header">
+                    <span class="toast-icon">${alerta.icono || '🔔'}</span>
+                    <strong>${alerta.titulo}</strong>
+                    ${etiquetaRecordatorio}
+                    <button class="toast-close" onclick="this.parentElement.parentElement.remove()">×</button>
+                </div>
+                <div class="toast-body">
+                    <div class="toast-mensaje">${alerta.mensaje ? alerta.mensaje.substring(0, 100) : 'Nueva alerta'}...</div>
+                    <div class="toast-parcela">🌾 ${alerta.parcela || 'Sistema'}</div>
+                    <a href="${alerta.url || '/alertas'}" class="toast-link">Ver detalles →</a>
+                </div>
+            `;
+
+            document.body.appendChild(toast);
+
+            // Auto-remover después de un tiempo
+            setTimeout(() => {
+                toast.style.animation = 'slideOutRight 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, esRecordatorio ? 10000 : 8000);
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // ACTUALIZAR BADGE DE ALERTAS
+        // ═══════════════════════════════════════════════════════════
+        function actualizarBadgeAlertas(cantidad) {
+            const badges = document.querySelectorAll('.nav-badge');
+            badges.forEach(badge => {
+                if (cantidad > 0) {
+                    badge.textContent = cantidad;
+                    badge.style.display = 'inline-block';
+                } else {
+                    badge.style.display = 'none';
+                }
+            });
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // TOGGLE DE SONIDO
+        // ═══════════════════════════════════════════════════════════
+        function toggleSonidoAlertas() {
+            sonidosHabilitados = !sonidosHabilitados;
+            localStorage.setItem('alertas_sonido', sonidosHabilitados);
+            
+            const icono = sonidosHabilitados ? '🔔' : '🔕';
+            const mensaje = sonidosHabilitados ? 'Sonidos activados ✅' : 'Sonidos desactivados 🔇';
+            
+            // Actualizar icono en el menú
+            const iconoSonido = document.getElementById('iconoSonido');
+            const textoSonido = document.getElementById('textoSonido');
+            if (iconoSonido) iconoSonido.textContent = icono;
+            if (textoSonido) textoSonido.textContent = sonidosHabilitados ? 'Sonido Activado' : 'Sonido Desactivado';
+            
+            mostrarMensajeTemporal(mensaje, icono);
+            
+            if (sonidosHabilitados && audioContext) {
+                reproducirSonidoAlerta('info');
+            }
+        }
+
+        function mostrarMensajeTemporal(mensaje, icono) {
+            const div = document.createElement('div');
+            div.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #28a745, #20c997);
+                color: white;
+                padding: 15px 25px;
+                border-radius: 12px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                z-index: 10000;
+                font-weight: 600;
+                animation: slideInRight 0.3s ease;
+            `;
+            div.innerHTML = `${icono} ${mensaje}`;
+            document.body.appendChild(div);
+            
+            setTimeout(() => {
+                div.style.animation = 'slideOutRight 0.3s ease';
+                setTimeout(() => div.remove(), 300);
+            }, 2000);
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // FUNCIÓN GLOBAL PARA PRUEBAS
+        // ═══════════════════════════════════════════════════════════
+        function probarSonidoAlerta(nivel = 'info') {
+            reproducirSonidoAlerta(nivel, false);
+            mostrarNotificacionToast({
+                id: Date.now(),
+                nivel: nivel,
+                icono: nivel === 'critico' ? '🚨' : nivel === 'alto' ? '⚠️' : 'ℹ️',
+                titulo: `Prueba de sonido: ${nivel}`,
+                mensaje: 'Esta es una notificación de prueba del sistema',
+                parcela: 'Sistema de Prueba',
+                url: '/alertas'
+            }, false);
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // INICIALIZACIÓN DEL SISTEMA
+        // ═══════════════════════════════════════════════════════════
+        document.addEventListener('DOMContentLoaded', function() {
+            // Actualizar icono según estado guardado
+            const iconoSonido = document.getElementById('iconoSonido');
+            const textoSonido = document.getElementById('textoSonido');
+            if (iconoSonido) iconoSonido.textContent = sonidosHabilitados ? '🔔' : '🔕';
+            if (textoSonido) textoSonido.textContent = sonidosHabilitados ? 'Sonido Activado' : 'Sonido Desactivado';
+
+            // Iniciar monitoreo
+            iniciarMonitoreoAlertas();
+            
+            // Cargar alertas iniciales
+            fetch('/alertas/recientes', {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.alertas) {
+                    ultimasAlertas = data.alertas;
+                    procesarRecordatorios(data.alertas);
+                    actualizarBadgeAlertas(data.alertas.length);
+                    console.log(`📊 ${data.alertas.length} alertas activas cargadas`);
+                }
+            })
+            .catch(err => console.error('❌ Error cargando alertas:', err));
+
+            console.log('✅ Sistema de alertas CON RECORDATORIOS inicializado');
+            console.log('🔊 Configuración de recordatorios:');
+            console.log('   - Crítico: Inmediato, 10min, 30min (máx 3)');
+            console.log('   - Alto: Inmediato, 30min (máx 2)');
+            console.log('   - Medio/Info: Solo 1 vez');
+            console.log(`🔊 Estado actual: ${sonidosHabilitados ? 'ACTIVADO' : 'DESACTIVADO'}`);
+        });
+
+        // Limpiar interval al salir
+        window.addEventListener('beforeunload', () => {
+            if (intervaloChequeo) clearInterval(intervaloChequeo);
         });
     </script>
 

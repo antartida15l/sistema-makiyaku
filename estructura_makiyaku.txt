@@ -1,0 +1,339 @@
+Listado de rutas de carpetas para el volumen OS
+El número de serie del volumen es 9E6A-68BE
+C:\XAMPP\HTDOCS\LARAVEL\MAKIYAKU\APP
++---comands
++---Console
+¦   ¦   kernel.php
+¦   ¦   
+¦   +---Commands
+¦           ActualizarClimaParcelasCommand.php
+¦           GeocodificarUbicaciones.php
+¦           
++---Http
+¦   +---Controllers
+¦   ¦   ¦   AlertaController.php
+¦   ¦   ¦   ClimaController.php
+¦   ¦   ¦   Controller.php
+¦   ¦   ¦   CultivoController.php
+¦   ¦   ¦   DashboardController.php
+¦   ¦   ¦   ParcelaController.php
+¦   ¦   ¦   ProfileController.php
+¦   ¦   ¦   
+¦   ¦   +---Auth
+¦   ¦           AuthenticatedSessionController.php
+¦   ¦           ConfirmablePasswordController.php
+¦   ¦           EmailVerificationNotificationController.php
+¦   ¦           EmailVerificationPromptController.php
+¦   ¦           NewPasswordController.php
+¦   ¦           PasswordController.php
+¦   ¦           PasswordResetLinkController.php
+¦   ¦           RegisteredUserController.php
+¦   ¦           VerifyEmailController.php
+¦   ¦           
+¦   +---Requests
+¦       ¦   ProfileUpdateRequest.php
+¦       ¦   
+¦       +---Auth
+¦               LoginRequest.php
+¦               
++---Models
+¦       Alerta.php
+¦       ClimaHistorial.php
+¦       Cultivo.php
+¦       EventoRiego.php
+¦       LecturaHumedad.php
+¦       Parcela.php
+¦       Ubicacion.php
+¦       User.php
+¦       
++---Policies
+¦       ParcelaPolicy.php
+¦       
++---Providers
+¦       AppServiceProvider.php
+¦       AuthServiceProvider.php
+¦       
++---Services
+¦       AlertaService.php
+¦       ClimaService.php
+¦       GeocodingService.php
+¦       OpenWeatherService.php
+¦       
++---View
+    +---Components
+            AppLayout.php
+            GuestLayout.php
+            
+Listado de rutas de carpetas para el volumen OS
+El número de serie del volumen es 9E6A-68BE
+C:\XAMPP\HTDOCS\LARAVEL\MAKIYAKU\BOOTSTRAP
+¦   app.php
+¦   providers.php
+¦   
++---cache
+        .gitignore
+        packages.php
+        services.php
+        
+Listado de rutas de carpetas para el volumen OS
+El número de serie del volumen es 9E6A-68BE
+C:\XAMPP\HTDOCS\LARAVEL\MAKIYAKU\CONFIG
+    app.php
+    auth.php
+    cache.php
+    database.php
+    filesystems.php
+    logging.php
+    mail.php
+    queue.php
+    services.php
+    session.php
+    
+No existe ninguna subcarpeta 
+
+Listado de rutas de carpetas para el volumen OS
+El número de serie del volumen es 9E6A-68BE
+C:\XAMPP\HTDOCS\LARAVEL\MAKIYAKU\DATABASE
+¦   .gitignore
+¦   database.sqlite
+¦   
++---factories
+¦       UserFactory.php
+¦       
++---migrations
+¦       0001_01_01_000000_create_users_table.php
+¦       0001_01_01_000001_create_cache_table.php
+¦       0001_01_01_000002_create_jobs_table.php
+¦       2025_12_11_000001_create_ubicaciones_table.php
+¦       2025_12_11_000002_create_cultivos_table.php
+¦       2025_12_12_011206_create_parcelas_table.php
+¦       2025_12_12_011608_create_eventos_riego_table.php
+¦       2025_12_18_151646_create_clima_historial_table.php
+¦       2025_12_18_220725_add_soft_deletes_to_ubicaciones_table.php
+¦       2025_12_18_223848_drop_ubicacion_column_from_parcelas_table.php
+¦       2025_12_18_231839_update_alertas_table.php
+¦       2025_12_19_083944_add_archivada_to_alertas_table.php
+¦       
++---seeders
+        CultivosCostaCentralSurSeeder.php
+        CultivosCostaNorteSeeder.php
+        CultivoSeeder.php
+        CultivosSelvaSeeder.php
+        CultivosSierraSeeder.php
+        DatabaseSeeder.php
+        
+Listado de rutas de carpetas para el volumen OS
+El número de serie del volumen es 9E6A-68BE
+C:\XAMPP\HTDOCS\LARAVEL\MAKIYAKU\PUBLIC
+¦   .htaccess
+¦   favicon.ico
+¦   index.php
+¦   robots.txt
+¦   
++---build
+¦   ¦   manifest.json
+¦   ¦   
+¦   +---assets
+¦           app-C9BXtK88.css
+¦           app-CJy8ASEk.js
+¦           
++---images
+        logo1.png
+        logo2.png
+        logo3.png
+        logo4.png
+        logo5.png
+        logo6.png
+        logo7.png
+        logoF.png
+        
+Listado de rutas de carpetas para el volumen OS
+El número de serie del volumen es 9E6A-68BE
+C:\XAMPP\HTDOCS\LARAVEL\MAKIYAKU\RESOURCES
++---css
+¦       app.css
+¦       
++---js
+¦       app.js
+¦       bootstrap.js
+¦       
++---views
+    ¦   dashboard.blade.php
+    ¦   welcome.blade.php
+    ¦   
+    +---alertas
+    ¦   ¦   index.blade.php
+    ¦   ¦   
+    ¦   +---partials
+    ¦           alerta-card.blade.php
+    ¦           
+    +---auth
+    ¦       confirm-password.blade.php
+    ¦       forgot-password.blade.php
+    ¦       login.blade.php
+    ¦       register.blade.php
+    ¦       reset-password.blade.php
+    ¦       verify-email.blade.php
+    ¦       
+    +---clima
+    ¦       index.blade.php
+    ¦       
+    +---components
+    ¦       application-logo.blade.php
+    ¦       auth-session-status.blade.php
+    ¦       danger-button.blade.php
+    ¦       dropdown-link.blade.php
+    ¦       dropdown.blade.php
+    ¦       input-error.blade.php
+    ¦       input-label.blade.php
+    ¦       modal.blade.php
+    ¦       nav-link.blade.php
+    ¦       primary-button.blade.php
+    ¦       responsive-nav-link.blade.php
+    ¦       secondary-button.blade.php
+    ¦       text-input.blade.php
+    ¦       
+    +---cultivos
+    ¦       create.blade.php
+    ¦       edit.blade.php
+    ¦       index.blade.php
+    ¦       show.blade.php
+    ¦       
+    +---layouts
+    ¦       app.blade.php
+    ¦       guest.blade.php
+    ¦       navigation.blade.php
+    ¦       
+    +---parcelas
+    ¦       create.blade.php
+    ¦       edit.blade.php
+    ¦       index.blade.php
+    ¦       show.blade.php
+    ¦       
+    +---profile
+        ¦   edit.blade.php
+        ¦   
+        +---partials
+                delete-user-form.blade.php
+                update-password-form.blade.php
+                update-profile-information-form.blade.php
+                
+Listado de rutas de carpetas para el volumen OS
+El número de serie del volumen es 9E6A-68BE
+C:\XAMPP\HTDOCS\LARAVEL\MAKIYAKU\ROUTES
+    auth.php
+    console.php
+    web.php
+    
+No existe ninguna subcarpeta 
+
+Listado de rutas de carpetas para el volumen OS
+El número de serie del volumen es 9E6A-68BE
+C:\XAMPP\HTDOCS\LARAVEL\MAKIYAKU\STORAGE
++---app
+¦   ¦   .gitignore
+¦   ¦   
+¦   +---private
+¦   ¦       .gitignore
+¦   ¦       
+¦   +---public
+¦           .gitignore
+¦           
++---framework
+¦   ¦   .gitignore
+¦   ¦   
+¦   +---cache
+¦   ¦   ¦   .gitignore
+¦   ¦   ¦   
+¦   ¦   +---data
+¦   ¦           .gitignore
+¦   ¦           
+¦   +---sessions
+¦   ¦       .gitignore
+¦   ¦       
+¦   +---testing
+¦   ¦       .gitignore
+¦   ¦       
+¦   +---views
+¦           .gitignore
+¦           016276a526f797d724959fecbc537879.php
+¦           03890ed75e7ef089bdb905f3e713c863.php
+¦           068d3ddcf91bfefcc4a38d34d6b0d377.php
+¦           16e61fc7fc1a7f6d23b927fa0bc379b8.php
+¦           1aa2f1b44e00628893e40130503b5e67.php
+¦           2b76454426553c6005d035a8bdac86e7.php
+¦           2b8400539b624668bf247a2813736248.php
+¦           309d2724bd97be7b0c99bbda47b3b552.php
+¦           462a09389de13b9559405b300248e871.php
+¦           49847ff6c61099a106df54a19da67eb1.php
+¦           4d481903fdbcb16dad24e534853cfa4b.php
+¦           4d4a9854faff7b3959dbf1072869b9aa.php
+¦           54cff3962e8c2a43efe44f1479fb4035.php
+¦           5921df40686764dadba02b28942a3125.php
+¦           5b1c0372c8dfa5677b82df21daba6dcd.php
+¦           5fd934e349533edf9868fbb738d243d6.php
+¦           6d5c161db04ed792885fc8230b66f3f3.php
+¦           77b2b977e2695981a6b0aae4484ad391.php
+¦           7baa6c3e37a829f9c7c0052e2f3b4de4.php
+¦           807e35b7e88785cff8a3445d141999b3.php
+¦           8513e4be86092b85608aa8a106494eec.php
+¦           853422091f0cfcfe4cdace71ff9c43fc.php
+¦           8a13261b668449d727ad3019221a94ea.php
+¦           8c1265f5d5f9c4d5f557f8953084f041.php
+¦           9281838933e79a2da79234fe6a70df22.php
+¦           969e00c26e6b767ec264444a68750e2e.php
+¦           96a97a7eb7d79e9a5800a5776e85ff80.php
+¦           9e05d2ee3c3d4a1d5c934b552b290232.php
+¦           9ff622af59a3f3c9c210f95fa7cd214b.php
+¦           a1320aec725b8772dbc498c2e7402446.php
+¦           a4929cc756f50b9da151d13814d349b1.php
+¦           a690c622bdc222a537003f58fac4bf6e.php
+¦           abaefca44a139bad5a4844c25f1caa0f.php
+¦           acdb44a16751c59c37ee951c4fcfc86d.php
+¦           af81b2c665757941783f316f35c23b96.php
+¦           affea428e2c2f60ce956b0c1aad63e6f.php
+¦           b0ed123e27fdd60c7ef365b6cf0cc409.php
+¦           becfefa18ae9c10f310189e276572e94.php
+¦           c195a92ae7510fbd60ab2a45e275e0f8.php
+¦           c2c2bdea96fe02dfb50452dce39f5c7b.php
+¦           c687b8729d95e063fff68970b179f533.php
+¦           c8ba1791ad7e2417d2391cad1031247b.php
+¦           d20c99792bb607fb0a8ca85e3c03fcbb.php
+¦           d2e25f38d17931c41315dccfdaffe229.php
+¦           d5e8bae3343ca9d21746d86735d3918e.php
+¦           d9e3b51ecc07f63c437bc91258322fd5.php
+¦           e45ea0637a4fe9ef182f8abe4b63dbea.php
+¦           e707950ae3286f97d889be1c5d500db6.php
+¦           ec709b2e6fcb70948d200aaa45cf7ed7.php
+¦           f12ffb00d878bf28bfbff488bdb59c3e.php
+¦           f1ad17c8863607328141fff938366c90.php
+¦           f9b6ae93282eba42ed4578e59396ef94.php
+¦           f9fce827750734609a9aee12585bfce0.php
+¦           fa1fc700f02c283f97c702cc56906d90.php
+¦           fa7a5b6527f7c3016ba82acab3e27dcf.php
+¦           fbaa38d028cdca8a0db494d18bd5d1ba.php
+¦           
++---logs
+        .gitignore
+        laravel.log
+        
+Listado de rutas de carpetas para el volumen OS
+El número de serie del volumen es 9E6A-68BE
+C:\XAMPP\HTDOCS\LARAVEL\MAKIYAKU\TESTS
+¦   TestCase.php
+¦   
++---Feature
+¦   ¦   ExampleTest.php
+¦   ¦   ProfileTest.php
+¦   ¦   
+¦   +---Auth
+¦           AuthenticationTest.php
+¦           EmailVerificationTest.php
+¦           PasswordConfirmationTest.php
+¦           PasswordResetTest.php
+¦           PasswordUpdateTest.php
+¦           RegistrationTest.php
+¦           
++---Unit
+        ExampleTest.php
+        

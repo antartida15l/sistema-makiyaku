@@ -13,16 +13,25 @@ return new class extends Migration
     {
         Schema::create('eventos_riego', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('parcela_id')->constrained()->onDelete('cascade');
-            $table->foreignId('user_id')->constrained();
-            $table->timestamp('fecha_inicio');
-            $table->timestamp('fecha_fin')->nullable();
-            $table->integer('duracion_minutos')->nullable();
-            $table->decimal('litros_utilizados', 10, 2)->nullable();
-            $table->enum('tipo', ['manual', 'automatico', 'programado']);
-            $table->enum('estado', ['en_proceso', 'completado', 'cancelado'])->default('en_proceso');
-            $table->text('notas')->nullable();
+            
+            // Foreign key a parcelas
+            $table->foreignId('parcela_id')
+                ->constrained('parcelas')
+                ->onDelete('cascade');
+            
+            // Datos del riego
+            $table->timestamp('fecha_riego')->useCurrent();
+            $table->decimal('cantidad_agua', 10, 2)->comment('Litros de agua utilizados');
+            $table->enum('tipo_riego', ['manual', 'automatico', 'goteo', 'aspersion'])->default('manual');
+            
+            // Observaciones opcionales
+            $table->text('notas')->nullable()->comment('Observaciones del agricultor');
+            
             $table->timestamps();
+            
+            // Índices
+            $table->index('parcela_id', 'idx_eventos_parcela');
+            $table->index('fecha_riego', 'idx_fecha_riego');
         });
     }
 

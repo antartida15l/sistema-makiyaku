@@ -1,0 +1,2261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CienciaPuno</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .header {
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0 0 10px 0;
+      color: #333;
+      font-size: 28px;
+    }
+    .header p {
+      color: #666;
+      margin-bottom: 20px;
+    }
+    .search-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 15px 40px;
+      font-size: 16px;
+      border-radius: 25px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      transition: transform 0.2s;
+      font-weight: bold;
+    }
+    .search-btn:hover {
+      transform: translateY(-2px);
+    }
+    .search-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .menu-tabs {
+      background: white;
+      padding: 10px;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .tab-btn {
+      background: #f5f5f5;
+      color: #333;
+      border: none;
+      padding: 12px 20px;
+      font-size: 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: 600;
+    }
+    .tab-btn:hover {
+      background: #e0e0e0;
+    }
+    .tab-btn.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: white;
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+    .stat-number {
+      font-size: 42px;
+      font-weight: bold;
+      color: #667eea;
+      margin: 10px 0;
+    }
+    .stat-label {
+      font-size: 13px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .publications-section {
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    .publications-section h2 {
+      margin-top: 0;
+      margin-bottom: 20px;
+      color: #333;
+    }
+    .search-box {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .search-input {
+      flex: 1;
+      padding: 15px 20px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 16px;
+      transition: border 0.3s;
+    }
+    .search-input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    .filter-toggle-btn {
+      background: #f5f5f5;
+      color: #333;
+      border: 2px solid #e0e0e0;
+      padding: 12px 25px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .filter-toggle-btn:hover {
+      background: #e0e0e0;
+    }
+    .filter-toggle-btn.active {
+      background: #667eea;
+      color: white;
+      border-color: #667eea;
+    }
+    .filters-panel {
+      background: #f8f8f8;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    .filters-panel.show {
+      display: block;
+    }
+    .filters-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+    }
+    .filter-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 5px;
+    }
+    .filter-input, .filter-select {
+      padding: 10px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border 0.3s;
+    }
+    .filter-input:focus, .filter-select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    .filter-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+    .apply-btn {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 10px 25px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.3s;
+    }
+    .apply-btn:hover {
+      background: #5568d3;
+    }
+    .clear-btn {
+      background: #f5f5f5;
+      color: #333;
+      border: 2px solid #e0e0e0;
+      padding: 10px 25px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+    .clear-btn:hover {
+      background: #e0e0e0;
+    }
+    .publication-card {
+      border-bottom: 1px solid #eee;
+      padding: 20px 0;
+    }
+    .publication-card:last-child {
+      border-bottom: none;
+    }
+    .pub-title {
+      font-size: 16px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
+    .pub-authors {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+    .pub-meta {
+      margin-top: 10px;
+    }
+    .pub-year {
+      display: inline-block;
+      background: #667eea;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      margin-right: 10px;
+    }
+    .pub-citations {
+      display: inline-block;
+      background: #f0f0f0;
+      color: #333;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+    }
+    .pub-link {
+      color: #667eea;
+      text-decoration: none;
+      font-size: 14px;
+      margin-top: 8px;
+      display: inline-block;
+    }
+    .pub-link:hover {
+      text-decoration: underline;
+    }
+    .author-card {
+      border-bottom: 1px solid #eee;
+      padding: 20px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .author-card:last-child {
+      border-bottom: none;
+    }
+    .author-info {
+      flex: 1;
+    }
+    .author-rank {
+      font-size: 24px;
+      font-weight: bold;
+      color: #667eea;
+      margin-right: 20px;
+      min-width: 40px;
+    }
+    .author-name {
+      font-size: 16px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 5px;
+    }
+    .author-stats {
+      display: flex;
+      gap: 15px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    .author-stat {
+      display: inline-block;
+      background: #f0f0f0;
+      color: #666;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+    }
+    .year-card {
+      border-bottom: 1px solid #eee;
+      padding: 20px 0;
+    }
+    .year-card:last-child {
+      border-bottom: none;
+    }
+    .year-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .year-title {
+      font-size: 20px;
+      font-weight: bold;
+      color: #667eea;
+    }
+    .year-count {
+      background: #f0f0f0;
+      color: #333;
+      padding: 6px 15px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    .topic-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      color: white;
+    }
+    .topic-name {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .topic-stats {
+      display: flex;
+      gap: 20px;
+      font-size: 14px;
+    }
+    .network-node {
+      background: white;
+      border: 3px solid #667eea;
+      padding: 15px;
+      border-radius: 50%;
+      display: inline-block;
+      margin: 10px;
+      font-size: 12px;
+      text-align: center;
+      min-width: 100px;
+      min-height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+    .network-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      padding: 20px;
+    }
+    .inst-card {
+      border-left: 4px solid #667eea;
+      padding: 15px;
+      background: #f8f8f8;
+      margin-bottom: 15px;
+      border-radius: 5px;
+    }
+    .inst-name {
+      font-size: 16px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 8px;
+    }
+    .chart-container {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+    .bar-chart {
+      display: flex;
+      align-items: flex-end;
+      height: 300px;
+      gap: 10px;
+      padding: 20px 0;
+    }
+    .bar {
+      flex: 1;
+      background: linear-gradient(to top, #667eea, #764ba2);
+      border-radius: 5px 5px 0 0;
+      position: relative;
+      min-width: 40px;
+      transition: transform 0.3s;
+    }
+    .bar:hover {
+      transform: scale(1.05);
+    }
+    .bar-label {
+      position: absolute;
+      bottom: -25px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+    .bar-value {
+      position: absolute;
+      top: -25px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-weight: bold;
+      font-size: 12px;
+      color: #333;
+    }
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: white;
+      font-size: 18px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 15px;
+    }
+    .error {
+      background: #ff4444;
+      color: white;
+      padding: 20px;
+      border-radius: 15px;
+      margin: 20px 0;
+      text-align: center;
+    }
+    .results-count {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useMemo } = React;
+
+    function App() {
+        const temasTraducciones = {
+            'Humanities': 'Humanidades',
+            'Biology': 'Biología',
+            'Psychology': 'Psicología',
+            'Geography': 'Geografía',
+            'Medicine': 'Medicina',
+            'Chemistry': 'Química',
+            'Physics': 'Física',
+            'Mathematics': 'Matemáticas',
+            'Computer Science': 'Ciencias de la Computación',
+            'Engineering': 'Ingeniería',
+            'Environmental Science': 'Ciencias Ambientales',
+            'Geology': 'Geología',
+            'Economics': 'Economía',
+            'Sociology': 'Sociología',
+            'Political Science': 'Ciencias Políticas',
+            'History': 'Historia',
+            'Philosophy': 'Filosofía',
+            'Education': 'Educación',
+            'Business': 'Negocios',
+            'Law': 'Derecho',
+            'Agriculture': 'Agricultura',
+            'Ecology': 'Ecología',
+            'Fishery': 'Pesca',
+            'Aquatic Science': 'Ciencias Acuáticas',
+            'Animal Science': 'Ciencias Animales',
+            'Veterinary': 'Veterinaria',
+            'Archaeology': 'Arqueología',
+            'Anthropology': 'Antropología',
+            'Linguistics': 'Lingüística',
+            'Art': 'Arte',
+            'Literature': 'Literatura'
+        };
+
+        const traducirTema = (tema) => {
+            return temasTraducciones[tema] || tema;
+        };
+
+      const [activeTab, setActiveTab] = useState('dashboard');
+      const [total, setTotal] = useState(null);
+      const [publications, setPublications] = useState([]);
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState(null);
+      
+      // Búsqueda general
+      const [searchQuery, setSearchQuery] = useState('');
+      const [showFilters, setShowFilters] = useState(false);
+      
+      // Filtros avanzados
+      const [filters, setFilters] = useState({
+        author: '',
+        institution: '',
+        yearFrom: '',
+        yearTo: '',
+        country: '',
+        citationsMin: '',
+        openAccess: 'all'
+      });
+      
+      const [filteredPubs, setFilteredPubs] = useState([]);
+      const [selectedTopic, setSelectedTopic] = useState(null);
+      const [selectedAuthor, setSelectedAuthor] = useState(null); 
+
+      const buscarPuno = async () => {
+        setLoading(true);
+        setError(null);
+        setTotal(null);
+        setPublications([]);
+
+        try {
+          const response = await fetch(
+             "https://api.openalex.org/works?filter=authorships.institutions.lineage:i4210136524&per-page=200&sort=cited_by_count:desc"
+          );
+
+          if (!response.ok) {
+            throw new Error('Error en la respuesta de la API');
+          }
+
+          const data = await response.json();
+          setTotal(data.meta.count);
+          setPublications(data.results || []);
+          setFilteredPubs(data.results || []);
+
+        } catch (err) {
+          setError("Error al consultar OpenAlex: " + err.message);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const applySearch = () => {
+        let filtered = [...publications];
+
+        // Búsqueda general
+        if (searchQuery.trim()) {
+          const query = searchQuery.toLowerCase();
+          filtered = filtered.filter(pub => {
+            const title = pub.title?.toLowerCase() || '';
+            const authors = pub.authorships?.map(a => a.author?.display_name?.toLowerCase()).join(' ') || '';
+            const institutions = pub.authorships?.flatMap(a => 
+              a.institutions?.map(i => i.display_name?.toLowerCase()) || []
+            ).join(' ') || '';
+            
+            return title.includes(query) || authors.includes(query) || institutions.includes(query);
+          });
+        }
+
+        // Filtros avanzados
+        if (filters.author) {
+          filtered = filtered.filter(pub => 
+            pub.authorships?.some(a => 
+              a.author?.display_name?.toLowerCase().includes(filters.author.toLowerCase())
+            )
+          );
+        }
+
+        if (filters.institution) {
+          filtered = filtered.filter(pub =>
+            pub.authorships?.some(a =>
+              a.institutions?.some(inst =>
+                inst.display_name?.toLowerCase().includes(filters.institution.toLowerCase())
+              )
+            )
+          );
+        }
+
+        if (filters.country) {
+          filtered = filtered.filter(pub =>
+            pub.authorships?.some(a =>
+              a.countries?.some(country =>
+                country.toLowerCase().includes(filters.country.toLowerCase())
+              )
+            )
+          );
+        }
+
+        if (filters.yearFrom) {
+          filtered = filtered.filter(pub => pub.publication_year >= parseInt(filters.yearFrom));
+        }
+
+        if (filters.yearTo) {
+          filtered = filtered.filter(pub => pub.publication_year <= parseInt(filters.yearTo));
+        }
+
+        if (filters.citationsMin) {
+          filtered = filtered.filter(pub => (pub.cited_by_count || 0) >= parseInt(filters.citationsMin));
+        }
+
+        if (filters.openAccess !== 'all') {
+          filtered = filtered.filter(pub => {
+            if (filters.openAccess === 'yes') {
+              return pub.open_access?.is_oa === true;
+            } else {
+              return pub.open_access?.is_oa === false;
+            }
+          });
+        }
+
+        setFilteredPubs(filtered);
+      };
+
+      const clearFilters = () => {
+        setFilters({
+          author: '',
+          institution: '',
+          yearFrom: '',
+          yearTo: '',
+          country: '',
+          citationsMin: '',
+          openAccess: 'all'
+        });
+        setSearchQuery('');
+        setFilteredPubs(publications);
+      };
+
+      const totalCitations = publications.reduce((sum, pub) => sum + (pub.cited_by_count || 0), 0);
+      const avgCitations = publications.length > 0 ? Math.round(totalCitations / publications.length) : 0;
+      const latestYear = publications.length > 0 ? Math.max(...publications.map(p => p.publication_year || 0)) : 0;
+
+      // Ranking de autores
+      const getAuthorsRanking = () => {
+        const authorsMap = {};
+        
+        publications.forEach(pub => {
+          if (pub.authorships && pub.authorships.length > 0) {
+            pub.authorships.forEach(authorship => {
+              const authorName = authorship.author?.display_name;
+              const authorId = authorship.author?.id;
+              
+              if (authorName && authorId) {
+                if (!authorsMap[authorId]) {
+                  authorsMap[authorId] = {
+                    name: authorName,
+                    publications: 0,
+                    citations: 0,
+                    institutions: new Set()
+                  };
+                }
+                authorsMap[authorId].publications++;
+                authorsMap[authorId].citations += (pub.cited_by_count || 0);
+                
+                authorship.institutions?.forEach(inst => {
+                  if (inst.display_name) {
+                    authorsMap[authorId].institutions.add(inst.display_name);
+                  }
+                });
+              }
+            });
+          }
+        });
+
+        return Object.values(authorsMap)
+          .map(author => ({
+            ...author,
+            institutions: Array.from(author.institutions).join(', ')
+          }))
+          .sort((a, b) => b.publications - a.publications)
+          .slice(0, 50);
+      };
+
+      // Publicaciones por año
+      const getPublicationsByYear = () => {
+        const yearMap = {};
+        
+        publications.forEach(pub => {
+          const year = pub.publication_year;
+          if (year) {
+            if (!yearMap[year]) {
+              yearMap[year] = [];
+            }
+            yearMap[year].push(pub);
+          }
+        });
+
+        return Object.entries(yearMap)
+          .sort((a, b) => b[0] - a[0])
+          .map(([year, pubs]) => ({
+            year,
+            publications: pubs,
+            count: pubs.length,
+            citations: pubs.reduce((sum, p) => sum + (p.cited_by_count || 0), 0)
+          }));
+      };
+
+      // Top temas/conceptos
+      const getTopTopics = () => {
+        const topicsMap = {};
+        
+        publications.forEach(pub => {
+          pub.concepts?.forEach(concept => {
+            if (concept.display_name && concept.score > 0.3) {
+              if (!topicsMap[concept.display_name]) {
+                topicsMap[concept.display_name] = {
+                  name: concept.display_name,
+                  count: 0,
+                  totalScore: 0
+                };
+              }
+              topicsMap[concept.display_name].count++;
+              topicsMap[concept.display_name].totalScore += concept.score;
+            }
+          });
+        });
+
+        return Object.values(topicsMap)
+          .map(topic => ({
+            ...topic,
+            avgScore: (topic.totalScore / topic.count).toFixed(2)
+          }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 20);
+      };
+
+      // Red de coautoría
+      const getCoauthorNetwork = () => {
+        const collaborations = {};
+        
+        publications.forEach(pub => {
+          const authors = pub.authorships?.map(a => a.author?.display_name).filter(Boolean) || [];
+          authors.forEach(author => {
+            if (!collaborations[author]) {
+              collaborations[author] = new Set();
+            }
+            authors.forEach(coauthor => {
+              if (author !== coauthor) {
+                collaborations[author].add(coauthor);
+              }
+            });
+          });
+        });
+
+        return Object.entries(collaborations)
+          .map(([author, coauthors]) => ({
+            author,
+            connections: coauthors.size
+          }))
+          .sort((a, b) => b.connections - a.connections)
+          .slice(0, 15);
+      };
+
+      // Análisis institucional
+      const getInstitutionalAnalysis = () => {
+        const instMap = {};
+        
+        publications.forEach(pub => {
+          pub.authorships?.forEach(authorship => {
+            authorship.institutions?.forEach(inst => {
+              const instName = inst.display_name;
+              if (instName) {
+                if (!instMap[instName]) {
+                  instMap[instName] = {
+                    name: instName,
+                    publications: 0,
+                    citations: 0,
+                    authors: new Set()
+                  };
+                }
+                instMap[instName].publications++;
+                instMap[instName].citations += (pub.cited_by_count || 0);
+                if (authorship.author?.display_name) {
+                  instMap[instName].authors.add(authorship.author.display_name);
+                }
+              }
+            });
+          });
+        });
+
+        return Object.values(instMap)
+          .map(inst => ({
+            ...inst,
+            authorCount: inst.authors.size
+          }))
+          .sort((a, b) => b.publications - a.publications)
+          .slice(0, 20);
+      };
+        const getPublicationsByTopic = (topicName) => {
+            return publications.filter(pub => 
+                pub.concepts?.some(concept => 
+                concept.display_name === topicName && concept.score > 0.3
+                )
+            ).sort((a, b) => (b.cited_by_count || 0) - (a.cited_by_count || 0));
+            };
+
+        const getPublicationsByAuthor = (authorName) => {
+            if (!authorName || !publications || publications.length === 0) return [];
+            
+            return publications.filter(pub =>
+                pub.authorships?.some(a => a.author?.display_name === authorName)
+            ).sort((a, b) => (b.cited_by_count || 0) - (a.cited_by_count || 0));
+            };
+
+       // Obtener colaboradores directos de un autor
+        const getAuthorCollaborators = (authorName) => {
+        const collaboratorsMap = {};
+        
+        publications.forEach(pub => {
+            const authors = pub.authorships?.map(a => a.author?.display_name).filter(Boolean) || [];
+            
+            if (authors.includes(authorName)) {
+            authors.forEach(coauthor => {
+                if (coauthor !== authorName) {
+                if (!collaboratorsMap[coauthor]) {
+                    collaboratorsMap[coauthor] = {
+                    name: coauthor,
+                    publications: 0,
+                    citations: 0
+                    };
+                }
+                collaboratorsMap[coauthor].publications++;
+                collaboratorsMap[coauthor].citations += (pub.cited_by_count || 0);
+                }
+            });
+            }
+        });
+        
+        return Object.values(collaboratorsMap)
+            .sort((a, b) => b.publications - a.publications)
+            .slice(0, 10);
+        };
+
+        // Obtener estadísticas detalladas de un autor
+        const getAuthorStats = (authorName) => {
+        const authorPubs = getPublicationsByAuthor(authorName);
+        const totalCitations = authorPubs.reduce((sum, pub) => sum + (pub.cited_by_count || 0), 0);
+        const collaborators = getAuthorCollaborators(authorName);
+        
+        const years = authorPubs.map(p => p.publication_year).filter(Boolean);
+        const firstYear = years.length > 0 ? Math.min(...years) : 0;
+        const lastYear = years.length > 0 ? Math.max(...years) : 0;
+        
+        const institutions = new Set();
+        authorPubs.forEach(pub => {
+            pub.authorships?.forEach(a => {
+            if (a.author?.display_name === authorName) {
+                a.institutions?.forEach(inst => {
+                if (inst.display_name) institutions.add(inst.display_name);
+                });
+            }
+            });
+        });
+        
+        return {
+            totalPublications: authorPubs.length,
+            totalCitations,
+            avgCitations: authorPubs.length > 0 ? Math.round(totalCitations / authorPubs.length) : 0,
+            collaboratorsCount: collaborators.length,
+            institutions: Array.from(institutions),
+            yearRange: firstYear > 0 ? `${firstYear} - ${lastYear}` : 'N/A',
+            hIndex: calculateHIndex(authorPubs)
+        };
+        };
+
+        // Calcular H-Index simplificado
+        const calculateHIndex = (pubs) => {
+        const citations = pubs.map(p => p.cited_by_count || 0).sort((a, b) => b - a);
+        let h = 0;
+        for (let i = 0; i < citations.length; i++) {
+            if (citations[i] >= i + 1) {
+            h = i + 1;
+            } else {
+            break;
+            }
+        }
+        return h;
+        }; 
+
+        
+
+      const authorsRanking = useMemo(() => getAuthorsRanking(), [publications]);
+      const publicationsByYear = useMemo(() => getPublicationsByYear(), [publications]);
+      const topTopics = useMemo(() => getTopTopics(), [publications]);
+      const coauthorNetwork = useMemo(() => getCoauthorNetwork(), [publications]);
+      const institutionalAnalysis = useMemo(() => getInstitutionalAnalysis(), [publications]);
+
+      return (
+        <div className="container">
+          <div className="header">
+            <h1>📊 CienciaPuno</h1>
+            <p>Análisis integral de publicaciones académicas sobre Puno</p>
+            <button 
+              className="search-btn" 
+              onClick={buscarPuno}
+              disabled={loading}
+            >
+              {loading ? ' Buscando...' : 'Cargar Datos de Puno'}
+            </button>
+          </div>
+
+          {loading && (
+            <div className="loading">
+              ⏳ Cargando datos desde OpenAlex...
+            </div>
+          )}
+
+          {error && (
+            <div className="error">❌ {error}</div>
+          )}
+
+          {total !== null && !loading && (
+            <>
+              <div className="menu-tabs">
+                <button 
+                  className={`tab-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('dashboard')}
+                >
+                  📊 Dashboard
+                </button>
+                <button 
+                  className={`tab-btn ${activeTab === 'search' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('search')}
+                >
+                  🔍 Búsqueda
+                </button>
+                <button 
+                  className={`tab-btn ${activeTab === 'topics' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('topics')}
+                >
+                  🏷️ Temas
+                </button>
+                <button 
+                  className={`tab-btn ${activeTab === 'network' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('network')}
+                >
+                  🤝 Coautoría
+                </button>
+                <button 
+                  className={`tab-btn ${activeTab === 'institutions' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('institutions')}
+                >
+                  🏛️ Instituciones
+                </button>
+                <button 
+                  className={`tab-btn ${activeTab === 'authors' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('authors')}
+                >
+                  👥 Autores
+                </button>
+                <button 
+                  className={`tab-btn ${activeTab === 'years' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('years')}
+                >
+                  📅 Por Años
+                </button>
+                <button 
+                  className={`tab-btn ${activeTab === 'charts' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('charts')}
+                >
+                  📈 Gráficos
+                </button>
+              </div>
+
+              {activeTab === 'dashboard' && (
+                <>
+                  <div className="stats-grid">
+                    <div className="stat-card">
+                      <div className="stat-label">Total Publicaciones</div>
+                      <div className="stat-number">{total.toLocaleString()}</div>
+                    </div>
+                    <div className="stat-card">
+                      <div className="stat-label">Citaciones Totales</div>
+                      <div className="stat-number">{totalCitations.toLocaleString()}</div>
+                    </div>
+                    <div className="stat-card">
+                      <div className="stat-label">Promedio Citaciones</div>
+                      <div className="stat-number">{avgCitations}</div>
+                    </div>
+                    <div className="stat-card">
+                      <div className="stat-label">Año Más Reciente</div>
+                      <div className="stat-number">{latestYear}</div>
+                    </div>
+                  </div>
+
+                  <div className="publications-section">
+                    <h2>📚 Top 20 Publicaciones Más Citadas</h2>
+                    {publications.length === 0 ? (
+                      <p>No se encontraron publicaciones.</p>
+                    ) : (
+                      publications.slice(0, 20).map((pub, index) => (
+                        <div key={pub.id || index} className="publication-card">
+                          <div className="pub-title">
+                            {index + 1}. {pub.title || 'Sin título'}
+                          </div>
+                          <div className="pub-authors">
+                            {pub.authorships && pub.authorships.length > 0 ? (
+                              <>
+                                {pub.authorships.slice(0, 3).map(a => a.author?.display_name).filter(Boolean).join(', ')}
+                                {pub.authorships.length > 3 && ', et al.'}
+                              </>
+                            ) : (
+                              'Autores no disponibles'
+                            )}
+                          </div>
+                          <div className="pub-meta">
+                            {pub.publication_year && (
+                              <span className="pub-year">📅 {pub.publication_year}</span>
+                            )}
+                            <span className="pub-citations">
+                              📖 {pub.cited_by_count || 0} citaciones
+                            </span>
+                          </div>
+                          {pub.doi && (
+                            <a 
+                              href={`https://doi.org/${pub.doi}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="pub-link"
+                            >
+                              🔗 Ver publicación
+                            </a>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </>
+              )}
+
+              {activeTab === 'search' && (
+                <div className="publications-section">
+                  <h2>🔍 Búsqueda General</h2>
+                  
+                  <div className="search-box">
+                    <input 
+                      className="search-input"
+                      type="text"
+                      placeholder="Buscar por título, autor o institución (ej: universidad nacional del altiplano, José Rodriguez, etc.)"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && applySearch()}
+                    />
+                    <button 
+                      className={`filter-toggle-btn ${showFilters ? 'active' : ''}`}
+                      onClick={() => setShowFilters(!showFilters)}
+                    >
+                      ⚙️ Filtros
+                    </button>
+                    <button className="apply-btn" onClick={applySearch}>
+                      Buscar
+                    </button>
+                  </div>
+
+                  <div className={`filters-panel ${showFilters ? 'show' : ''}`}>
+                    <h3 style={{marginBottom: '15px', fontSize: '16px'}}>Filtros Avanzados</h3>
+                    <div className="filters-grid">
+                      <div className="filter-group">
+                        <label className="filter-label">Autor</label>
+                        <input 
+                          className="filter-input"
+                          type="text"
+                          placeholder="Nombre del autor"
+                          value={filters.author}
+                          onChange={(e) => setFilters({...filters, author: e.target.value})}
+                        />
+                      </div>
+                      <div className="filter-group">
+                        <label className="filter-label">Institución</label>
+                        <input 
+                          className="filter-input"
+                          type="text"
+                          placeholder="Nombre de la institución"
+                          value={filters.institution}
+                          onChange={(e) => setFilters({...filters, institution: e.target.value})}
+                        />
+                      </div>
+                      <div className="filter-group">
+                        <label className="filter-label">País</label>
+                        <input 
+                          className="filter-input"
+                          type="text"
+                          placeholder="País"
+                          value={filters.country}
+                          onChange={(e) => setFilters({...filters, country: e.target.value})}
+                        />
+                      </div>
+                      <div className="filter-group">
+                        <label className="filter-label">Año Desde</label>
+                        <input 
+                          className="filter-input"
+                          type="number"
+                          placeholder="2000"
+                          value={filters.yearFrom}
+                          onChange={(e) => setFilters({...filters, yearFrom: e.target.value})}
+                        />
+                      </div>
+                      <div className="filter-group">
+                        <label className="filter-label">Año Hasta</label>
+                        <input 
+                          className="filter-input"
+                          type="number"
+                          placeholder="2024"
+                          value={filters.yearTo}
+                          onChange={(e) => setFilters({...filters, yearTo: e.target.value})}
+                        />
+                      </div>
+                      <div className="filter-group">
+                        <label className="filter-label">Citaciones Mínimas</label>
+                        <input 
+                          className="filter-input"
+                          type="number"
+                          placeholder="10"
+                          value={filters.citationsMin}
+                          onChange={(e) => setFilters({...filters, citationsMin: e.target.value})}
+                        />
+                      </div>
+                      <div className="filter-group">
+                        <label className="filter-label">Acceso Abierto</label>
+                        <select 
+                          className="filter-select"
+                          value={filters.openAccess}
+                          onChange={(e) => setFilters({...filters, openAccess: e.target.value})}
+                        >
+                          <option value="all">Todos</option>
+                          <option value="yes">Sí</option>
+                          <option value="no">No</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="filter-actions">
+                      <button className="clear-btn" onClick={clearFilters}>
+                        Limpiar Filtros
+                      </button>
+                      <button className="apply-btn" onClick={applySearch}>
+                        Aplicar Filtros
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="results-count">
+                    Mostrando {filteredPubs.length} de {publications.length} publicaciones
+                  </div>
+                  
+                  {filteredPubs.slice(0, 100).map((pub, index) => (
+                    <div key={pub.id || index} className="publication-card">
+                      <div className="pub-title">
+                        {index + 1}. {pub.title || 'Sin título'}
+                      </div>
+                      <div className="pub-authors">
+                        {pub.authorships && pub.authorships.length > 0 ? (
+                          <>
+                            {pub.authorships.slice(0, 3).map(a => a.author?.display_name).filter(Boolean).join(', ')}
+                            {pub.authorships.length > 3 && ', et al.'}
+                          </>
+                        ) : (
+                          'Autores no disponibles'
+                        )}
+                      </div>
+                      <div className="pub-meta">
+                        {pub.publication_year && (
+                          <span className="pub-year">📅 {pub.publication_year}</span>
+                        )}
+                        <span className="pub-citations">
+                          📖 {pub.cited_by_count || 0} citaciones
+                        </span>
+                        {pub.open_access?.is_oa && (
+                          <span className="pub-year" style={{background: '#4CAF50', marginLeft: '10px'}}>
+                            🔓 Acceso Abierto
+                          </span>
+                        )}
+                      </div>
+                      {pub.doi && (
+                        <a 
+                          href={`https://doi.org/${pub.doi}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="pub-link"
+                        >
+                          🔗 Ver publicación
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {activeTab === 'topics' && (
+                <div className="publications-section">
+                    <h2>🏷️ Top 20 Temas de Investigación</h2>
+                    
+                    {!selectedTopic ? (
+                    <>
+                        <p style={{color: '#666', marginBottom: '20px'}}>
+                        Haz clic en un tema para ver las publicaciones relacionadas
+                        </p>
+                        {topTopics.map((topic, index) => (
+                        <div 
+                            key={index} 
+                            className="topic-card"
+                            onClick={() => setSelectedTopic(topic.name)}
+                            style={{cursor: 'pointer', transition: 'transform 0.2s'}}
+                            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                        >
+                            <div className="topic-name">
+                            #{index + 1} {traducirTema(topic.name)}
+                            {topic.name !== traducirTema(topic.name) && (
+                                <span style={{fontSize: '14px', opacity: '0.8', marginLeft: '10px'}}>
+                                ({topic.name})
+                                </span>
+                            )}
+                            </div>
+                            <div className="topic-stats">
+                            <span>📄 {topic.count} publicaciones</span>
+                            <span>⭐ Relevancia promedio: {topic.avgScore}</span>
+                            <span style={{marginLeft: 'auto'}}>👉 Ver publicaciones</span>
+                            </div>
+                        </div>
+                        ))}
+                    </>
+                    ) : (
+                    <>
+                        <button 
+                        onClick={() => setSelectedTopic(null)}
+                        style={{
+                            background: '#f5f5f5',
+                            border: '2px solid #e0e0e0',
+                            padding: '10px 20px',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            marginBottom: '20px',
+                            fontWeight: '600',
+                            fontSize: '14px'
+                        }}
+                        >
+                        ← Volver a todos los temas
+                        </button>
+                        
+                        <h3 style={{marginBottom: '20px', color: '#667eea'}}>
+                        📚 Publicaciones en: {traducirTema(selectedTopic)}
+                        {selectedTopic !== traducirTema(selectedTopic) && (
+                            <span style={{fontSize: '16px', color: '#666', marginLeft: '10px'}}>
+                            ({selectedTopic})
+                            </span>
+                        )}
+                        </h3>
+                        
+                        <div className="results-count">
+                        {getPublicationsByTopic(selectedTopic).length} publicaciones encontradas
+                        </div>
+                        
+                        {getPublicationsByTopic(selectedTopic).map((pub, index) => (
+                        <div key={pub.id || index} className="publication-card">
+                            <div className="pub-title">
+                            {index + 1}. {pub.title || 'Sin título'}
+                            </div>
+                            <div className="pub-authors">
+                            {pub.authorships && pub.authorships.length > 0 ? (
+                                <>
+                                {pub.authorships.slice(0, 3).map(a => a.author?.display_name).filter(Boolean).join(', ')}
+                                {pub.authorships.length > 3 && ', et al.'}
+                                </>
+                            ) : (
+                                'Autores no disponibles'
+                            )}
+                            </div>
+                            <div className="pub-meta">
+                            {pub.publication_year && (
+                                <span className="pub-year">📅 {pub.publication_year}</span>
+                            )}
+                            <span className="pub-citations">
+                                📖 {pub.cited_by_count || 0} citaciones
+                            </span>
+                            {pub.open_access?.is_oa && (
+                                <span className="pub-year" style={{background: '#4CAF50', marginLeft: '10px'}}>
+                                🔓 Acceso Abierto
+                                </span>
+                            )}
+                            </div>
+                            <div style={{marginTop: '10px', fontSize: '13px', color: '#666'}}>
+                            <strong>Conceptos relacionados:</strong>{' '}
+                            {pub.concepts
+                                ?.filter(c => c.score > 0.3)
+                                .slice(0, 5)
+                                .map(c => traducirTema(c.display_name))
+                                .join(', ')}
+                            </div>
+                            {pub.doi && (
+                            <a 
+                                href={`https://doi.org/${pub.doi}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="pub-link"
+                            >
+                                🔗 Ver publicación
+                            </a>
+                            )}
+                        </div>
+                        ))}
+                    </>
+                    )}
+                </div>
+                )}
+
+              {activeTab === 'network' && (
+                <div className="publications-section">
+                    <h2>🤝 Red de Coautoría</h2>
+                    
+                    {!selectedAuthor ? (
+                    <>
+                        <p style={{marginBottom: '20px', color: '#666'}}>
+                        Haz clic en un autor para ver sus publicaciones y colaboradores
+                        </p>
+                        
+                        <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                        gap: '20px',
+                        marginTop: '20px'
+                        }}>
+                        {coauthorNetwork.map((node, index) => (
+                            <div 
+                            key={index}
+                            onClick={() => {
+                                console.log('Autor seleccionado:', node.author);
+                                setSelectedAuthor(node.author);
+                                }}
+                            style={{
+                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                padding: '25px',
+                                borderRadius: '15px',
+                                color: 'white',
+                                cursor: 'pointer',
+                                transition: 'all 0.3s',
+                                boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
+                                position: 'relative',
+                                overflow: 'hidden'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-5px)';
+                                e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.3)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.2)';
+                            }}
+                            >
+                            <div style={{
+                                position: 'absolute',
+                                top: '10px',
+                                right: '10px',
+                                background: 'rgba(255,255,255,0.3)',
+                                borderRadius: '50%',
+                                width: '40px',
+                                height: '40px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontWeight: 'bold',
+                                fontSize: '16px'
+                            }}>
+                                #{index + 1}
+                            </div>
+                            
+                            <div style={{
+                                fontSize: '18px',
+                                fontWeight: 'bold',
+                                marginBottom: '15px',
+                                paddingRight: '50px',
+                                lineHeight: '1.3'
+                            }}>
+                                {node.author}
+                            </div>
+                            
+                            <div style={{
+                                display: 'flex',
+                                gap: '15px',
+                                fontSize: '14px',
+                                flexWrap: 'wrap'
+                            }}>
+                                <div style={{
+                                background: 'rgba(255,255,255,0.2)',
+                                padding: '8px 12px',
+                                borderRadius: '8px'
+                                }}>
+                                🤝 {node.connections} colaboradores
+                                </div>
+                            </div>
+                            
+                            <div style={{
+                                marginTop: '15px',
+                                fontSize: '13px',
+                                opacity: '0.9'
+                            }}>
+                                👉 Click para ver detalles
+                            </div>
+                            </div>
+                        ))}
+                        </div>
+                    </>
+                    ) : (
+                    <>
+                        <button 
+                        onClick={() => setSelectedAuthor(null)}
+                        style={{
+                            background: '#f5f5f5',
+                            border: '2px solid #e0e0e0',
+                            padding: '10px 20px',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            marginBottom: '20px',
+                            fontWeight: '600',
+                            fontSize: '14px'
+                        }}
+                        >
+                        ← Volver a la red de coautoría
+                        </button>
+                        
+                        <div style={{
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        padding: '30px',
+                        borderRadius: '15px',
+                        color: 'white',
+                        marginBottom: '30px'
+                        }}>
+                        <h3 style={{margin: '0 0 20px 0', fontSize: '24px'}}>
+                            👤 {selectedAuthor}
+                        </h3>
+                        
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                            gap: '15px'
+                        }}>
+                            <div>
+                            <div style={{fontSize: '28px', fontWeight: 'bold'}}>
+                                {getAuthorStats(selectedAuthor).totalPublications}
+                            </div>
+                            <div style={{fontSize: '13px', opacity: '0.9'}}>Publicaciones</div>
+                            </div>
+                            <div>
+                            <div style={{fontSize: '28px', fontWeight: 'bold'}}>
+                                {getAuthorStats(selectedAuthor).totalCitations}
+                            </div>
+                            <div style={{fontSize: '13px', opacity: '0.9'}}>Citaciones</div>
+                            </div>
+                            <div>
+                            <div style={{fontSize: '28px', fontWeight: 'bold'}}>
+                                {getAuthorStats(selectedAuthor).avgCitations}
+                            </div>
+                            <div style={{fontSize: '13px', opacity: '0.9'}}>Citas/Publicación</div>
+                            </div>
+                            <div>
+                            <div style={{fontSize: '28px', fontWeight: 'bold'}}>
+                                {getAuthorStats(selectedAuthor).hIndex}
+                            </div>
+                            <div style={{fontSize: '13px', opacity: '0.9'}}>H-Index</div>
+                            </div>
+                            <div>
+                            <div style={{fontSize: '28px', fontWeight: 'bold'}}>
+                                {getAuthorStats(selectedAuthor).collaboratorsCount}
+                            </div>
+                            <div style={{fontSize: '13px', opacity: '0.9'}}>Colaboradores</div>
+                            </div>
+                            <div>
+                            <div style={{fontSize: '20px', fontWeight: 'bold'}}>
+                                {getAuthorStats(selectedAuthor).yearRange}
+                            </div>
+                            <div style={{fontSize: '13px', opacity: '0.9'}}>Período Activo</div>
+                            </div>
+                        </div>
+                        
+                        {getAuthorStats(selectedAuthor).institutions.length > 0 && (
+                            <div style={{marginTop: '20px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.3)'}}>
+                            <strong>🏛️ Instituciones:</strong>
+                            <div style={{marginTop: '8px', fontSize: '14px'}}>
+                                {getAuthorStats(selectedAuthor).institutions.join(' • ')}
+                            </div>
+                            </div>
+                        )}
+                        </div>
+                        
+                        <h3 style={{marginBottom: '20px', color: '#667eea'}}>
+                        🤝 Top 10 Colaboradores Frecuentes
+                        </h3>
+                        
+                        <div style={{marginBottom: '30px'}}>
+                        {getAuthorCollaborators(selectedAuthor).map((collab, index) => (
+                            <div 
+                            key={index}
+                            style={{
+                                background: '#f8f8f8',
+                                padding: '15px',
+                                borderRadius: '10px',
+                                marginBottom: '10px',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                            onClick={() => setSelectedAuthor(collab.name)}
+                            onMouseEnter={(e) => e.currentTarget.style.background = '#e8e8e8'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = '#f8f8f8'}
+                            >
+                            <div>
+                                <div style={{fontWeight: 'bold', color: '#333', marginBottom: '5px'}}>
+                                #{index + 1} {collab.name}
+                                </div>
+                                <div style={{fontSize: '13px', color: '#666'}}>
+                                📄 {collab.publications} publicaciones conjuntas • 
+                                📖 {collab.citations} citaciones
+                                </div>
+                            </div>
+                            <div style={{fontSize: '20px'}}>→</div>
+                            </div>
+                        ))}
+                        </div>
+                        
+                        <h3 style={{marginBottom: '20px', color: '#667eea'}}>
+                        📚 Publicaciones de {selectedAuthor}
+                        </h3>
+                        
+                        <div className="results-count">
+                        {getPublicationsByAuthor(selectedAuthor).length} publicaciones encontradas
+                        </div>
+                        
+                        {getPublicationsByAuthor(selectedAuthor).map((pub, index) => (
+                        <div key={pub.id || index} className="publication-card">
+                            <div className="pub-title">
+                            {index + 1}. {pub.title || 'Sin título'}
+                            </div>
+                            <div className="pub-authors">
+                            {pub.authorships && pub.authorships.length > 0 ? (
+                                <>
+                                {pub.authorships.slice(0, 5).map((a, idx) => {
+                                    const name = a.author?.display_name;
+                                    const isSelected = name === selectedAuthor;
+                                    return (
+                                    <span key={idx}>
+                                        <span 
+                                        style={{
+                                            fontWeight: isSelected ? 'bold' : 'normal',
+                                            color: isSelected ? '#667eea' : 'inherit'
+                                        }}
+                                        >
+                                        {name}
+                                        </span>
+                                        {idx < Math.min(4, pub.authorships.length - 1) && ', '}
+                                    </span>
+                                    );
+                                })}
+                                {pub.authorships.length > 5 && ', et al.'}
+                                </>
+                            ) : (
+                                'Autores no disponibles'
+                            )}
+                            </div>
+                            <div className="pub-meta">
+                            {pub.publication_year && (
+                                <span className="pub-year">📅 {pub.publication_year}</span>
+                            )}
+                            <span className="pub-citations">
+                                📖 {pub.cited_by_count || 0} citaciones
+                            </span>
+                            {pub.open_access?.is_oa && (
+                                <span className="pub-year" style={{background: '#4CAF50', marginLeft: '10px'}}>
+                                🔓 Acceso Abierto
+                                </span>
+                            )}
+                            </div>
+                            {pub.doi && (
+                            <a 
+                                href={`https://doi.org/${pub.doi}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="pub-link"
+                            >
+                                🔗 Ver publicación
+                            </a>
+                            )}
+                        </div>
+                        ))}
+                    </>
+                    )}
+                </div>
+                )}
+
+              {activeTab === 'institutions' && (
+                <div className="publications-section">
+                  <h2>🏛️ Análisis Institucional - Top 20</h2>
+                  {institutionalAnalysis.map((inst, index) => (
+                    <div key={index} className="inst-card">
+                      <div className="inst-name">#{index + 1} {inst.name}</div>
+                      <div className="author-stats">
+                        <span className="author-stat">📄 {inst.publications} publicaciones</span>
+                        <span className="author-stat">📖 {inst.citations.toLocaleString()} citaciones</span>
+                        <span className="author-stat">👥 {inst.authorCount} autores</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {activeTab === 'authors' && (
+                <div className="publications-section">
+                    {!selectedAuthor ? (
+                    <>
+                        <h2>👥 Top 50 Autores por Número de Publicaciones</h2>
+                        <p style={{color: '#666', marginBottom: '20px'}}>
+                        Haz clic en un autor para ver su perfil y publicaciones
+                        </p>
+                        {authorsRanking.length === 0 ? (
+                        <p>No se encontraron autores.</p>
+                        ) : (
+                        authorsRanking.map((author, index) => (
+                            <div 
+                            key={index} 
+                            className="author-card"
+                            onClick={() => setSelectedAuthor(author.name)}
+                            style={{cursor: 'pointer', transition: 'all 0.2s'}}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.background = '#f8f8f8';
+                                e.currentTarget.style.transform = 'translateX(5px)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'transparent';
+                                e.currentTarget.style.transform = 'translateX(0)';
+                            }}
+                            >
+                            <span className="author-rank">#{index + 1}</span>
+                            <div className="author-info">
+                                <div className="author-name">{author.name}</div>
+                                <div className="author-stats">
+                                <span className="author-stat">📄 {author.publications} publicaciones</span>
+                                <span className="author-stat">📖 {author.citations.toLocaleString()} citaciones</span>
+                                {author.institutions && (
+                                    <span className="author-stat">🏛️ {author.institutions}</span>
+                                )}
+                                </div>
+                            </div>
+                            <div style={{fontSize: '20px', color: '#667eea'}}>→</div>
+                            </div>
+                        ))
+                        )}
+                    </>
+                    ) : (
+                    <>
+                        <button 
+                        onClick={() => setSelectedAuthor(null)}
+                        style={{
+                            background: '#f5f5f5',
+                            border: '2px solid #e0e0e0',
+                            padding: '10px 20px',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            marginBottom: '20px',
+                            fontWeight: '600',
+                            fontSize: '14px'
+                        }}
+                        >
+                        ← Volver al listado de autores
+                        </button>
+                        
+                        <div style={{
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        padding: '30px',
+                        borderRadius: '15px',
+                        color: 'white',
+                        marginBottom: '30px'
+                        }}>
+                        <h3 style={{margin: '0 0 20px 0', fontSize: '24px'}}>
+                            👤 {selectedAuthor}
+                        </h3>
+                        
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                            gap: '15px'
+                        }}>
+                            <div>
+                            <div style={{fontSize: '28px', fontWeight: 'bold'}}>
+                                {getAuthorStats(selectedAuthor).totalPublications}
+                            </div>
+                            <div style={{fontSize: '13px', opacity: '0.9'}}>Publicaciones</div>
+                            </div>
+                            <div>
+                            <div style={{fontSize: '28px', fontWeight: 'bold'}}>
+                                {getAuthorStats(selectedAuthor).totalCitations}
+                            </div>
+                            <div style={{fontSize: '13px', opacity: '0.9'}}>Citaciones</div>
+                            </div>
+                            <div>
+                            <div style={{fontSize: '28px', fontWeight: 'bold'}}>
+                                {getAuthorStats(selectedAuthor).avgCitations}
+                            </div>
+                            <div style={{fontSize: '13px', opacity: '0.9'}}>Citas/Publicación</div>
+                            </div>
+                            <div>
+                            <div style={{fontSize: '28px', fontWeight: 'bold'}}>
+                                {getAuthorStats(selectedAuthor).hIndex}
+                            </div>
+                            <div style={{fontSize: '13px', opacity: '0.9'}}>H-Index</div>
+                            </div>
+                            <div>
+                            <div style={{fontSize: '20px', fontWeight: 'bold'}}>
+                                {getAuthorStats(selectedAuthor).yearRange}
+                            </div>
+                            <div style={{fontSize: '13px', opacity: '0.9'}}>Período Activo</div>
+                            </div>
+                        </div>
+                        
+                        {getAuthorStats(selectedAuthor).institutions.length > 0 && (
+                            <div style={{marginTop: '20px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.3)'}}>
+                            <strong>🏛️ Instituciones:</strong>
+                            <div style={{marginTop: '8px', fontSize: '14px'}}>
+                                {getAuthorStats(selectedAuthor).institutions.join(' • ')}
+                            </div>
+                            </div>
+                        )}
+                        </div>
+                        
+                        <h3 style={{marginBottom: '20px', color: '#667eea'}}>
+                        📚 Todas las Publicaciones de {selectedAuthor}
+                        </h3>
+                        
+                        <div className="results-count">
+                        {getPublicationsByAuthor(selectedAuthor).length} publicaciones encontradas
+                        </div>
+                        
+                        {getPublicationsByAuthor(selectedAuthor).map((pub, index) => (
+                        <div key={pub.id || index} className="publication-card">
+                            <div className="pub-title">
+                            {index + 1}. {pub.title || 'Sin título'}
+                            </div>
+                            <div className="pub-authors">
+                            {pub.authorships && pub.authorships.length > 0 ? (
+                                <>
+                                {pub.authorships.slice(0, 5).map((a, idx) => {
+                                    const name = a.author?.display_name;
+                                    const isSelected = name === selectedAuthor;
+                                    return (
+                                    <span key={idx}>
+                                        <span 
+                                        style={{
+                                            fontWeight: isSelected ? 'bold' : 'normal',
+                                            color: isSelected ? '#667eea' : 'inherit'
+                                        }}
+                                        >
+                                        {name}
+                                        </span>
+                                        {idx < Math.min(4, pub.authorships.length - 1) && ', '}
+                                    </span>
+                                    );
+                                })}
+                                {pub.authorships.length > 5 && ', et al.'}
+                                </>
+                            ) : (
+                                'Autores no disponibles'
+                            )}
+                            </div>
+                            <div className="pub-meta">
+                            {pub.publication_year && (
+                                <span className="pub-year">📅 {pub.publication_year}</span>
+                            )}
+                            <span className="pub-citations">
+                                📖 {pub.cited_by_count || 0} citaciones
+                            </span>
+                            {pub.open_access?.is_oa && (
+                                <span className="pub-year" style={{background: '#4CAF50', marginLeft: '10px'}}>
+                                🔓 Acceso Abierto
+                                </span>
+                            )}
+                            </div>
+                            {pub.doi && (
+                            <a 
+                                href={`https://doi.org/${pub.doi}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="pub-link"
+                            >
+                                🔗 Ver publicación
+                            </a>
+                            )}
+                        </div>
+                        ))}
+                    </>
+                    )}
+                </div>
+                )}
+
+              {activeTab === 'years' && (
+                <div className="publications-section">
+                  <h2>📅 Publicaciones por Año</h2>
+                  {publicationsByYear.length === 0 ? (
+                    <p>No se encontraron publicaciones por año.</p>
+                  ) : (
+                    publicationsByYear.map((yearData, index) => (
+                      <div key={index} className="year-card">
+                        <div className="year-header">
+                          <div className="year-title">Año {yearData.year}</div>
+                          <div className="year-count">{yearData.count} publicaciones | {yearData.citations.toLocaleString()} citaciones</div>
+                        </div>
+                        {yearData.publications.slice(0, 5).map((pub, idx) => (
+                          <div key={idx} style={{marginLeft: '20px', marginTop: '10px', paddingBottom: '10px', borderBottom: idx < 4 ? '1px solid #f5f5f5' : 'none'}}>
+                            <div className="pub-title" style={{fontSize: '14px'}}>
+                              • {pub.title || 'Sin título'}
+                            </div>
+                            <div style={{marginTop: '5px'}}>
+                              {pub.publication_year && (
+                                <span className="pub-year">📅 {pub.publication_year}</span>
+                              )}
+                              <span className="pub-citations">
+                                📖 {pub.cited_by_count || 0} citaciones
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                        {yearData.publications.length > 5 && (
+                          <div style={{marginLeft: '20px', marginTop: '10px', color: '#666', fontSize: '13px'}}>
+                            ... y {yearData.publications.length - 5} publicaciones más
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'charts' && (
+                <div className="publications-section">
+                    <h2>📈 Visualizaciones de Tendencias</h2>
+                    
+                    {/* Gráfico de Línea - Evolución Temporal */}
+                    <div className="chart-container">
+                    <h3 style={{marginBottom: '10px'}}>📊 Evolución de Publicaciones en el Tiempo</h3>
+                    <p style={{color: '#666', fontSize: '13px', marginBottom: '20px'}}>
+                        Tendencia de producción científica por año
+                    </p>
+                    <div style={{position: 'relative', height: '350px', padding: '20px'}}>
+                        <svg width="100%" height="100%" viewBox="0 0 800 300" preserveAspectRatio="xMidYMid meet">
+                        {(() => {
+                            const data = publicationsByYear.slice(0, 20).reverse();
+                            const maxCount = Math.max(...data.map(y => y.count));
+                            const padding = 60;
+                            const width = 800 - padding * 2;
+                            const height = 240;
+                            
+                            const points = data.map((item, i) => {
+                            const x = padding + (i / (data.length - 1)) * width;
+                            const y = 20 + height - (item.count / maxCount) * height;
+                            return `${x},${y}`;
+                            }).join(' ');
+                            
+                            const areaPoints = `${padding},${20 + height} ${points} ${padding + width},${20 + height}`;
+                            
+                            return (
+                            <>
+                                <defs>
+                                <linearGradient id="lineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" stopColor="#667eea" stopOpacity="0.6"/>
+                                    <stop offset="100%" stopColor="#764ba2" stopOpacity="0.1"/>
+                                </linearGradient>
+                                </defs>
+                                
+                                {/* Grid lines */}
+                                {[0, 0.25, 0.5, 0.75, 1].map((ratio, i) => {
+                                const y = 20 + height - ratio * height;
+                                return (
+                                    <g key={i}>
+                                    <line 
+                                        x1={padding} 
+                                        y1={y} 
+                                        x2={padding + width} 
+                                        y2={y}
+                                        stroke="#e0e0e0"
+                                        strokeWidth="1"
+                                    />
+                                    <text
+                                        x={padding - 10}
+                                        y={y + 4}
+                                        textAnchor="end"
+                                        fontSize="11"
+                                        fill="#666"
+                                    >
+                                        {Math.round(maxCount * ratio)}
+                                    </text>
+                                    </g>
+                                );
+                                })}
+                                
+                                {/* Area fill */}
+                                <polygon
+                                points={areaPoints}
+                                fill="url(#lineGradient)"
+                                />
+                                
+                                {/* Line */}
+                                <polyline
+                                points={points}
+                                fill="none"
+                                stroke="#667eea"
+                                strokeWidth="3"
+                                strokeLinejoin="round"
+                                strokeLinecap="round"
+                                />
+                                
+                                {/* Points and labels */}
+                                {data.map((item, i) => {
+                                const x = padding + (i / (data.length - 1)) * width;
+                                const y = 20 + height - (item.count / maxCount) * height;
+                                return (
+                                    <g key={i}>
+                                    <circle
+                                        cx={x}
+                                        cy={y}
+                                        r="5"
+                                        fill="#667eea"
+                                        stroke="white"
+                                        strokeWidth="2"
+                                    />
+                                    <text
+                                        x={x}
+                                        y={20 + height + 20}
+                                        textAnchor="middle"
+                                        fontSize="11"
+                                        fill="#666"
+                                    >
+                                        {item.year}
+                                    </text>
+                                    <text
+                                        x={x}
+                                        y={y - 10}
+                                        textAnchor="middle"
+                                        fontSize="11"
+                                        fontWeight="bold"
+                                        fill="#333"
+                                    >
+                                        {item.count}
+                                    </text>
+                                    </g>
+                                );
+                                })}
+                            </>
+                            );
+                        })()}
+                        </svg>
+                    </div>
+                    </div>
+
+                    {/* Gráfico de Barras Horizontales - Top Autores */}
+                    <div className="chart-container">
+                    <h3 style={{marginBottom: '10px'}}>👥 Top 10 Autores Más Productivos</h3>
+                    <p style={{color: '#666', fontSize: '13px', marginBottom: '20px'}}>
+                        Autores con mayor número de publicaciones
+                    </p>
+                    <div style={{padding: '10px 0'}}>
+                        {authorsRanking.slice(0, 10).map((author, index) => {
+                        const maxPubs = authorsRanking[0]?.publications || 1;
+                        const percentage = (author.publications / maxPubs) * 100;
+                        return (
+                            <div key={index} style={{marginBottom: '15px'}}>
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                marginBottom: '5px'
+                            }}>
+                                <span style={{fontSize: '13px', fontWeight: '600', color: '#333'}}>
+                                {index + 1}. {author.name.length > 30 ? author.name.substring(0, 30) + '...' : author.name}
+                                </span>
+                                <span style={{fontSize: '13px', fontWeight: 'bold', color: '#667eea'}}>
+                                {author.publications}
+                                </span>
+                            </div>
+                            <div style={{
+                                width: '100%',
+                                height: '25px',
+                                background: '#f0f0f0',
+                                borderRadius: '12px',
+                                overflow: 'hidden',
+                                position: 'relative'
+                            }}>
+                                <div style={{
+                                width: `${percentage}%`,
+                                height: '100%',
+                                background: `linear-gradient(90deg, #667eea ${index * 10}%, #764ba2 100%)`,
+                                borderRadius: '12px',
+                                transition: 'width 1s ease',
+                                display: 'flex',
+                                alignItems: 'center',
+                                paddingLeft: '10px'
+                                }}>
+                                <span style={{fontSize: '11px', color: 'white', fontWeight: 'bold'}}>
+                                    {author.citations.toLocaleString()} citas
+                                </span>
+                                </div>
+                            </div>
+                            </div>
+                        );
+                        })}
+                    </div>
+                    </div>
+
+                    {/* Gráfico de Donut - Distribución por Acceso Abierto */}
+                    <div className="chart-container">
+                    <h3 style={{marginBottom: '10px'}}>🔓 Distribución por Acceso Abierto</h3>
+                    <p style={{color: '#666', fontSize: '13px', marginBottom: '20px'}}>
+                        Proporción de publicaciones de acceso abierto vs cerrado
+                    </p>
+                    <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '60px', flexWrap: 'wrap', padding: '20px'}}>
+                        {(() => {
+                        const openAccess = publications.filter(p => p.open_access?.is_oa).length;
+                        const closed = publications.length - openAccess;
+                        const openPercentage = ((openAccess / publications.length) * 100).toFixed(1);
+                        const closedPercentage = ((closed / publications.length) * 100).toFixed(1);
+                        const openAngle = (openAccess / publications.length) * 360;
+                        const closedAngle = 360 - openAngle;
+                        
+                        // Calculate path for donut chart
+                        const radius = 80;
+                        const innerRadius = 50;
+                        const centerX = 100;
+                        const centerY = 100;
+                        
+                        const getDonutPath = (startAngle, endAngle, outerR, innerR) => {
+                            const start = (startAngle - 90) * Math.PI / 180;
+                            const end = (endAngle - 90) * Math.PI / 180;
+                            
+                            const x1 = centerX + outerR * Math.cos(start);
+                            const y1 = centerY + outerR * Math.sin(start);
+                            const x2 = centerX + outerR * Math.cos(end);
+                            const y2 = centerY + outerR * Math.sin(end);
+                            const x3 = centerX + innerR * Math.cos(end);
+                            const y3 = centerY + innerR * Math.sin(end);
+                            const x4 = centerX + innerR * Math.cos(start);
+                            const y4 = centerY + innerR * Math.sin(start);
+                            
+                            const largeArc = endAngle - startAngle > 180 ? 1 : 0;
+                            
+                            return `M ${x1} ${y1} A ${outerR} ${outerR} 0 ${largeArc} 1 ${x2} ${y2} L ${x3} ${y3} A ${innerR} ${innerR} 0 ${largeArc} 0 ${x4} ${y4} Z`;
+                        };
+                        
+                        return (
+                            <>
+                            <svg width="220" height="220" viewBox="0 0 200 200">
+                                {/* Open Access segment */}
+                                <path
+                                d={getDonutPath(0, openAngle, radius, innerRadius)}
+                                fill="#4CAF50"
+                                stroke="white"
+                                strokeWidth="2"
+                                />
+                                
+                                {/* Closed Access segment */}
+                                <path
+                                d={getDonutPath(openAngle, 360, radius, innerRadius)}
+                                fill="#ff6b6b"
+                                stroke="white"
+                                strokeWidth="2"
+                                />
+                                
+                                {/* Center circle */}
+                                <circle cx={centerX} cy={centerY} r={innerRadius} fill="white"/>
+                                
+                                {/* Center text */}
+                                <text x={centerX} y={centerY - 5} textAnchor="middle" fontSize="28" fontWeight="bold" fill="#333">
+                                {publications.length}
+                                </text>
+                                <text x={centerX} y={centerY + 15} textAnchor="middle" fontSize="13" fill="#666">
+                                Total
+                                </text>
+                            </svg>
+                            
+                            <div style={{minWidth: '200px'}}>
+                                <div style={{marginBottom: '25px'}}>
+                                <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px'}}>
+                                    <div style={{width: '24px', height: '24px', background: '#4CAF50', borderRadius: '6px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)'}}></div>
+                                    <span style={{fontWeight: '600', color: '#333', fontSize: '15px'}}>Acceso Abierto</span>
+                                </div>
+                                <div style={{marginLeft: '36px', fontSize: '14px', color: '#666'}}>
+                                    <div style={{fontWeight: '600', color: '#4CAF50', fontSize: '18px', marginBottom: '4px'}}>
+                                    {openAccess.toLocaleString()}
+                                    </div>
+                                    <div>{openPercentage}% del total</div>
+                                </div>
+                                </div>
+                                
+                                <div>
+                                <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px'}}>
+                                    <div style={{width: '24px', height: '24px', background: '#ff6b6b', borderRadius: '6px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)'}}></div>
+                                    <span style={{fontWeight: '600', color: '#333', fontSize: '15px'}}>Acceso Cerrado</span>
+                                </div>
+                                <div style={{marginLeft: '36px', fontSize: '14px', color: '#666'}}>
+                                    <div style={{fontWeight: '600', color: '#ff6b6b', fontSize: '18px', marginBottom: '4px'}}>
+                                    {closed.toLocaleString()}
+                                    </div>
+                                    <div>{closedPercentage}% del total</div>
+                                </div>
+                                </div>
+                            </div>
+                            </>
+                        );
+                        })()}
+                    </div>
+                    </div>
+
+                    {/* Gráfico de Burbujas - Top Instituciones */}
+                    <div className="chart-container">
+                    <h3 style={{marginBottom: '10px'}}>🏛️ Top Instituciones (Publicaciones vs Citaciones)</h3>
+                    <p style={{color: '#666', fontSize: '13px', marginBottom: '20px'}}>
+                        Tamaño de burbuja = número de autores
+                    </p>
+                    <div style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '20px',
+                        justifyContent: 'center',
+                        padding: '20px',
+                        minHeight: '300px',
+                        alignItems: 'center'
+                    }}>
+                        {institutionalAnalysis.slice(0, 15).map((inst, index) => {
+                        const maxPubs = institutionalAnalysis[0]?.publications || 1;
+                        const size = 60 + (inst.authorCount / institutionalAnalysis[0].authorCount) * 100;
+                        const colors = [
+                            '#667eea', '#764ba2', '#f093fb', '#4facfe',
+                            '#43e97b', '#fa709a', '#fee140', '#30cfd0',
+                            '#a8edea', '#fed6e3', '#c1dfc4', '#deab8a',
+                            '#89f7fe', '#66a6ff', '#f6d365'
+                        ];
+                        
+                        return (
+                            <div
+                            key={index}
+                            style={{
+                                width: `${size}px`,
+                                height: `${size}px`,
+                                borderRadius: '50%',
+                                background: colors[index % colors.length],
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: 'white',
+                                fontSize: size > 100 ? '11px' : '9px',
+                                fontWeight: 'bold',
+                                textAlign: 'center',
+                                padding: '10px',
+                                boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
+                                cursor: 'pointer',
+                                transition: 'transform 0.3s',
+                                position: 'relative'
+                            }}
+                            title={inst.name}
+                            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+                            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                            >
+                            <div style={{fontSize: size > 100 ? '16px' : '13px', marginBottom: '3px'}}>
+                                {inst.publications}
+                            </div>
+                            <div style={{fontSize: size > 100 ? '9px' : '8px', opacity: '0.9'}}>
+                                {inst.name.length > 20 ? inst.name.substring(0, 18) + '...' : inst.name}
+                            </div>
+                            <div style={{fontSize: size > 100 ? '8px' : '7px', opacity: '0.8', marginTop: '3px'}}>
+                                {inst.citations.toLocaleString()} citas
+                            </div>
+                            </div>
+                        );
+                        })}
+                    </div>
+                    </div>
+
+                    {/* Mapa de Calor - Productividad por Año */}
+                    <div className="chart-container">
+                    <h3 style={{marginBottom: '10px'}}>🔥 Mapa de Calor: Productividad Anual</h3>
+                    <p style={{color: '#666', fontSize: '13px', marginBottom: '20px'}}>
+                        Intensidad de color = número de publicaciones
+                    </p>
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))',
+                        gap: '10px',
+                        padding: '10px'
+                    }}>
+                        {publicationsByYear.slice(0, 20).map((yearData, index) => {
+                        const maxCount = Math.max(...publicationsByYear.map(y => y.count));
+                        const intensity = (yearData.count / maxCount);
+                        const color = intensity > 0.7 ? '#d32f2f' :
+                                    intensity > 0.4 ? '#f57c00' :
+                                    intensity > 0.2 ? '#fbc02d' : '#c8e6c9';
+                        
+                        return (
+                            <div
+                            key={index}
+                            style={{
+                                background: color,
+                                padding: '20px',
+                                borderRadius: '10px',
+                                textAlign: 'center',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                                cursor: 'pointer',
+                                transition: 'all 0.3s'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'scale(1.05)';
+                                e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.2)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'scale(1)';
+                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                            }}
+                            >
+                            <div style={{fontSize: '18px', fontWeight: 'bold', color: '#fff', marginBottom: '5px'}}>
+                                {yearData.count}
+                            </div>
+                            <div style={{fontSize: '12px', color: '#fff', opacity: '0.9'}}>
+                                {yearData.year}
+                            </div>
+                            <div style={{fontSize: '10px', color: '#fff', opacity: '0.8', marginTop: '3px'}}>
+                                {yearData.citations.toLocaleString()} citas
+                            </div>
+                            </div>
+                        );
+                        })}
+                    </div>
+                    </div>
+                </div>
+                )}
+            </>
+          )}
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

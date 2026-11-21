@@ -76,6 +76,9 @@
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
         overflow: hidden;
+        text-decoration: none;
+        color: inherit;
+        display: block;
     }
 
     .stat-card::before {
@@ -93,6 +96,7 @@
     .stat-card:hover {
         transform: translateY(-8px);
         box-shadow: var(--box-shadow-hover);
+        cursor: pointer;
     }
 
     .stat-card:hover::before {
@@ -193,7 +197,7 @@
         color: var(--text-muted);
     }
 
-    /* Charts Grid - Mejorado */
+    /* Charts Grid - Ajustado para mejor distribución */
     .charts-grid {
         display: grid;
         grid-template-columns: 2fr 1fr;
@@ -242,8 +246,9 @@
         font-size: 18px;
     }
 
+    /* Ajuste de altura del gráfico - MÁS COMPACTO */
     .chart-placeholder {
-        height: 320px;
+        height: 280px;
         background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
         border-radius: 12px;
         display: flex;
@@ -253,6 +258,10 @@
         font-size: 14px;
         border: 2px dashed #dee2e6;
         transition: all 0.3s;
+    }
+
+    #humedadChart, #comparativaChart, #pronosticoChart {
+        height: 280px !important;
     }
 
     .chart-placeholder:hover {
@@ -310,7 +319,7 @@
         box-shadow: 0 0 0 4px rgba(40, 167, 69, 0.15);
     }
 
-    /* Activity List - Mejorado */
+    /* Activity List - Mejorado y más compacto */
     .activity-card {
         background: var(--white);
         border-radius: var(--border-radius);
@@ -347,22 +356,6 @@
         font-size: 18px;
     }
 
-    .view-all-link {
-        color: var(--primary-color);
-        text-decoration: none;
-        font-size: 14px;
-        font-weight: 600;
-        transition: all 0.3s;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-    }
-
-    .view-all-link:hover {
-        color: #1e7e34;
-        gap: 8px;
-    }
-
     .activity-list {
         display: flex;
         flex-direction: column;
@@ -372,7 +365,7 @@
     .activity-item {
         display: flex;
         gap: 18px;
-        padding: 18px 0;
+        padding: 15px 0;
         border-bottom: 1px solid #f5f5f5;
         transition: all 0.3s;
     }
@@ -428,6 +421,50 @@
         font-size: 12px;
     }
 
+    /* Distribución de cultivos mejorada */
+    .cultivo-item {
+        margin-bottom: 15px;
+    }
+
+    .cultivo-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        align-items: center;
+    }
+
+    .cultivo-nombre {
+        font-weight: 600;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .cultivo-stats {
+        color: #6c757d;
+        font-size: 13px;
+    }
+
+    .cultivo-bar-container {
+        background: #e9ecef;
+        height: 10px;
+        border-radius: 5px;
+        overflow: hidden;
+        margin-bottom: 5px;
+    }
+
+    .cultivo-bar {
+        background: linear-gradient(90deg, #28a745, #20c997);
+        height: 100%;
+        transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .cultivo-area {
+        font-size: 12px;
+        color: #6c757d;
+    }
+
     /* Quick Actions Section */
     .quick-actions {
         display: grid;
@@ -450,6 +487,7 @@
         flex-direction: column;
         align-items: center;
         gap: 12px;
+        position: relative;
     }
 
     .quick-action-btn:hover {
@@ -468,11 +506,29 @@
         align-items: center;
         justify-content: center;
         font-size: 24px;
+        position: relative;
     }
 
     .quick-action-label {
         font-weight: 600;
         font-size: 14px;
+    }
+
+    .notification-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: #ffc107;
+        color: #000;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: bold;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
 
     /* Responsive Design */
@@ -510,7 +566,11 @@
         }
 
         .chart-placeholder {
-            height: 260px;
+            height: 220px;
+        }
+
+        #humedadChart, #comparativaChart, #pronosticoChart {
+            height: 220px !important;
         }
 
         .quick-actions {
@@ -544,9 +604,9 @@
         <div class="quick-action-icon">🌾</div>
         <div class="quick-action-label">Ver Parcelas</div>
     </a>
-    <a href="#" class="quick-action-btn">
-        <div class="quick-action-icon">💧</div>
-        <div class="quick-action-label">Monitorear</div>
+    <a href="{{ route('clima.index') }}" class="quick-action-btn">
+        <div class="quick-action-icon">🌤️</div>
+        <div class="quick-action-label">Monitorear Clima</div>
     </a>
     <a href="#" class="quick-action-btn">
         <div class="quick-action-icon">📊</div>
@@ -556,101 +616,98 @@
 
 <!-- Dashboard Stats -->
 <div class="stats-grid">
-    <div class="stat-card primary">
+      {{-- ✅ ALERTAS ACTIVAS - CLICKEABLE --}}
+    <a href="{{ route('alertas.index') }}" class="stat-card danger">
         <div class="stat-header">
             <div class="stat-content">
-                <div class="stat-value">{{ $totalParcelas ?? 0 }}</div>
-                <div class="stat-label">Parcelas Activas</div>
-            </div>
-            <div class="stat-icon primary">🌾</div>
-        </div>
-        <div class="stat-footer">
-            <div class="stat-change positive">
-                <span class="stat-change-icon">↑</span>
-                <span>{{ $parcelasNuevas ?? 0 }}</span>
-            </div>
-            <div class="stat-period">este mes</div>
-        </div>
-    </div>
-
-    <div class="stat-card success">
-        <div class="stat-header">
-            <div class="stat-content">
-                <div class="stat-value">{{ $humedadPromedio ?? 0 }}%</div>
-                <div class="stat-label">Humedad Promedio</div>
-            </div>
-            <div class="stat-icon success">💧</div>
-        </div>
-        <div class="stat-footer">
-            <div class="stat-change {{ ($cambioHumedad ?? 0) >= 0 ? 'positive' : 'negative' }}">
-                <span class="stat-change-icon">{{ ($cambioHumedad ?? 0) >= 0 ? '↑' : '↓' }}</span>
-                <span>{{ abs($cambioHumedad ?? 0) }}%</span>
-            </div>
-            <div class="stat-period">últimas 24h</div>
-        </div>
-    </div>
-
-    <div class="stat-card warning">
-        <div class="stat-header">
-            <div class="stat-content">
-                <div class="stat-value">{{ number_format($aguaHoy ?? 0, 0) }}</div>
-                <div class="stat-label">Litros de Agua (hoy)</div>
-            </div>
-            <div class="stat-icon warning">🚿</div>
-        </div>
-        <div class="stat-footer">
-            <div class="stat-change {{ ($cambioAgua ?? 0) >= 0 ? 'negative' : 'positive' }}">
-                <span class="stat-change-icon">{{ ($cambioAgua ?? 0) >= 0 ? '↑' : '↓' }}</span>
-                <span>{{ abs($cambioAgua ?? 0) }}%</span>
-            </div>
-            <div class="stat-period">vs ayer</div>
-        </div>
-    </div>
-
-    <div class="stat-card danger">
-        <div class="stat-header">
-            <div class="stat-content">
-                <div class="stat-value">{{ $alertasActivas ?? 0 }}</div>
+                <div class="stat-value">{{ $alertasActivas }}</div>
                 <div class="stat-label">Alertas Activas</div>
             </div>
             <div class="stat-icon danger">🔔</div>
         </div>
         <div class="stat-footer">
-            <div class="stat-change {{ ($nuevasAlertas ?? 0) > 0 ? 'negative' : 'positive' }}">
-                <span class="stat-change-icon">{{ ($nuevasAlertas ?? 0) > 0 ? '+' : '✓' }}</span>
-                <span>{{ $nuevasAlertas ?? 0 }}</span>
+            <div class="stat-change {{ $nuevasAlertas > 0 ? 'negative' : 'positive' }}">
+                <span class="stat-change-icon">{{ $nuevasAlertas > 0 ? '+' : '✓' }}</span>
+                <span>{{ $nuevasAlertas }}</span>
             </div>
-            <div class="stat-period">{{ ($nuevasAlertas ?? 0) == 1 ? 'nueva alerta' : 'nuevas hoy' }}</div>
+            <div class="stat-period">{{ $nuevasAlertas == 1 ? 'nueva alerta' : 'nuevas hoy' }}</div>
+        </div>
+    </a>
+
+    {{-- ✅ PARCELAS ACTIVAS - DATOS REALES --}}
+    <div class="stat-card primary">
+        <div class="stat-header">
+            <div class="stat-content">
+                <div class="stat-value">{{ $totalParcelas }}</div>
+                <div class="stat-label">Parcelas Activas</div>
+            </div>
+            <div class="stat-icon primary">🌾</div>
+        </div>
+        <div class="stat-footer">
+            <div class="stat-change {{ $parcelasNuevas > 0 ? 'positive' : '' }}">
+                <span class="stat-change-icon">{{ $parcelasNuevas > 0 ? '↑' : '•' }}</span>
+                <span>{{ $parcelasNuevas }}</span>
+            </div>
+            <div class="stat-period">este mes</div>
         </div>
     </div>
+
+    {{-- ✅ CLIMA PROMEDIO EN TIEMPO REAL - DESDE API --}}
+    <div class="stat-card success">
+        <div class="stat-header">
+            <div class="stat-content">
+                @if($climaPromedio['hay_datos'])
+                    <div class="stat-value">{{ $climaPromedio['temperatura'] }}°C</div>
+                    <div class="stat-label">Temperatura Promedio</div>
+                @else
+                    <div class="stat-value">--</div>
+                    <div class="stat-label">Sin Datos de Clima</div>
+                @endif
+            </div>
+            <div class="stat-icon success">🌡️</div>
+        </div>
+        <div class="stat-footer">
+            @if($climaPromedio['hay_datos'])
+                <div class="stat-change">
+                    <span>💧 {{ $climaPromedio['humedad'] }}%</span>
+                </div>
+                <div class="stat-period">humedad actual</div>
+            @else
+                <div class="stat-period">
+                    <a href="{{ route('clima.index') }}" style="color: #28a745; font-weight: 600;">
+                        Configurar clima →
+                    </a>
+                </div>
+            @endif
+        </div>
+    </div>
+
 </div>
 
 <!-- Charts Section -->
 <div class="charts-grid">
+    {{-- ✅ COMPARATIVA DE CLIMA ENTRE PARCELAS - TIEMPO REAL --}}
     <div class="chart-card">
         <div class="chart-header">
             <div class="chart-title">
-                <div class="chart-icon">📈</div>
-                <span>Historial de Humedad (7 días)</span>
+                <div class="chart-icon">🌡️</div>
+                <span>Comparativa de Clima (Tiempo Real)</span>
             </div>
-            <select class="filter-select" id="parcelaFilter">
-                <option value="all">Todas las parcelas</option>
-                @if(isset($parcelas) && count($parcelas) > 0)
-                    @foreach($parcelas as $parcela)
-                        <option value="{{ $parcela->id }}">{{ $parcela->nombre }}</option>
-                    @endforeach
-                @endif
-            </select>
+            <button class="filter-select" id="btnRefrescarClima" style="cursor: pointer;">
+                🔄 Actualizar
+            </button>
         </div>
-        <div class="chart-placeholder">
+        <div class="chart-placeholder" id="chartComparativa">
             <div class="chart-placeholder-content">
-                <div class="chart-placeholder-icon">📊</div>
-                <div class="chart-placeholder-title">Gráfico de Humedad</div>
-                <div class="chart-placeholder-subtitle">Visualización de datos en tiempo real</div>
+                <div class="chart-placeholder-icon">🌤️</div>
+                <div class="chart-placeholder-title">Cargando clima en tiempo real...</div>
+                <div class="chart-placeholder-subtitle">Obteniendo datos desde OpenWeather API</div>
             </div>
         </div>
+        <canvas id="comparativaChart" style="display: none;"></canvas>
     </div>
 
+    {{-- ✅ DISTRIBUCIÓN POR CULTIVO - MEJORADA --}}
     <div class="chart-card">
         <div class="chart-header">
             <div class="chart-title">
@@ -658,128 +715,697 @@
                 <span>Distribución por Cultivo</span>
             </div>
         </div>
-        <div class="chart-placeholder">
-            <div class="chart-placeholder-content">
-                <div class="chart-placeholder-icon">🌱</div>
-                <div class="chart-placeholder-title">Cultivos Activos</div>
-                <div class="chart-placeholder-subtitle">Análisis de distribución</div>
+        @if(count($distribucionCultivos) > 0)
+            <div style="padding: 15px 0;">
+                @foreach($distribucionCultivos as $cultivo)
+                    <div class="cultivo-item">
+                        <div class="cultivo-header">
+                            <span class="cultivo-nombre">
+                                {{ $cultivo['emoji'] ?? '🌾' }} {{ $cultivo['nombre'] }}
+                            </span>
+                            <span class="cultivo-stats">
+                                {{ $cultivo['cantidad'] }} parcela(s) • {{ $cultivo['porcentaje'] }}%
+                            </span>
+                        </div>
+                        <div class="cultivo-bar-container">
+                            <div class="cultivo-bar" style="width: {{ $cultivo['porcentaje'] }}%;"></div>
+                        </div>
+                        <div class="cultivo-area">
+                            Área total: {{ $cultivo['area'] }} m²
+                        </div>
+                    </div>
+                @endforeach
             </div>
-        </div>
-    </div>
-</div>
-
-<!-- Recent Activity -->
-<div class="activity-card">
-    <div class="activity-header">
-        <div class="activity-title">
-            <div class="activity-title-icon">⚡</div>
-            <span>Actividad Reciente</span>
-        </div>
-        <a href="#" class="view-all-link">
-            Ver todo
-            <span>→</span>
-        </a>
-    </div>
-
-    <div class="activity-list">
-        @if(isset($actividadesRecientes) && count($actividadesRecientes) > 0)
-            @foreach($actividadesRecientes as $actividad)
-                <div class="activity-item">
-                    <div class="activity-icon" style="background: {{ $actividad['color'] }}; color: {{ $actividad['iconColor'] }};">
-                        {{ $actividad['icon'] }}
-                    </div>
-                    <div class="activity-content">
-                        <div class="activity-item-title">{{ $actividad['titulo'] }}</div>
-                        <div class="activity-time">{{ $actividad['tiempo'] }}</div>
-                    </div>
-                </div>
-            @endforeach
         @else
-            <div class="activity-item">
-                <div class="activity-icon" style="background: rgba(0, 123, 255, 0.1); color: #007bff;">ℹ️</div>
-                <div class="activity-content">
-                    <div class="activity-item-title">Sistema iniciado correctamente</div>
-                    <div class="activity-time">Hace unos momentos</div>
-                </div>
-            </div>
-
-            <div class="activity-item">
-                <div class="activity-icon" style="background: rgba(40, 167, 69, 0.1); color: #28a745;">✓</div>
-                <div class="activity-content">
-                    <div class="activity-item-title">Todos los sensores funcionando correctamente</div>
-                    <div class="activity-time">Hace 5 minutos</div>
-                </div>
-            </div>
-
-            <div class="activity-item">
-                <div class="activity-icon" style="background: rgba(40, 167, 69, 0.1); color: #28a745;">📊</div>
-                <div class="activity-content">
-                    <div class="activity-item-title">Datos sincronizados con éxito</div>
-                    <div class="activity-time">Hace 15 minutos</div>
-                </div>
-            </div>
-
-            <div class="activity-item">
-                <div class="activity-icon" style="background: rgba(0, 123, 255, 0.1); color: #007bff;">🌱</div>
-                <div class="activity-content">
-                    <div class="activity-item-title">Bienvenido al sistema MAKIYAKU</div>
-                    <div class="activity-time">Hoy</div>
+            <div class="chart-placeholder">
+                <div class="chart-placeholder-content">
+                    <div class="chart-placeholder-icon">🌱</div>
+                    <div class="chart-placeholder-title">Sin Cultivos</div>
+                    <div class="chart-placeholder-subtitle">Crea tu primera parcela para ver datos</div>
                 </div>
             </div>
         @endif
     </div>
 </div>
+
+<!-- Pronóstico 5 días + Actividades -->
+<div class="charts-grid">
+    {{-- ✅ PRONÓSTICO 5 DÍAS - DESDE API --}}
+    <div class="chart-card">
+        <div class="chart-header">
+            <div class="chart-title">
+                <div class="chart-icon">📅</div>
+                <span>Pronóstico (5 días)</span>
+            </div>
+            <select class="filter-select" id="parcelaFilterPronostico">
+                <option value="all">Todas las parcelas</option>
+                @foreach($parcelas as $parcela)
+                    <option value="{{ $parcela->id }}">{{ $parcela->nombre }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="chart-placeholder" id="chartPronostico">
+            <div class="chart-placeholder-content">
+                <div class="chart-placeholder-icon">⛅</div>
+                <div class="chart-placeholder-title">Cargando pronóstico...</div>
+                <div class="chart-placeholder-subtitle">Obteniendo datos climáticos</div>
+            </div>
+        </div>
+        <canvas id="pronosticoChart" style="display: none;"></canvas>
+    </div>
+
+    {{-- ✅ ACTIVIDAD RECIENTE --}}
+    <div class="activity-card">
+        <div class="activity-header">
+            <div class="activity-title">
+                <div class="activity-title-icon">⚡</div>
+                <span>Actividad Reciente</span>
+            </div>
+        </div>
+
+        <div class="activity-list">
+            @if(count($actividadesRecientes) > 0)
+                @foreach($actividadesRecientes as $actividad)
+                    <div class="activity-item">
+                        <div class="activity-icon" style="background: {{ $actividad['color'] }}; color: {{ $actividad['iconColor'] }};">
+                            {{ $actividad['icon'] }}
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-item-title">{{ $actividad['titulo'] }}</div>
+                            <div class="activity-time">{{ $actividad['tiempo'] }}</div>
+                        </div>
+                    </div>
+                @endforeach
+            @else
+                <div class="activity-item">
+                    <div class="activity-icon" style="background: rgba(0, 123, 255, 0.1); color: #007bff;">🌱</div>
+                    <div class="activity-content">
+                        <div class="activity-item-title">¡Sistema iniciado! Crea tu primera parcela para comenzar</div>
+                        <div class="activity-time">Ahora</div>
+                    </div>
+                </div>
+            @endif
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-    // Filtro de parcelas para el gráfico
-    document.getElementById('parcelaFilter')?.addEventListener('change', function(e) {
-        console.log('Parcela seleccionada:', e.target.value);
-        // Aquí puedes agregar la lógica AJAX para cargar datos reales
-    });
+// ═══════════════════════════════════════════════════════════
+// DASHBOARD - SCRIPT COMPLETO
+// ═══════════════════════════════════════════════════════════
 
-    // Animación de números al cargar
-    document.addEventListener('DOMContentLoaded', function() {
-        const statValues = document.querySelectorAll('.stat-value');
-        
-        statValues.forEach(element => {
-            const finalValue = parseInt(element.textContent) || 0;
-            let currentValue = 0;
-            const increment = finalValue / 30;
-            const duration = 1000;
-            const stepTime = duration / 30;
+let comparativaChart = null;
+let pronosticoChart = null;
 
-            const counter = setInterval(() => {
-                currentValue += increment;
-                if (currentValue >= finalValue) {
-                    element.textContent = element.textContent.includes('%') ? finalValue + '%' : finalValue;
-                    clearInterval(counter);
-                } else {
-                    element.textContent = Math.floor(currentValue);
-                }
-            }, stepTime);
-        });
-    });
-
-    // Simulación de actualización en tiempo real
-    let updateInterval;
+// ═══════════════════════════════════════════════════════════
+// CARGAR DATOS AL INICIAR
+// ═══════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', function() {
+    cargarComparativaClima();
+    cargarPronostico('all');
     
-    function startRealTimeUpdates() {
-        updateInterval = setInterval(function() {
-            console.log('🔄 Actualizando datos en tiempo real...');
-            // Aquí puedes hacer peticiones AJAX para actualizar los datos
-        }, 30000); // Cada 30 segundos
+    // Animar las barras de cultivos
+    animarBarrasCultivos();
+});
+
+// ═══════════════════════════════════════════════════════════
+// EVENTOS DE FILTROS
+// ═══════════════════════════════════════════════════════════
+document.getElementById('btnRefrescarClima')?.addEventListener('click', function() {
+    this.innerHTML = '⏳ Cargando...';
+    this.disabled = true;
+    cargarComparativaClima();
+});
+
+document.getElementById('parcelaFilterPronostico')?.addEventListener('change', function(e) {
+    cargarPronostico(e.target.value);
+});
+
+// ═══════════════════════════════════════════════════════════
+// FUNCIÓN: Comparativa de Clima entre Parcelas
+// ═══════════════════════════════════════════════════════════
+function cargarComparativaClima() {
+    const btn = document.getElementById('btnRefrescarClima');
+    
+    fetch('{{ route("dashboard.comparativa") }}')
+        .then(response => response.json())
+        .then(result => {
+            if (!result.success || result.data.length === 0) {
+                mostrarMensajeSinDatos('chartComparativa', '❌ No hay datos de clima disponibles', 'Verifica que las parcelas tengan ubicación configurada');
+                return;
+            }
+
+            const datos = result.data;
+            
+            // Ocultar placeholder y mostrar canvas
+            document.getElementById('chartComparativa').style.display = 'none';
+            document.getElementById('comparativaChart').style.display = 'block';
+
+            // Destruir gráfico anterior si existe
+            if (comparativaChart) {
+                comparativaChart.destroy();
+            }
+
+            const ctx = document.getElementById('comparativaChart').getContext('2d');
+            comparativaChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: datos.map(d => d.parcela),
+                    datasets: [
+                        {
+                            label: 'Temperatura (°C)',
+                            data: datos.map(d => d.temperatura),
+                            backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 2,
+                            borderRadius: 8,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Humedad (%)',
+                            data: datos.map(d => d.humedad),
+                            backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 2,
+                            borderRadius: 8,
+                            yAxisID: 'y1'
+                        },
+                        {
+                            label: 'Viento (km/h)',
+                            data: datos.map(d => d.viento),
+                            backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 2,
+                            borderRadius: 8,
+                            yAxisID: 'y'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15,
+                                font: {
+                                    size: 12,
+                                    weight: '600'
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            borderColor: 'rgba(255, 255, 255, 0.2)',
+                            borderWidth: 1,
+                            titleFont: {
+                                size: 14,
+                                weight: 'bold'
+                            },
+                            bodyFont: {
+                                size: 13
+                            },
+                            callbacks: {
+                                title: function(context) {
+                                    const idx = context[0].dataIndex;
+                                    return `${datos[idx].emoji} ${datos[idx].parcela}`;
+                                },
+                                afterTitle: function(context) {
+                                    const idx = context[0].dataIndex;
+                                    return datos[idx].descripcion;
+                                },
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += context.parsed.y;
+                                    if (context.dataset.label === 'Temperatura (°C)') {
+                                        label += '°C';
+                                    } else if (context.dataset.label === 'Humedad (%)') {
+                                        label += '%';
+                                    } else if (context.dataset.label === 'Viento (km/h)') {
+                                        label += ' km/h';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: {
+                                    size: 12,
+                                    weight: '600'
+                                }
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Temperatura (°C) / Viento (km/h)',
+                                font: {
+                                    size: 11,
+                                    weight: '600'
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Humedad (%)',
+                                font: {
+                                    size: 11,
+                                    weight: '600'
+                                }
+                            },
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                            max: 100
+                        }
+                    }
+                }
+            });
+
+            if (btn) {
+                btn.innerHTML = '🔄 Actualizar';
+                btn.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error al cargar clima:', error);
+            mostrarMensajeSinDatos('chartComparativa', '⚠️ Error al cargar datos', 'Por favor, intenta nuevamente');
+            if (btn) {
+                btn.innerHTML = '🔄 Actualizar';
+                btn.disabled = false;
+            }
+        });
+}
+
+// ═══════════════════════════════════════════════════════════
+// FUNCIÓN: Pronóstico 5 días
+// ═══════════════════════════════════════════════════════════
+function cargarPronostico(parcelaId) {
+    const chartPlaceholder = document.getElementById('chartPronostico');
+    const canvas = document.getElementById('pronosticoChart');
+
+    // Mostrar loading
+    chartPlaceholder.innerHTML = `
+        <div class="chart-placeholder-content">
+            <div class="chart-placeholder-icon">⏳</div>
+            <div class="chart-placeholder-title">Cargando pronóstico...</div>
+            <div class="chart-placeholder-subtitle">Obteniendo datos climáticos</div>
+        </div>
+    `;
+    chartPlaceholder.style.display = 'flex';
+    canvas.style.display = 'none';
+
+    fetch(`{{ route("dashboard.pronostico") }}?parcela_id=${parcelaId}`)
+        .then(response => response.json())
+        .then(result => {
+            if (!result.success || result.data.length === 0) {
+                mostrarMensajeSinDatos('chartPronostico', '❌ No hay pronóstico disponible', 'Verifica que la parcela tenga ubicación configurada');
+                return;
+            }
+
+            const datos = result.data;
+            
+            chartPlaceholder.style.display = 'none';
+            canvas.style.display = 'block';
+
+            if (pronosticoChart) {
+                pronosticoChart.destroy();
+            }
+
+            const ctx = canvas.getContext('2d');
+            pronosticoChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: datos.map(d => `${d.dia_semana} ${d.fecha}`),
+                    datasets: [
+                        {
+                            label: 'Temp. Máxima (°C)',
+                            data: datos.map(d => d.temp_max),
+                            borderColor: 'rgb(255, 99, 132)',
+                            backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 5,
+                            pointHoverRadius: 7
+                        },
+                        {
+                            label: 'Temp. Mínima (°C)',
+                            data: datos.map(d => d.temp_min),
+                            borderColor: 'rgb(54, 162, 235)',
+                            backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 5,
+                            pointHoverRadius: 7
+                        },
+                        {
+                            label: 'Prob. Lluvia (%)',
+                            data: datos.map(d => d.lluvia_prob),
+                            borderColor: 'rgb(75, 192, 192)',
+                            backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                            borderWidth: 3,
+                            borderDash: [5, 5],
+                            tension: 0.4,
+                            fill: false,
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15,
+                                font: {
+                                    size: 12,
+                                    weight: '600'
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            borderColor: 'rgba(255, 255, 255, 0.2)',
+                            borderWidth: 1,
+                            titleFont: {
+                                size: 14,
+                                weight: 'bold'
+                            },
+                            bodyFont: {
+                                size: 13
+                            },
+                            callbacks: {
+                                title: function(context) {
+                                    const idx = context[0].dataIndex;
+                                    return `${datos[idx].emoji} ${datos[idx].dia_semana} ${datos[idx].fecha}`;
+                                },
+                                afterTitle: function(context) {
+                                    const idx = context[0].dataIndex;
+                                    return datos[idx].descripcion;
+                                },
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += context.parsed.y;
+                                    if (label.includes('Temp')) {
+                                        label += '°C';
+                                    } else if (label.includes('Prob')) {
+                                        label += '%';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: {
+                                    size: 11,
+                                    weight: '600'
+                                }
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Temperatura (°C)',
+                                font: {
+                                    size: 11,
+                                    weight: '600'
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Probabilidad Lluvia (%)',
+                                font: {
+                                    size: 11,
+                                    weight: '600'
+                                }
+                            },
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                            max: 100
+                        }
+                    }
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error al cargar pronóstico:', error);
+            mostrarMensajeSinDatos('chartPronostico', '⚠️ Error al cargar pronóstico', 'Por favor, intenta nuevamente');
+        });
+}
+
+// ═══════════════════════════════════════════════════════════
+// HELPER: Mostrar mensaje cuando no hay datos
+// ═══════════════════════════════════════════════════════════
+function mostrarMensajeSinDatos(containerId, titulo, subtitulo) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="chart-placeholder-content">
+            <div class="chart-placeholder-icon" style="font-size: 48px;">📊</div>
+            <div class="chart-placeholder-title">${titulo}</div>
+            <div class="chart-placeholder-subtitle">${subtitulo}</div>
+        </div>
+    `;
+    container.style.display = 'flex';
+
+    // Ocultar canvas correspondiente
+    const canvasId = containerId.replace('chart', '') + 'Chart';
+    const canvas = document.getElementById(canvasId);
+    if (canvas) {
+        canvas.style.display = 'none';
     }
+}
 
-    // Iniciar actualizaciones
-    startRealTimeUpdates();
+// ═══════════════════════════════════════════════════════════
+// ANIMACIÓN: Barras de cultivos
+// ═══════════════════════════════════════════════════════════
+function animarBarrasCultivos() {
+    const barras = document.querySelectorAll('.cultivo-bar');
+    
+    barras.forEach((barra, index) => {
+        const anchoFinal = barra.style.width;
+        barra.style.width = '0%';
+        
+        setTimeout(() => {
+            barra.style.transition = 'width 1s cubic-bezier(0.4, 0, 0.2, 1)';
+            barra.style.width = anchoFinal;
+        }, index * 150);
+    });
+}
+</script>
 
-    // Limpiar el intervalo cuando se sale de la página
-    window.addEventListener('beforeunload', function() {
-        if (updateInterval) {
-            clearInterval(updateInterval);
+
+
+<script>
+// ════════════════════════════════════════════════════════════
+// TOAST DE ALERTAS NUEVAS AL ENTRAR
+// ════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', function() {
+    // Solo mostrar si es la primera carga (no recarga)
+    if (!sessionStorage.getItem('toastMostrado')) {
+        setTimeout(() => {
+            mostrarToastAlertas();
+            sessionStorage.setItem('toastMostrado', 'true');
+        }, 1500); // Esperar 1.5s después de cargar
+    }
+});
+
+function mostrarToastAlertas() {
+    fetch('{{ route("alertas.recientes") }}')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.alertas.length > 0) {
+                const alertas = data.alertas;
+                
+                // Crear contenedor de toast
+                const toastContainer = document.createElement('div');
+                toastContainer.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    z-index: 9999;
+                    max-width: 400px;
+                `;
+                document.body.appendChild(toastContainer);
+
+                // Crear cada alerta
+                alertas.forEach((alerta, index) => {
+                    setTimeout(() => {
+                        const toast = crearToast(alerta);
+                        toastContainer.appendChild(toast);
+                        
+                        // Animar entrada
+                        setTimeout(() => toast.style.transform = 'translateX(0)', 10);
+                        
+                        // Auto-cerrar después de 8 segundos
+                        setTimeout(() => {
+                            toast.style.transform = 'translateX(450px)';
+                            setTimeout(() => toast.remove(), 300);
+                        }, 8000);
+                    }, index * 400); // Stagger de 400ms entre alertas
+                });
+
+                // Reproducir sonido según nivel
+                reproducirSonidoAlerta(alertas[0].nivel);
+            }
+        })
+        .catch(error => console.error('Error cargando toast:', error));
+}
+
+function crearToast(alerta) {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        background: white;
+        border-left: 5px solid ${alerta.color_hex};
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        transform: translateX(450px);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+    `;
+
+    toast.innerHTML = `
+        <div style="display: flex; gap: 15px; align-items: start;">
+            <div style="font-size: 32px; flex-shrink: 0;">
+                ${alerta.icono}
+            </div>
+            <div style="flex: 1; min-width: 0;">
+                <div style="font-weight: 700; font-size: 16px; color: #212529; margin-bottom: 5px;">
+                    ${alerta.titulo}
+                </div>
+                <div style="font-size: 13px; color: #6c757d; margin-bottom: 5px;">
+                    🌾 ${alerta.parcela}
+                </div>
+                <div style="font-size: 14px; color: #495057; line-height: 1.4; margin-bottom: 10px;">
+                    ${alerta.mensaje.substring(0, 120)}${alerta.mensaje.length > 120 ? '...' : ''}
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 12px; color: #6c757d;">
+                        ${alerta.tiempo}
+                    </span>
+                    <span style="font-size: 12px; color: #28a745; font-weight: 600;">
+                        Ver detalles →
+                    </span>
+                </div>
+            </div>
+            <button onclick="this.parentElement.parentElement.remove()" style="
+                background: none;
+                border: none;
+                font-size: 20px;
+                color: #6c757d;
+                cursor: pointer;
+                padding: 0;
+                margin-left: 10px;
+            ">×</button>
+        </div>
+    `;
+
+    // Click para ir a la parcela
+    toast.addEventListener('click', function(e) {
+        if (e.target.tagName !== 'BUTTON') {
+            window.location.href = alerta.url;
         }
     });
+
+    return toast;
+}
+
+function reproducirSonidoAlerta(nivel) {
+    // Usar API de audio del navegador para sonido simple
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    // Frecuencia según nivel
+    const frecuencias = {
+        'critico': [800, 600, 800],
+        'alto': [600, 500],
+        'medio': [500],
+        'info': [400]
+    };
+
+    const freqs = frecuencias[nivel] || [500];
+    
+    let time = audioContext.currentTime;
+    freqs.forEach((freq, i) => {
+        oscillator.frequency.setValueAtTime(freq, time);
+        gainNode.gain.setValueAtTime(0.3, time);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, time + 0.3);
+        time += 0.35;
+    });
+
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + (freqs.length * 0.35));
+}
 </script>
 @endpush

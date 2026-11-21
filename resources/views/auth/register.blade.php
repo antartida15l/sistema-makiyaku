@@ -521,7 +521,9 @@
     <div class="register-container">
         <div class="register-card">
             <div class="register-header">
-                <div class="register-logo">🌱</div>
+                <div class="register-logo">
+                     <img src="{{ asset('images/portada.png') }}" alt="MAKIYAKU" style="width: 100%; height: 100%; object-fit: contain;">
+                </div>
                 <h1 class="register-title">Crear Cuenta</h1>
                 <p class="register-subtitle">Únete a MAKIYAKU y gestiona tu sistema de riego</p>
             </div>
