@@ -502,7 +502,7 @@
     {{-- HEADER --}}
     <div class="page-header">
         <div class="page-header-content">
-            <div class="page-icon">🌾</div>
+            <div class="page-icon"><x-icono name="parcela" :size="20" /></div>
             <div class="page-title-group">
                 <h1>{{ $cultivo->nombreCultivo }}</h1>
                 @if($cultivo->nombreCientifico)
@@ -517,15 +517,15 @@
                 <span>Volver</span>
             </a>
             <a href="{{ route('cultivos.edit', $cultivo) }}" class="btn btn-edit">
-                <span>✏️</span>
+                
                 <span>Editar</span>
             </a>
             <form action="{{ route('cultivos.destroy', $cultivo) }}" method="POST" style="display: inline;" 
-                  onsubmit="return confirm('¿Estás seguro de eliminar este cultivo?\n\n⚠️ ADVERTENCIA: Esto eliminará permanentemente toda la información del cultivo.\n\nEsta acción no se puede deshacer.');">
+                  onsubmit="return confirm('¿Estás seguro de eliminar este cultivo?\n\nADVERTENCIA: Esto eliminará permanentemente toda la información del cultivo.\n\nEsta acción no se puede deshacer.');">
                 @csrf
                 @method('DELETE')
                 <button type="submit" class="btn btn-delete">
-                    <span>🗑️</span>
+                    
                     <span>Eliminar</span>
                 </button>
             </form>
@@ -535,14 +535,14 @@
     {{-- ALERTAS --}}
     @if(session('success'))
         <div class="alert alert-success">
-            <span style="font-size: 24px;">✅</span>
+            <span style="font-size: 24px;"><x-icono name="ok" :size="20" /></span>
             <strong>{{ session('success') }}</strong>
         </div>
     @endif
 
     @if(session('error'))
         <div class="alert alert-danger">
-            <span style="font-size: 24px;">❌</span>
+            <span style="font-size: 24px;"></span>
             <strong>{{ session('error') }}</strong>
         </div>
     @endif
@@ -551,7 +551,7 @@
         {{-- INFORMACIÓN BÁSICA --}}
         <div class="detail-section">
             <div class="section-header">
-                <div class="section-icon">📋</div>
+                <div class="section-icon"></div>
                 <div class="section-title">
                     <h3>Información Básica</h3>
                     <p class="section-description">Clasificación y características generales</p>
@@ -561,7 +561,7 @@
             <div class="detail-grid">
                 <div class="detail-item">
                     <div class="detail-label">
-                        <span>🏷️</span> Tipo de Cultivo
+                        Tipo de Cultivo
                     </div>
                     <div class="detail-value">
                         <span class="badge badge-primary">{{ $cultivo->tipo }}</span>
@@ -571,7 +571,7 @@
                 @if($cultivo->region)
                 <div class="detail-item">
                     <div class="detail-label">
-                        <span>🗺️</span> Región de Adaptación
+                        Región de Adaptación
                     </div>
                     <div class="detail-value">
                         <span class="badge badge-info">{{ $cultivo->region }}</span>
@@ -582,7 +582,7 @@
                 @if($cultivo->cicloProductivo)
                 <div class="detail-item">
                     <div class="detail-label">
-                        <span>📅</span> Ciclo Productivo
+                        <span><x-icono name="ciclo" :size="20" /></span> Ciclo Productivo
                     </div>
                     <div class="detail-value">
                         <span class="detail-value-large">{{ $cultivo->cicloProductivo }}</span> días
@@ -594,7 +594,7 @@
             @if($cultivo->descripcion)
             <div style="margin-top: 20px;">
                 <div class="detail-label" style="margin-bottom: 12px;">
-                    <span>📝</span> Descripción
+                    Descripción
                 </div>
                 <div class="description-box">
                     {{ $cultivo->descripcion }}
@@ -606,7 +606,7 @@
         {{-- REQUERIMIENTOS DE RIEGO --}}
         <div class="detail-section">
             <div class="section-header">
-                <div class="section-icon">💧</div>
+                <div class="section-icon"><x-icono name="agua" :size="20" /></div>
                 <div class="section-title">
                     <h3>Requerimientos de Riego</h3>
                     <p class="section-description">Necesidades hídricas del cultivo</p>
@@ -616,7 +616,7 @@
             <div class="detail-grid-3">
                 <div class="detail-item">
                     <div class="detail-label">
-                        <span>🔄</span> Frecuencia de Riego
+                        Frecuencia de Riego
                     </div>
                     <div class="detail-value range-display">
                         <span class="detail-value-large">{{ $cultivo->frecuenciaRiegoMin }}</span>
@@ -628,7 +628,7 @@
 
                 <div class="detail-item">
                     <div class="detail-label">
-                        <span>💦</span> Consumo de Agua
+                        Consumo de Agua
                     </div>
                     <div class="detail-value">
                         <span class="detail-value-large">{{ number_format($cultivo->litrosPorM2Dia, 2) }}</span>
@@ -638,7 +638,7 @@
 
                 <div class="detail-item">
                     <div class="detail-label">
-                        <span>⏱️</span> Días Críticos sin Agua
+                        <span><x-icono name="reloj" :size="20" /></span> Días Críticos sin Agua
                     </div>
                     <div class="detail-value">
                         <span class="detail-value-large">{{ $cultivo->diasCriticosSinAgua }}</span>
@@ -650,7 +650,7 @@
             <div class="detail-grid-2" style="margin-top: 20px;">
                 <div class="detail-item">
                     <div class="detail-label">
-                        <span>💧</span> Humedad Óptima
+                        <span><x-icono name="agua" :size="20" /></span> Humedad Óptima
                     </div>
                     <div class="detail-value range-display">
                         <span class="detail-value-large">{{ number_format($cultivo->humedadOptimaMin, 0) }}%</span>
@@ -661,7 +661,7 @@
 
                 <div class="detail-item">
                     <div class="detail-label">
-                        <span>🏜️</span> Sensibilidad a Sequía
+                        Sensibilidad a Sequía
                     </div>
                     <div class="detail-value">
                         @php
@@ -679,7 +679,7 @@
 
             <div class="detail-item" style="margin-top: 20px;">
                 <div class="detail-label">
-                    <span>🌱</span> Etapa de Mayor Consumo de Agua
+                    <span><x-icono name="parcela" :size="20" /></span> Etapa de Mayor Consumo de Agua
                 </div>
                 <div class="detail-value" style="font-size: 15px;">
                     {{ $cultivo->etapaMayorConsumo }}
@@ -690,7 +690,7 @@
             <div class="detail-grid-2" style="margin-top: 20px;">
                 <div class="detail-item">
                     <div class="detail-label">
-                        <span>📆</span> Inicio Etapa Mayor Consumo
+                        Inicio Etapa Mayor Consumo
                     </div>
                     <div class="detail-value">
                         Día <span class="detail-value-large">{{ $cultivo->diasEtapaConsumoMin }}</span>
@@ -699,7 +699,7 @@
 
                 <div class="detail-item">
                     <div class="detail-label">
-                        <span>📆</span> Fin Etapa Mayor Consumo
+                        Fin Etapa Mayor Consumo
                     </div>
                     <div class="detail-value">
                         Día <span class="detail-value-large">{{ $cultivo->diasEtapaConsumoMax }}</span>
@@ -710,7 +710,7 @@
 
             @if($cultivo->reduccionConHidrogel)
             <div class="info-box">
-                <span class="info-box-icon">💡</span>
+                <span class="info-box-icon"><x-icono name="consejo" :size="20" /></span>
                 <span>Con el uso de hidrogel, este cultivo puede reducir su consumo de agua en un <strong>{{ number_format($cultivo->reduccionConHidrogel, 0) }}%</strong>, optimizando significativamente la eficiencia del riego.</span>
             </div>
             @endif
@@ -719,7 +719,7 @@
         {{-- TEMPERATURAS CRÍTICAS --}}
         <div class="detail-section">
             <div class="section-header">
-                <div class="section-icon">🌡️</div>
+                <div class="section-icon"><x-icono name="calor" :size="20" /></div>
                 <div class="section-title">
                     <h3>Condiciones Climáticas Críticas</h3>
                     <p class="section-description">Límites térmicos de tolerancia y sensibilidad</p>
@@ -729,7 +729,7 @@
             <div class="detail-grid-3">
                 <div class="detail-item">
                     <div class="detail-label">
-                        <span>❄️</span> Temperatura Crítica Mínima
+                        <span><x-icono name="helada" :size="20" /></span> Temperatura Crítica Mínima
                     </div>
                     <div class="detail-value">
                         <span class="detail-value-large">{{ number_format($cultivo->tempCriticaMinima, 1) }}°C</span>
@@ -738,7 +738,7 @@
 
                 <div class="detail-item">
                     <div class="detail-label">
-                        <span>🔥</span> Temperatura Crítica Máxima
+                        <span><x-icono name="calor" :size="20" /></span> Temperatura Crítica Máxima
                     </div>
                     <div class="detail-value">
                         <span class="detail-value-large">{{ number_format($cultivo->tempCriticaMaxima, 1) }}°C</span>
@@ -747,7 +747,7 @@
 
                 <div class="detail-item">
                     <div class="detail-label">
-                        <span>🧊</span> Sensibilidad a Heladas
+                        Sensibilidad a Heladas
                     </div>
                     <div class="detail-value">
                         @php
@@ -765,7 +765,7 @@
 
             @if($cultivo->efectoTempMinima)
             <div class="warning-box" style="margin-top: 20px;">
-                <span class="info-box-icon">❄️</span>
+                <span class="info-box-icon"><x-icono name="helada" :size="20" /></span>
                 <div>
                     <strong>Efecto de Temperatura Mínima Crítica:</strong><br>
                     {{ $cultivo->efectoTempMinima }}
@@ -775,7 +775,7 @@
 
             @if($cultivo->efectoTempMaxima)
             <div class="danger-box">
-                <span class="info-box-icon">🔥</span>
+                <span class="info-box-icon"><x-icono name="calor" :size="20" /></span>
                 <div>
                     <strong>Efecto de Temperatura Máxima Crítica:</strong><br>
                     {{ $cultivo->efectoTempMaxima }}
@@ -784,7 +784,7 @@
             @endif
 
             <div class="info-box">
-                <span class="info-box-icon">🌡️</span>
+                <span class="info-box-icon"><x-icono name="calor" :size="20" /></span>
                 <span>El sistema monitoreará automáticamente estas temperaturas y generará alertas cuando se detecten condiciones críticas que puedan afectar el cultivo.</span>
             </div>
         </div>
@@ -793,7 +793,7 @@
         @if($cultivo->observaciones)
         <div class="detail-section">
             <div class="section-header">
-                <div class="section-icon">📝</div>
+                <div class="section-icon"></div>
                 <div class="section-title">
                     <h3>Observaciones Técnicas</h3>
                     <p class="section-description">Notas y recomendaciones adicionales</p>
@@ -810,7 +810,7 @@
         @if($cultivo->parcelas->count() > 0)
         <div class="detail-section">
             <div class="section-header">
-                <div class="section-icon">🌾</div>
+                <div class="section-icon"><x-icono name="parcela" :size="20" /></div>
                 <div class="section-title">
                     <h3>Parcelas con este Cultivo</h3>
                     <p class="section-description">{{ $cultivo->parcelas->count() }} parcela(s) registrada(s)</p>
@@ -820,7 +820,7 @@
             <div class="parcelas-list">
                 @foreach($cultivo->parcelas as $parcela)
                 <a href="{{ route('parcelas.show', $parcela) }}" class="parcela-item" style="text-decoration: none; color: inherit;">
-                    <div class="parcela-icon">🌱</div>
+                    <div class="parcela-icon"><x-icono name="parcela" :size="20" /></div>
                     <div class="parcela-info">
                         <div class="parcela-name">{{ $parcela->nombreParcela }}</div>
                         <div class="parcela-area">{{ number_format($parcela->areaM2, 2) }} m²</div>
@@ -830,13 +830,13 @@
             </div>
 
             <div class="info-box" style="margin-top: 20px;">
-                <span class="info-box-icon">⚠️</span>
+                <span class="info-box-icon"><x-icono name="alerta" :size="20" /></span>
                 <span>Este cultivo está siendo utilizado en {{ $cultivo->parcelas->count() }} parcela(s). No podrás eliminarlo mientras esté asociado a parcelas activas.</span>
             </div>
         @else
         <div class="detail-section">
             <div class="section-header">
-                <div class="section-icon">🌾</div>
+                <div class="section-icon"><x-icono name="parcela" :size="20" /></div>
                 <div class="section-title">
                     <h3>Parcelas con este Cultivo</h3>
                     <p class="section-description">Sin parcelas asociadas</p>
@@ -844,7 +844,7 @@
             </div>
 
             <div class="empty-state">
-                <span style="font-size: 48px; display: block; margin-bottom: 15px;">🌾</span>
+                <span style="font-size: 48px; display: block; margin-bottom: 15px;"><x-icono name="parcela" :size="20" /></span>
                 <p>Este cultivo aún no está siendo utilizado en ninguna parcela.</p>
             </div>
         @endif

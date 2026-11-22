@@ -13,6 +13,7 @@ class Alerta extends Model
     protected $fillable = [
         'user_id',
         'parcela_id',
+        'grupo',
         'tipo',
         'nivel',
         'icono',
@@ -26,7 +27,9 @@ class Alerta extends Model
         'leida',
         'leida_en',
         'archivada',           
-        'archivada_en',        
+        'archivada_en',
+        'archivada_por',
+        'actualizada_en',
         'fecha_expiracion',
         'notificacion_enviada',
         'fecha_notificacion',
@@ -40,6 +43,7 @@ class Alerta extends Model
         'fecha_expiracion' => 'datetime',
         'notificacion_enviada' => 'boolean',
         'fecha_notificacion' => 'datetime',
+        'actualizada_en' => 'datetime',
         'datos_adicionales' => 'array',
         'puntaje_urgencia' => 'integer',
     ];
@@ -57,11 +61,72 @@ class Alerta extends Model
     public const TIPO_FIN_CICLO = 'fin_ciclo_proximo';
     public const TIPO_CICLO_COMPLETADO = 'ciclo_completado';
 
+    // Grupos: solo puede haber UNA alerta activa por parcela y grupo.
+    public const GRUPO_RIEGO = 'riego';
+    public const GRUPO_HELADA = 'helada';
+    public const GRUPO_CALOR = 'calor';
+    public const GRUPO_LLUVIA = 'lluvia';
+    public const GRUPO_CICLO = 'ciclo';
+    public const GRUPO_HIDROGEL = 'hidrogel';
+
+    public const GRUPO_POR_TIPO = [
+        self::TIPO_RIEGO_URGENTE => self::GRUPO_RIEGO,
+        self::TIPO_RIEGO_HOY => self::GRUPO_RIEGO,
+        self::TIPO_RIEGO_PROXIMO => self::GRUPO_RIEGO,
+        self::TIPO_HELADA => self::GRUPO_HELADA,
+        self::TIPO_CALOR_EXTREMO => self::GRUPO_CALOR,
+        self::TIPO_LLUVIA_PROXIMA => self::GRUPO_LLUVIA,
+        self::TIPO_RENOVAR_HIDROGEL => self::GRUPO_HIDROGEL,
+        self::TIPO_FIN_CICLO => self::GRUPO_CICLO,
+        self::TIPO_CICLO_COMPLETADO => self::GRUPO_CICLO,
+    ];
+
+    // Quien archivo la alerta
+    public const POR_USUARIO = 'usuario';
+    public const POR_SISTEMA = 'sistema';
+    public const POR_RIEGO = 'riego';
+
     // Niveles de alerta
     public const NIVEL_INFO = 'info';
     public const NIVEL_MEDIO = 'medio';
     public const NIVEL_ALTO = 'alto';
     public const NIVEL_CRITICO = 'critico';
+
+    // ============================================
+    // ESCALA UNICA DE INTENSIDAD
+    // ============================================
+    // Todas las alertas (riego, clima, ciclo) usan el mismo puntaje 0-100 y
+    // esta misma tabla, asi nivel, prioridad y color siempre coinciden.
+
+    public static function nivelPorPuntaje(int $puntaje): string
+    {
+        return match (true) {
+            $puntaje >= 85 => self::NIVEL_CRITICO,
+            $puntaje >= 65 => self::NIVEL_ALTO,
+            $puntaje >= 40 => self::NIVEL_MEDIO,
+            default => self::NIVEL_INFO,
+        };
+    }
+
+    public static function prioridadPorNivel(string $nivel): string
+    {
+        return match ($nivel) {
+            self::NIVEL_CRITICO => 'critica',
+            self::NIVEL_ALTO => 'alta',
+            self::NIVEL_MEDIO => 'media',
+            default => 'baja',
+        };
+    }
+
+    public static function rangoNivel(string $nivel): int
+    {
+        return match ($nivel) {
+            self::NIVEL_CRITICO => 4,
+            self::NIVEL_ALTO => 3,
+            self::NIVEL_MEDIO => 2,
+            default => 1,
+        };
+    }
 
     // ============================================
     // RELACIONES
@@ -164,7 +229,7 @@ class Alerta extends Model
     {
         return $query->where('notificacion_enviada', false)
             ->where('leida', false)
-            ->where('archivada', false)  // ✅ Agregado
+            ->where('archivada', false)
             ->whereIn('nivel', [self::NIVEL_CRITICO, self::NIVEL_ALTO]);
     }
 
@@ -183,6 +248,19 @@ class Alerta extends Model
             self::NIVEL_MEDIO => 'info',
             self::NIVEL_INFO => 'primary',
             default => 'secondary',
+        };
+    }
+
+    /**
+     * Etiqueta legible del nivel
+     */
+    public function getEtiquetaNivelAttribute(): string
+    {
+        return match ($this->nivel) {
+            self::NIVEL_CRITICO => 'Critica',
+            self::NIVEL_ALTO => 'Alta',
+            self::NIVEL_MEDIO => 'Media',
+            default => 'Informativa',
         };
     }
 
@@ -253,13 +331,14 @@ class Alerta extends Model
     /**
      *  Archivar alerta
      */
-    public function archivar(): void
+    public function archivar(string $por = self::POR_USUARIO): void
     {
         $this->update([
             'leida' => true,
             'leida_en' => $this->leida_en ?? now(),
             'archivada' => true,
             'archivada_en' => now(),
+            'archivada_por' => $por,
         ]);
     }
 

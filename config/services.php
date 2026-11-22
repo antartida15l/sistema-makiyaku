@@ -35,8 +35,9 @@ return [
         ],
     ],
 
-    'openweather' => [
-        'key' => env('OPENWEATHER_API_KEY'),
+    // Open-Meteo no necesita API key (uso no comercial). Ver app/Services/OpenMeteoService.php
+    'open_meteo' => [
+        'cache_minutos' => 15,
     ],
 
 ];

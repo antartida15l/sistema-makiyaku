@@ -494,13 +494,13 @@
     <!-- Header -->
     <div class="clima-header">
         <h1 class="page-title">
-            <span>🌤️</span>
+            <span><x-icono name="calor" :size="20" /></span>
             <span>Clima en Tiempo Real</span>
         </h1>
         
         @if(isset($datos))
         <button id="btnRefresh" class="btn-refresh">
-            <span>🔄</span>
+            
             <span>Actualizar</span>
         </button>
         @endif
@@ -509,7 +509,7 @@
     <!-- Búsqueda -->
     <div class="search-card">
         <div class="search-wrapper">
-            <span class="search-icon">🔍</span>
+            <span class="search-icon"></span>
             <input 
                 type="text" 
                 id="searchInput"
@@ -524,7 +524,7 @@
 
     @if(isset($error))
         <div class="alert alert-danger">
-            <strong>⚠️ Error:</strong> {{ $error }}
+            <strong>Error:</strong> {{ $error }}
         </div>
     @else
         <!-- Alertas inteligentes -->
@@ -546,7 +546,7 @@
         <div class="clima-actual">
             <div class="clima-main-header">
                 <div>
-                    <h2>📍 {{ $datos['name'] }}, {{ $datos['country'] }}</h2>
+                    <h2>{{ $datos['name'] }}, {{ $datos['country'] }}</h2>
                     <p>{{ $datos['weather_description'] }}</p>
                 </div>
                 <img src="{{ $datos['icon_url'] }}" alt="Clima" class="weather-icon-large">
@@ -554,25 +554,25 @@
 
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-label">🌡️ TEMPERATURA</div>
+                    <div class="stat-label">TEMPERATURA</div>
                     <div class="stat-value">{{ $datos['temp'] }}°C</div>
                     <div class="stat-extra">Sensación: {{ $datos['feels_like'] }}°C</div>
                 </div>
 
                 <div class="stat-card humedad">
-                    <div class="stat-label">💧 HUMEDAD</div>
+                    <div class="stat-label">HUMEDAD</div>
                     <div class="stat-value">{{ $datos['humidity'] }}%</div>
                     <div class="stat-extra">Presión: {{ $datos['pressure'] }} hPa</div>
                 </div>
 
                 <div class="stat-card viento">
-                    <div class="stat-label">🌬️ VIENTO</div>
+                    <div class="stat-label">VIENTO</div>
                     <div class="stat-value">{{ $datos['wind_speed'] }} m/s</div>
                     <div class="stat-extra">Dirección: {{ $datos['wind_direction'] }}</div>
                 </div>
 
                 <div class="stat-card lluvia">
-                    <div class="stat-label">🌧️ PRECIPITACIÓN</div>
+                    <div class="stat-label">PRECIPITACIÓN</div>
                     <div class="stat-value">{{ $datos['rain_3h'] }} mm</div>
                     <div class="stat-extra">Últimas 3 horas</div>
                 </div>
@@ -583,7 +583,7 @@
         @if(!empty($pronostico_horario))
         <div class="forecast-section">
             <h3 class="forecast-title">
-                <span>⏰</span>
+                <span><x-icono name="reloj" :size="20" /></span>
                 <span>Pronóstico por hora (próximas 24h)</span>
             </h3>
             <div class="hourly-forecast">
@@ -593,7 +593,7 @@
                     <img src="{{ $hora['icon_url'] }}" alt="Clima" class="hourly-icon">
                     <div class="hourly-temp">{{ $hora['temp'] }}°</div>
                     @if($hora['pop'] > 0)
-                    <div class="hourly-pop">💧 {{ $hora['pop'] }}%</div>
+                    <div class="hourly-pop">{{ $hora['pop'] }}%</div>
                     @endif
                 </div>
                 @endforeach
@@ -605,7 +605,7 @@
         @if(!empty($pronostico_diario))
         <div class="forecast-section">
             <h3 class="forecast-title">
-                <span>📅</span>
+                <span><x-icono name="ciclo" :size="20" /></span>
                 <span>Pronóstico 5 días</span>
             </h3>
             <div class="daily-forecast">
@@ -622,7 +622,7 @@
                         <span class="temp-min">{{ $dia['temp_min'] }}°</span>
                     </div>
                     <div class="daily-pop">
-                        <span>💧</span>
+                        <span><x-icono name="agua" :size="20" /></span>
                         <span>{{ $dia['pop'] }}%</span>
                     </div>
                 </div>
@@ -636,7 +636,7 @@
         <div class="charts-grid">
             <div class="chart-card">
                 <h3 class="chart-title">
-                    <span>🌡️</span>
+                    <span><x-icono name="calor" :size="20" /></span>
                     <span>Temperatura (48h)</span>
                 </h3>
                 <div class="chart-container">
@@ -646,7 +646,7 @@
 
             <div class="chart-card">
                 <h3 class="chart-title">
-                    <span>🌧️</span>
+                    <span><x-icono name="lluvia" :size="20" /></span>
                     <span>Probabilidad de Lluvia</span>
                 </h3>
                 <div class="chart-container">
@@ -659,7 +659,7 @@
 
     <!-- Ciudades principales -->
     <div class="quick-cities">
-        <h3>🏙️ Ciudades Principales de Perú</h3>
+        <h3>Ciudades Principales de Perú</h3>
         <div class="cities-grid">
             @foreach($ciudades_principales as $city)
                 <a href="{{ route('clima.index', ['lat' => $city['lat'], 'lon' => $city['lon']]) }}" 
@@ -707,7 +707,7 @@ searchInput?.addEventListener('input', function() {
                 
                 autocompleteResults.innerHTML = data.map(city => `
                     <div class="autocomplete-item" data-lat="${city.lat}" data-lon="${city.lon}">
-                        <span>📍</span>
+                        
                         <div>
                             <div style="font-weight:700;color:#212529">${city.display_name}</div>
                         </div>

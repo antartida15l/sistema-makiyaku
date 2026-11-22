@@ -46,7 +46,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         /*
         |----------------------------------------------------------------------
-        | 🤖 RECOMENDACIONES INTELIGENTES POR PARCELA
+        | RECOMENDACIONES INTELIGENTES POR PARCELA
         |----------------------------------------------------------------------
         */
         Route::prefix('parcelas/{parcela}/recomendaciones')
@@ -74,7 +74,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | 🌱 PARCELAS – CRUD + FUNCIONALIDADES
+    | PARCELAS – CRUD + FUNCIONALIDADES
     |--------------------------------------------------------------------------
     */
     Route::prefix('parcelas')->name('parcelas.')->group(function () {
@@ -105,14 +105,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | 🌾 CULTIVOS – CRUD COMPLETO
+    | CULTIVOS – CRUD COMPLETO
     |--------------------------------------------------------------------------
     */
     Route::resource('cultivos', CultivoController::class);
 
     /*
     |--------------------------------------------------------------------------
-    | 🌤️ CLIMA – CONSULTAS Y AJAX
+    | CLIMA – CONSULTAS Y AJAX
     |--------------------------------------------------------------------------
     */
     Route::prefix('clima')->name('clima.')->group(function () {
@@ -137,7 +137,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | 🗺️ API AUXILIAR – GEOCODIFICACIÓN
+    | API AUXILIAR – GEOCODIFICACIÓN
     |--------------------------------------------------------------------------
     */
     Route::post('/api/geocodificar', [ParcelaController::class, 'geocodificarAjax'])
@@ -145,7 +145,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | 🔔 ALERTAS – SISTEMA COMPLETO
+    | ALERTAS – SISTEMA COMPLETO
     |--------------------------------------------------------------------------
     */
     Route::prefix('alertas')->name('alertas.')->group(function () {
@@ -173,7 +173,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | 👤 PERFIL DE USUARIO
+    | PERFIL DE USUARIO
     |--------------------------------------------------------------------------
     */
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

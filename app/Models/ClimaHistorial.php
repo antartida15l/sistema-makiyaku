@@ -43,6 +43,17 @@ class ClimaHistorial extends Model
         'alerta_calor_extremo',
         'alerta_lluvia_proxima',
         'necesita_riego_urgente',
+        'et0_mm',
+        'lluvia_72h_mm',
+        'temp_min_prevista',
+        'temp_min_suelo',
+        'temp_max_prevista',
+        'hora_temp_min',
+        'lluvia_inicio',
+        'lluvia_fin',
+        'elevacion',
+        'fuente',
+        'desactualizado',
         'fecha_registro',
         'tipo_actualizacion',
         'notas',
@@ -71,6 +82,15 @@ class ClimaHistorial extends Model
         'alerta_lluvia_proxima' => 'boolean',
         'necesita_riego_urgente' => 'boolean',
         'fecha_registro' => 'datetime',
+        'et0_mm' => 'decimal:2',
+        'lluvia_72h_mm' => 'decimal:1',
+        'temp_min_prevista' => 'decimal:1',
+        'temp_min_suelo' => 'decimal:1',
+        'temp_max_prevista' => 'decimal:1',
+        'hora_temp_min' => 'datetime',
+        'lluvia_inicio' => 'datetime',
+        'lluvia_fin' => 'datetime',
+        'desactualizado' => 'boolean',
     ];
 
     // ============================================
@@ -120,7 +140,7 @@ class ClimaHistorial extends Model
         if ($this->alerta_helada) {
             $alertas[] = [
                 'tipo' => 'helada',
-                'mensaje' => '❄️ Riesgo de helada',
+                'mensaje' => 'Riesgo de helada',
                 'severidad' => 'alta',
             ];
         }
@@ -128,7 +148,7 @@ class ClimaHistorial extends Model
         if ($this->alerta_calor_extremo) {
             $alertas[] = [
                 'tipo' => 'calor',
-                'mensaje' => '🔥 Calor extremo',
+                'mensaje' => 'Calor extremo',
                 'severidad' => 'alta',
             ];
         }
@@ -136,7 +156,7 @@ class ClimaHistorial extends Model
         if ($this->alerta_lluvia_proxima) {
             $alertas[] = [
                 'tipo' => 'lluvia',
-                'mensaje' => '🌧️ Alta probabilidad de lluvia',
+                'mensaje' => 'Alta probabilidad de lluvia',
                 'severidad' => 'media',
             ];
         }
@@ -144,7 +164,7 @@ class ClimaHistorial extends Model
         if ($this->necesita_riego_urgente) {
             $alertas[] = [
                 'tipo' => 'riego',
-                'mensaje' => '💧 Riego urgente recomendado',
+                'mensaje' => 'Riego urgente recomendado',
                 'severidad' => 'alta',
             ];
         }
@@ -153,31 +173,22 @@ class ClimaHistorial extends Model
     }
 
     /**
-     * Obtiene emoji según la condición climática principal
+     * Se mantiene por compatibilidad; el sistema ya no usa emojis
      */
     public function getEmojiClimaAttribute(): string
     {
-        return match($this->condicion_principal) {
-            'Clear' => '☀️',
-            'Clouds' => '☁️',
-            'Rain' => '🌧️',
-            'Drizzle' => '🌦️',
-            'Thunderstorm' => '⛈️',
-            'Snow' => '❄️',
-            'Mist', 'Fog' => '🌫️',
-            default => '🌤️',
-        };
+        return '';
     }
 
     /**
-     * Obtiene la URL del icono de OpenWeather
+     * URL del icono local (public/img/clima)
      */
     public function getIconoUrlAttribute(): string
     {
         if (!$this->icono_codigo) {
             return '';
         }
-        return "https://openweathermap.org/img/wn/{$this->icono_codigo}@2x.png";
+        return asset("img/clima/{$this->icono_codigo}.svg");
     }
 
     /**
@@ -482,7 +493,7 @@ class ClimaHistorial extends Model
     public function generarResumen(): string
     {
         $partes = [
-            "{$this->emoji_clima} {$this->descripcion}",
+            "{$this->descripcion}",
             "{$this->temperatura}°C",
         ];
 
@@ -500,6 +511,6 @@ class ClimaHistorial extends Model
             $partes[] = "Lluvia: {$this->lluvia_1h}mm";
         }
 
-        return implode(' • ', $partes);
+        return implode(' - ', $partes);
     }
 }

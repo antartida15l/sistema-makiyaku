@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Dashboard') - MAKIYAKU</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2328a745'/%3E%3Cpath d='M20 44c2-14 10-22 26-24-1 16-9 24-24 26' fill='%23fff'/%3E%3C/svg%3E">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <style>
@@ -230,6 +230,8 @@
             50% { opacity: 0.5; }
         }
 
+        .nav-icon svg, .alert-icon svg { display: block; }
+        .sonido-apagado { opacity: .45; }
         .nav-icon {
             width: 26px;
             height: 26px;
@@ -858,23 +860,23 @@
                 <div class="nav-section">
                     <div class="nav-section-title">Principal</div>
                     <a href="{{ route('dashboard') }}" class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                        <span class="nav-icon">📊</span>
+                        <span class="nav-icon"><x-icono name="ciclo" :size="20" /></span>
                         <span>Dashboard</span>
                     </a>
                     <a href="{{ route('parcelas.index') }}" class="nav-item {{ request()->routeIs('parcelas.*') ? 'active' : '' }}">
-                        <span class="nav-icon">🌾</span>
+                        <span class="nav-icon"><x-icono name="parcela" :size="20" /></span>
                         <span>Mis Parcelas</span>
                     </a>
                     <a href="{{ route('cultivos.index') }}" class="nav-item {{ request()->routeIs('cultivos.*') ? 'active' : '' }}">
-                        <span class="nav-icon">🌿</span>
+                        <span class="nav-icon"><x-icono name="parcela" :size="20" /></span>
                         <span>Cultivos</span>
                     </a>
                     <a href="{{ route('clima.index') }}" class="nav-item {{ request()->routeIs('clima.*') ? 'active' : '' }}">
-                        <span class="nav-icon">☁️</span>
+                        <span class="nav-icon"><x-icono name="lluvia" :size="20" /></span>
                         <span>Clima</span>
                     </a>
                     <a href="{{ route('alertas.index') }}" class="nav-item {{ request()->routeIs('alertas.*') ? 'active' : '' }}">
-                        <span class="nav-icon">🔔</span>
+                        <span class="nav-icon"><x-icono name="alerta" :size="20" /></span>
                         <span>Alertas</span>
                         @php
                             $alertasNoLeidas = 0;
@@ -908,7 +910,7 @@
                 <div class="nav-section">
                     <div class="nav-section-title">Configuración</div>
                     <a href="#" class="nav-item" onclick="event.preventDefault(); toggleSonidoAlertas();">
-                        <span class="nav-icon" id="iconoSonido">🔔</span>
+                        <span class="nav-icon" id="iconoSonido"><x-icono name="alerta" :size="20" /></span>
                         <span id="textoSonido">Sonido de Alertas</span>
                     </a>
                 </div>
@@ -916,7 +918,7 @@
 
             <div class="sidebar-footer">
                 <div class="user-info">
-                    <div class="user-avatar">👤</div>
+                    <div class="user-avatar">{{ strtoupper(mb_substr(Auth::user()->name ?? 'U', 0, 1)) }}</div>
                     <div class="user-details">
                         <div class="user-name">{{ Auth::user()->name ?? 'Usuario' }}</div>
                         <div class="user-email">{{ Auth::user()->email ?? 'email@ejemplo.com' }}</div>
@@ -929,7 +931,7 @@
                 <form method="POST" action="{{ route('logout') }}" id="logoutForm">
                     @csrf
                     <button type="submit" class="btn-logout">
-                        <span>🚪</span>
+                        
                         <span>Cerrar Sesión</span>
                     </button>
                 </form>
@@ -957,7 +959,7 @@
                 {{-- Flash Messages --}}
                 @if(session('success'))
                     <div class="alert alert-success" role="alert">
-                        <span class="alert-icon">✅</span>
+                        <span class="alert-icon"><x-icono name="ok" :size="20" /></span>
                         <div class="alert-content">{{ session('success') }}</div>
                         <button class="alert-close" onclick="this.parentElement.remove()">×</button>
                     </div>
@@ -965,7 +967,7 @@
 
                 @if(session('error'))
                     <div class="alert alert-danger" role="alert">
-                        <span class="alert-icon">❌</span>
+                        
                         <div class="alert-content">{{ session('error') }}</div>
                         <button class="alert-close" onclick="this.parentElement.remove()">×</button>
                     </div>
@@ -973,7 +975,7 @@
 
                 @if(session('warning'))
                     <div class="alert alert-warning" role="alert">
-                        <span class="alert-icon">⚠️</span>
+                        <span class="alert-icon"><x-icono name="alerta" :size="20" /></span>
                         <div class="alert-content">{{ session('warning') }}</div>
                         <button class="alert-close" onclick="this.parentElement.remove()">×</button>
                     </div>
@@ -981,7 +983,7 @@
 
                 @if(session('info'))
                     <div class="alert alert-info" role="alert">
-                        <span class="alert-icon">ℹ️</span>
+                        <span class="alert-icon"><x-icono name="info" :size="20" /></span>
                         <div class="alert-content">{{ session('info') }}</div>
                         <button class="alert-close" onclick="this.parentElement.remove()">×</button>
                     </div>
@@ -989,7 +991,7 @@
 
                 @if($errors->any())
                     <div class="alert alert-danger" role="alert">
-                        <span class="alert-icon">❌</span>
+                        
                         <div class="alert-content">
                             <strong>Por favor corrige los siguientes errores:</strong>
                             <ul style="margin: 8px 0 0 20px; padding: 0;">
@@ -1085,7 +1087,7 @@
         document.addEventListener('click', function initAudio() {
             if (!audioContext) {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                console.log('✅ Audio Context inicializado');
+                console.log('Audio Context inicializado');
             }
             document.removeEventListener('click', initAudio);
         }, { once: true });
@@ -1121,7 +1123,7 @@
         // ═══════════════════════════════════════════════════════════
         function reproducirSonidoAlerta(tipo = 'info', esRecordatorio = false) {
             if (!sonidosHabilitados || !audioContext) {
-                console.log('🔇 Sonidos deshabilitados o AudioContext no disponible');
+                console.log('Sonidos deshabilitados o AudioContext no disponible');
                 return;
             }
 
@@ -1175,7 +1177,7 @@
                 tiempoActual += config.duracion + 0.1;
             }
 
-            console.log(`🔊 Sonido ${esRecordatorio ? 'RECORDATORIO' : 'INICIAL'} - Nivel: ${tipo}`);
+            console.log(`Sonido ${esRecordatorio ? 'RECORDATORIO' : 'INICIAL'} - Nivel: ${tipo}`);
         }
 
         // ═══════════════════════════════════════════════════════════
@@ -1217,7 +1219,7 @@
                         tracking.vecesRepetido++;
                         tracking.ultimaVez = ahora;
                         
-                        console.log(`⏰ Recordatorio ${tracking.vecesRepetido} para alerta #${alerta.id} (${alerta.titulo})`);
+                        console.log(`Recordatorio ${tracking.vecesRepetido} para alerta #${alerta.id} (${alerta.titulo})`);
                         break;
                     }
                 }
@@ -1227,7 +1229,7 @@
             Object.keys(tiemposRecordatorio).forEach(alertaId => {
                 const existe = alertasActuales.some(a => a.id == alertaId);
                 if (!existe) {
-                    console.log(`✅ Alerta #${alertaId} resuelta - eliminando recordatorios`);
+                    console.log(`Alerta #${alertaId} resuelta - eliminando recordatorios`);
                     delete tiemposRecordatorio[alertaId];
                 }
             });
@@ -1260,7 +1262,7 @@
                         actualizarBadgeAlertas(data.alertas.length);
                     }
                 } catch (error) {
-                    console.error('❌ Error al verificar alertas:', error);
+                    console.error('Error al verificar alertas:', error);
                 }
             }, 30000); // 30 segundos
         }
@@ -1287,14 +1289,14 @@
             
             toast.innerHTML = `
                 <div class="toast-header">
-                    <span class="toast-icon">${alerta.icono || '🔔'}</span>
+                    <span class="toast-icon">${alerta.icono || ''}</span>
                     <strong>${alerta.titulo}</strong>
                     ${etiquetaRecordatorio}
                     <button class="toast-close" onclick="this.parentElement.parentElement.remove()">×</button>
                 </div>
                 <div class="toast-body">
                     <div class="toast-mensaje">${alerta.mensaje ? alerta.mensaje.substring(0, 100) : 'Nueva alerta'}...</div>
-                    <div class="toast-parcela">🌾 ${alerta.parcela || 'Sistema'}</div>
+                    <div class="toast-parcela">${alerta.parcela || 'Sistema'}</div>
                     <a href="${alerta.url || '/alertas'}" class="toast-link">Ver detalles →</a>
                 </div>
             `;
@@ -1330,13 +1332,13 @@
             sonidosHabilitados = !sonidosHabilitados;
             localStorage.setItem('alertas_sonido', sonidosHabilitados);
             
-            const icono = sonidosHabilitados ? '🔔' : '🔕';
-            const mensaje = sonidosHabilitados ? 'Sonidos activados ✅' : 'Sonidos desactivados 🔇';
+            const icono = sonidosHabilitados ? '' : '';
+            const mensaje = sonidosHabilitados ? 'Sonidos activados ' : 'Sonidos desactivados ';
             
             // Actualizar icono en el menú
             const iconoSonido = document.getElementById('iconoSonido');
             const textoSonido = document.getElementById('textoSonido');
-            if (iconoSonido) iconoSonido.textContent = icono;
+            if (iconoSonido) iconoSonido.classList.toggle('sonido-apagado', !sonidosHabilitados);
             if (textoSonido) textoSonido.textContent = sonidosHabilitados ? 'Sonido Activado' : 'Sonido Desactivado';
             
             mostrarMensajeTemporal(mensaje, icono);
@@ -1378,7 +1380,7 @@
             mostrarNotificacionToast({
                 id: Date.now(),
                 nivel: nivel,
-                icono: nivel === 'critico' ? '🚨' : nivel === 'alto' ? '⚠️' : 'ℹ️',
+                icono: nivel === 'critico' ? '' : nivel === 'alto' ? '' : '',
                 titulo: `Prueba de sonido: ${nivel}`,
                 mensaje: 'Esta es una notificación de prueba del sistema',
                 parcela: 'Sistema de Prueba',
@@ -1393,7 +1395,7 @@
             // Actualizar icono según estado guardado
             const iconoSonido = document.getElementById('iconoSonido');
             const textoSonido = document.getElementById('textoSonido');
-            if (iconoSonido) iconoSonido.textContent = sonidosHabilitados ? '🔔' : '🔕';
+            if (iconoSonido) iconoSonido.classList.toggle('sonido-apagado', !sonidosHabilitados);
             if (textoSonido) textoSonido.textContent = sonidosHabilitados ? 'Sonido Activado' : 'Sonido Desactivado';
 
             // Iniciar monitoreo
@@ -1412,17 +1414,17 @@
                     ultimasAlertas = data.alertas;
                     procesarRecordatorios(data.alertas);
                     actualizarBadgeAlertas(data.alertas.length);
-                    console.log(`📊 ${data.alertas.length} alertas activas cargadas`);
+                    console.log(`${data.alertas.length} alertas activas cargadas`);
                 }
             })
-            .catch(err => console.error('❌ Error cargando alertas:', err));
+            .catch(err => console.error('Error cargando alertas:', err));
 
-            console.log('✅ Sistema de alertas CON RECORDATORIOS inicializado');
-            console.log('🔊 Configuración de recordatorios:');
+            console.log('Sistema de alertas CON RECORDATORIOS inicializado');
+            console.log('Configuración de recordatorios:');
             console.log('   - Crítico: Inmediato, 10min, 30min (máx 3)');
             console.log('   - Alto: Inmediato, 30min (máx 2)');
             console.log('   - Medio/Info: Solo 1 vez');
-            console.log(`🔊 Estado actual: ${sonidosHabilitados ? 'ACTIVADO' : 'DESACTIVADO'}`);
+            console.log(`Estado actual: ${sonidosHabilitados ? 'ACTIVADO' : 'DESACTIVADO'}`);
         });
 
         // Limpiar interval al salir

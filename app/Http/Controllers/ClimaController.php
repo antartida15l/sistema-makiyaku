@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\OpenWeatherService;
+use App\Services\OpenMeteoService;
 use App\Services\GeocodingService;
 use Illuminate\Http\Request;
 
@@ -12,7 +12,7 @@ class ClimaController extends Controller
     protected $geocodingService;
 
     public function __construct(
-        OpenWeatherService $weatherService,
+        OpenMeteoService $weatherService,
         GeocodingService $geocodingService
     ) {
         $this->weatherService = $weatherService;
@@ -156,21 +156,21 @@ class ClimaController extends Controller
     }
 
     /**
-     * Generar alertas inteligentes
+     * Avisos del clima pensados para quien trabaja el campo.
      */
     protected function generarAlertas(array $climaActual, ?array $pronostico): array
     {
         $alertas = [];
 
-        // Alerta de lluvia próxima
+        // Lluvia en las proximas 12 horas
         if ($pronostico && !empty($pronostico['list'])) {
             $lluviaProxima = null;
             $minutos = 0;
-            
+
             foreach (array_slice($pronostico['list'], 0, 4) as $i => $item) {
-                $minutos = ($i + 1) * 180; // cada registro = 3 horas = 180 min
-                
-                if ($item['pop'] > 50 || $item['rain_3h'] > 0) {
+                $minutos = ($i + 1) * 180;
+
+                if ($item['pop'] > 50 || $item['rain_3h'] >= 1) {
                     $lluviaProxima = $item;
                     break;
                 }
@@ -180,65 +180,79 @@ class ClimaController extends Controller
                 $horas = floor($minutos / 60);
                 $alertas[] = [
                     'tipo' => 'lluvia',
-                    'icono' => '🌧️',
+                    'icono' => '',
                     'clase' => 'info',
-                    'titulo' => 'Lluvia próxima',
+                    'titulo' => 'Lluvia proxima',
                     'mensaje' => sprintf(
-                        'Se espera lluvia en aproximadamente %s con %d%% de probabilidad',
-                        $horas > 0 ? "{$horas}h" : "{$minutos}min",
+                        'Se espera lluvia en unas %d horas (probabilidad %d%%). Si ibas a regar, conviene esperar.',
+                        $horas,
                         $lluviaProxima['pop']
                     ),
                 ];
             } else {
-                // Mensaje positivo si no hay lluvia
                 $alertas[] = [
                     'tipo' => 'sin-lluvia',
-                    'icono' => '☀️',
+                    'icono' => '',
                     'clase' => 'success',
-                    'titulo' => 'Sin lluvia próxima',
-                    'mensaje' => 'No se espera precipitación en las próximas 12 horas',
+                    'titulo' => 'Sin lluvia proxima',
+                    'mensaje' => 'No se espera lluvia en las proximas 12 horas.',
                 ];
             }
         }
 
-        // Alerta de temperatura extrema
-        if ($climaActual['temp'] < 5) {
+        // Frio (helada) segun la minima prevista de las proximas 24 horas
+        $minima = $pronostico
+            ? collect(array_slice($pronostico['list'] ?? [], 0, 8))->min('temp_min')
+            : null;
+        $minima = $minima ?? $climaActual['temp'];
+
+        if ($minima <= 3) {
             $alertas[] = [
                 'tipo' => 'frio',
-                'icono' => '🥶',
-                'clase' => 'warning',
-                'titulo' => 'Temperatura baja',
-                'mensaje' => sprintf('Temperatura actual de %s°C. Abrígate bien.', $climaActual['temp']),
-            ];
-        } elseif ($climaActual['temp'] > 30) {
-            $alertas[] = [
-                'tipo' => 'calor',
-                'icono' => '🔥',
-                'clase' => 'warning',
-                'titulo' => 'Temperatura alta',
-                'mensaje' => sprintf('Temperatura actual de %s°C. Mantente hidratado.', $climaActual['temp']),
+                'icono' => '',
+                'clase' => $minima <= 0 ? 'danger' : 'warning',
+                'titulo' => $minima <= 0 ? 'Riesgo de helada' : 'Noche muy fria',
+                'mensaje' => sprintf('Se espera una minima de %s C. Cubre los cultivos sensibles antes del anochecer.', $minima),
             ];
         }
 
-        // Alerta de viento fuerte
+        if ($climaActual['temp'] > 30) {
+            $alertas[] = [
+                'tipo' => 'calor',
+                'icono' => '',
+                'clase' => 'warning',
+                'titulo' => 'Temperatura alta',
+                'mensaje' => sprintf('Temperatura actual de %s C. Riega temprano o al atardecer para no perder agua.', $climaActual['temp']),
+            ];
+        }
+
         if ($climaActual['wind_speed'] > 10) {
             $alertas[] = [
                 'tipo' => 'viento',
-                'icono' => '💨',
+                'icono' => '',
                 'clase' => 'warning',
                 'titulo' => 'Viento fuerte',
-                'mensaje' => sprintf('Velocidad del viento: %s m/s. Ten precaución.', $climaActual['wind_speed']),
+                'mensaje' => sprintf('Viento de %s m/s. Evita fumigar o regar por aspersion; el agua y el producto se pierden.', $climaActual['wind_speed']),
             ];
         }
 
-        // Alerta de humedad alta
         if ($climaActual['humidity'] > 85) {
             $alertas[] = [
                 'tipo' => 'humedad',
-                'icono' => '💧',
+                'icono' => '',
                 'clase' => 'info',
                 'titulo' => 'Humedad alta',
-                'mensaje' => sprintf('Humedad relativa del %d%%. Ambiente muy húmedo.', $climaActual['humidity']),
+                'mensaje' => sprintf('Humedad relativa de %d%%. Vigila hongos y enfermedades en las hojas.', $climaActual['humidity']),
+            ];
+        }
+
+        if (!empty($climaActual['desactualizado'])) {
+            $alertas[] = [
+                'tipo' => 'sin-conexion',
+                'icono' => '',
+                'clase' => 'warning',
+                'titulo' => 'Datos guardados',
+                'mensaje' => 'No hay conexion a internet. Se muestran los ultimos datos disponibles, pueden estar atrasados.',
             ];
         }
 

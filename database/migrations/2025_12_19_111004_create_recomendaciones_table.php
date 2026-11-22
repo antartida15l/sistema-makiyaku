@@ -121,7 +121,7 @@ return new class extends Migration
             $table->index('categoria');
             $table->index('prioridad');
             $table->index(['activa', 'vigente_hasta'], 'idx_vigencia');
-            $table->index(['aplicada', 'descartada'], 'idx_estado');
+            $table->index(['aplicada', 'descartada'], 'idx_recomendacion_estado');
             $table->index('puntaje_relevancia');
         });
     }

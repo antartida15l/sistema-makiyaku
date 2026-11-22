@@ -369,7 +369,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding: 15px; background: #f8f9fa; border-radius: 12px; border-left: 4px solid #28a745;">
                 <div>
                     <span style="font-size: 14px; color: #6c757d;">
-                        ⏰ Última actualización: 
+                        Última actualización: 
                         <strong>{{ session('ultima_actualizacion_alertas') ? session('ultima_actualizacion_alertas')->diffForHumans() : 'Nunca' }}</strong>
                     </span>
                 </div>
@@ -377,12 +377,12 @@
                 <form action="{{ route('alertas.refrescar') }}" method="POST" style="margin: 0;">
                     @csrf
                     <button type="submit" style="background: linear-gradient(135deg, #28a745, #20c997); color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.3s;">
-                        <span style="font-size: 18px;">🔄</span>
+                        <span style="font-size: 18px;"></span>
                         Refrescar Alertas
                     </button>
                 </form>
             </div>
-            <div class="page-icon">🔔</div>
+            <div class="page-icon"><x-icono name="alerta" :size="20" /></div>
             <div class="page-title-group">
                 <h1>Mis Alertas</h1>
                 <p class="page-subtitle">
@@ -395,7 +395,7 @@
     {{-- MENSAJES DE ÉXITO --}}
     @if(session('success'))
         <div class="alert alert-success">
-            <span style="font-size: 24px;">✅</span>
+            <span style="font-size: 24px;"><x-icono name="ok" :size="20" /></span>
             <strong>{{ session('success') }}</strong>
         </div>
     @endif
@@ -427,7 +427,7 @@
     @if($alertasPorNivel['criticas']->count() > 0)
         <div class="alertas-seccion">
             <div class="seccion-header criticas">
-                <div class="seccion-icon">🚨</div>
+                <div class="seccion-icon"><x-icono name="alerta" :size="20" /></div>
                 <div class="seccion-titulo">
                     <h3>Alertas Críticas</h3>
                 </div>
@@ -446,7 +446,7 @@
     @if($alertasPorNivel['altas']->count() > 0)
         <div class="alertas-seccion">
             <div class="seccion-header altas">
-                <div class="seccion-icon">⚠️</div>
+                <div class="seccion-icon"><x-icono name="alerta" :size="20" /></div>
                 <div class="seccion-titulo">
                     <h3>Alertas Altas</h3>
                 </div>
@@ -465,7 +465,7 @@
     @if($alertasPorNivel['medias']->count() > 0)
         <div class="alertas-seccion">
             <div class="seccion-header medias">
-                <div class="seccion-icon">ℹ️</div>
+                <div class="seccion-icon"><x-icono name="info" :size="20" /></div>
                 <div class="seccion-titulo">
                     <h3>Alertas Medias</h3>
                 </div>
@@ -484,7 +484,7 @@
     @if($alertasPorNivel['info']->count() > 0)
         <div class="alertas-seccion">
             <div class="seccion-header info">
-                <div class="seccion-icon">💡</div>
+                <div class="seccion-icon"><x-icono name="consejo" :size="20" /></div>
                 <div class="seccion-titulo">
                     <h3>Alertas Informativas</h3>
                 </div>
@@ -502,7 +502,7 @@
     {{-- ESTADO VACÍO --}}
     @if($resumen['total'] === 0)
         <div class="empty-state">
-            <div class="empty-state-icon">🎉</div>
+            <div class="empty-state-icon"><x-icono name="ok" :size="48" /></div>
             <h3>¡Todo al día!</h3>
             <p>No tienes alertas pendientes en este momento</p>
         </div>
@@ -528,7 +528,7 @@ function marcarComoLeida(alertaId) {
     const boton = document.querySelector(`[data-alerta-id="${alertaId}"]`);
     if (boton) {
         boton.disabled = true;
-        boton.innerHTML = '⏳ Archivando...';
+        boton.innerHTML = 'Archivando...';
     }
 
     // Enviar petición AJAX
@@ -567,19 +567,19 @@ function marcarComoLeida(alertaId) {
             }
 
             // Mostrar notificación de éxito
-            mostrarNotificacion('✅ Alerta archivada correctamente', 'success');
+            mostrarNotificacion('Alerta archivada correctamente', 'success');
         } else {
             throw new Error(data.message || 'Error desconocido');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        mostrarNotificacion('❌ Error al archivar la alerta: ' + error.message, 'error');
+        mostrarNotificacion('Error al archivar la alerta: ' + error.message, 'error');
         
         // Rehabilitar el botón
         if (boton) {
             boton.disabled = false;
-            boton.innerHTML = '✓ Marcar como leída';
+            boton.innerHTML = 'Marcar como leída';
         }
     });
 }
@@ -669,7 +669,7 @@ function mostrarEstadoVacio() {
     if (container) {
         const emptyState = `
             <div class="empty-state" style="animation: fadeIn 0.5s;">
-                <div class="empty-state-icon">🎉</div>
+                <div class="empty-state-icon"><x-icono name="ok" :size="48" /></div>
                 <h3>¡Todo al día!</h3>
                 <p>No tienes alertas pendientes en este momento</p>
             </div>
@@ -688,10 +688,10 @@ function mostrarEstadoVacio() {
  */
 function mostrarNotificacion(mensaje, tipo = 'success') {
     const colores = {
-        success: { bg: '#d4edda', border: '#28a745', text: '#155724', icon: '✅' },
-        error: { bg: '#f8d7da', border: '#dc3545', text: '#721c24', icon: '❌' },
-        warning: { bg: '#fff3cd', border: '#ffc107', text: '#856404', icon: '⚠️' },
-        info: { bg: '#d1ecf1', border: '#17a2b8', text: '#0c5460', icon: 'ℹ️' }
+        success: { bg: '#d4edda', border: '#28a745', text: '#155724', icon: '' },
+        error: { bg: '#f8d7da', border: '#dc3545', text: '#721c24', icon: '' },
+        warning: { bg: '#fff3cd', border: '#ffc107', text: '#856404', icon: '' },
+        info: { bg: '#d1ecf1', border: '#17a2b8', text: '#0c5460', icon: '' }
     };
     
     const config = colores[tipo] || colores.success;
@@ -750,7 +750,7 @@ function marcarTodasLeidas() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            mostrarNotificacion(`✅ ${data.count} alertas archivadas`, 'success');
+            mostrarNotificacion(`${data.count} alertas archivadas`, 'success');
             
             // Recargar página después de 1 segundo
             setTimeout(() => {
@@ -760,7 +760,7 @@ function marcarTodasLeidas() {
     })
     .catch(error => {
         console.error('Error:', error);
-        mostrarNotificacion('❌ Error al archivar alertas', 'error');
+        mostrarNotificacion('Error al archivar alertas', 'error');
     });
 }
 
@@ -796,7 +796,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-console.log('✅ Sistema de alertas cargado correctamente');
+console.log('Sistema de alertas cargado correctamente');
 </script>
 @endpush
 @endsection

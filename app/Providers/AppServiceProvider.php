@@ -3,16 +3,22 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use App\Services\OpenWeatherService;
+use App\Services\AlertaService;
 use App\Services\ClimaService;
+use App\Services\MonitoreoService;
+use App\Services\OpenMeteoService;
+use App\Services\RiegoService;
 use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->singleton(OpenWeatherService::class);
+        $this->app->singleton(OpenMeteoService::class);
+        $this->app->singleton(RiegoService::class);
         $this->app->singleton(ClimaService::class);
+        $this->app->singleton(AlertaService::class);
+        $this->app->singleton(MonitoreoService::class);
     }
 
     public function boot(): void

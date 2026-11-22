@@ -34,7 +34,7 @@
     }
 
     .welcome-banner::before {
-        content: '🌱';
+        content: '';
         position: absolute;
         right: 30px;
         top: 50%;
@@ -417,7 +417,7 @@
     }
 
     .activity-time::before {
-        content: '🕐';
+        content: '';
         font-size: 12px;
     }
 
@@ -589,59 +589,59 @@
 @section('content')
 <!-- Welcome Banner -->
 <div class="welcome-banner">
-    <div class="welcome-title">👋 ¡Bienvenido de nuevo, {{ Auth::user()->name }}!</div>
+    <div class="welcome-title">¡Bienvenido de nuevo, {{ Auth::user()->name }}!</div>
     <div class="welcome-subtitle">Aquí está el resumen de tu sistema de riego inteligente</div>
-    <div class="welcome-date">📅 {{ now()->locale('es')->isoFormat('dddd, D [de] MMMM [de] YYYY') }}</div>
+    <div class="welcome-date">{{ now()->locale('es')->isoFormat('dddd, D [de] MMMM [de] YYYY') }}</div>
 </div>
 
 <!-- Quick Actions -->
 <div class="quick-actions">
     <a href="{{ route('parcelas.create') }}" class="quick-action-btn">
-        <div class="quick-action-icon">➕</div>
+        <div class="quick-action-icon"></div>
         <div class="quick-action-label">Nueva Parcela</div>
     </a>
     <a href="{{ route('parcelas.index') }}" class="quick-action-btn">
-        <div class="quick-action-icon">🌾</div>
+        <div class="quick-action-icon"><x-icono name="parcela" :size="20" /></div>
         <div class="quick-action-label">Ver Parcelas</div>
     </a>
     <a href="{{ route('clima.index') }}" class="quick-action-btn">
-        <div class="quick-action-icon">🌤️</div>
+        <div class="quick-action-icon"><x-icono name="calor" :size="20" /></div>
         <div class="quick-action-label">Monitorear Clima</div>
     </a>
     <a href="#" class="quick-action-btn">
-        <div class="quick-action-icon">📊</div>
+        <div class="quick-action-icon"><x-icono name="ciclo" :size="20" /></div>
         <div class="quick-action-label">Reportes</div>
     </a>
 </div>
 
 <!-- Dashboard Stats -->
 <div class="stats-grid">
-      {{-- ✅ ALERTAS ACTIVAS - CLICKEABLE --}}
+      {{-- ALERTAS ACTIVAS - CLICKEABLE --}}
     <a href="{{ route('alertas.index') }}" class="stat-card danger">
         <div class="stat-header">
             <div class="stat-content">
                 <div class="stat-value">{{ $alertasActivas }}</div>
                 <div class="stat-label">Alertas Activas</div>
             </div>
-            <div class="stat-icon danger">🔔</div>
+            <div class="stat-icon danger"><x-icono name="alerta" :size="20" /></div>
         </div>
         <div class="stat-footer">
             <div class="stat-change {{ $nuevasAlertas > 0 ? 'negative' : 'positive' }}">
-                <span class="stat-change-icon">{{ $nuevasAlertas > 0 ? '+' : '✓' }}</span>
+                <span class="stat-change-icon">{{ $nuevasAlertas > 0 ? '+' : '' }}</span>
                 <span>{{ $nuevasAlertas }}</span>
             </div>
             <div class="stat-period">{{ $nuevasAlertas == 1 ? 'nueva alerta' : 'nuevas hoy' }}</div>
         </div>
     </a>
 
-    {{-- ✅ PARCELAS ACTIVAS - DATOS REALES --}}
+    {{-- PARCELAS ACTIVAS - DATOS REALES --}}
     <div class="stat-card primary">
         <div class="stat-header">
             <div class="stat-content">
                 <div class="stat-value">{{ $totalParcelas }}</div>
                 <div class="stat-label">Parcelas Activas</div>
             </div>
-            <div class="stat-icon primary">🌾</div>
+            <div class="stat-icon primary"><x-icono name="parcela" :size="20" /></div>
         </div>
         <div class="stat-footer">
             <div class="stat-change {{ $parcelasNuevas > 0 ? 'positive' : '' }}">
@@ -652,7 +652,7 @@
         </div>
     </div>
 
-    {{-- ✅ CLIMA PROMEDIO EN TIEMPO REAL - DESDE API --}}
+    {{-- CLIMA PROMEDIO EN TIEMPO REAL - DESDE API --}}
     <div class="stat-card success">
         <div class="stat-header">
             <div class="stat-content">
@@ -664,12 +664,12 @@
                     <div class="stat-label">Sin Datos de Clima</div>
                 @endif
             </div>
-            <div class="stat-icon success">🌡️</div>
+            <div class="stat-icon success"><x-icono name="calor" :size="20" /></div>
         </div>
         <div class="stat-footer">
             @if($climaPromedio['hay_datos'])
                 <div class="stat-change">
-                    <span>💧 {{ $climaPromedio['humedad'] }}%</span>
+                    <span>{{ $climaPromedio['humedad'] }}%</span>
                 </div>
                 <div class="stat-period">humedad actual</div>
             @else
@@ -686,32 +686,32 @@
 
 <!-- Charts Section -->
 <div class="charts-grid">
-    {{-- ✅ COMPARATIVA DE CLIMA ENTRE PARCELAS - TIEMPO REAL --}}
+    {{-- COMPARATIVA DE CLIMA ENTRE PARCELAS - TIEMPO REAL --}}
     <div class="chart-card">
         <div class="chart-header">
             <div class="chart-title">
-                <div class="chart-icon">🌡️</div>
+                <div class="chart-icon"><x-icono name="calor" :size="20" /></div>
                 <span>Comparativa de Clima (Tiempo Real)</span>
             </div>
             <button class="filter-select" id="btnRefrescarClima" style="cursor: pointer;">
-                🔄 Actualizar
+                Actualizar
             </button>
         </div>
         <div class="chart-placeholder" id="chartComparativa">
             <div class="chart-placeholder-content">
-                <div class="chart-placeholder-icon">🌤️</div>
+                <div class="chart-placeholder-icon"><x-icono name="calor" :size="20" /></div>
                 <div class="chart-placeholder-title">Cargando clima en tiempo real...</div>
-                <div class="chart-placeholder-subtitle">Obteniendo datos desde OpenWeather API</div>
+                <div class="chart-placeholder-subtitle">Obteniendo datos desde Open-Meteo</div>
             </div>
         </div>
         <canvas id="comparativaChart" style="display: none;"></canvas>
     </div>
 
-    {{-- ✅ DISTRIBUCIÓN POR CULTIVO - MEJORADA --}}
+    {{-- DISTRIBUCIÓN POR CULTIVO - MEJORADA --}}
     <div class="chart-card">
         <div class="chart-header">
             <div class="chart-title">
-                <div class="chart-icon">🥧</div>
+                <div class="chart-icon"></div>
                 <span>Distribución por Cultivo</span>
             </div>
         </div>
@@ -721,7 +721,7 @@
                     <div class="cultivo-item">
                         <div class="cultivo-header">
                             <span class="cultivo-nombre">
-                                {{ $cultivo['emoji'] ?? '🌾' }} {{ $cultivo['nombre'] }}
+                                {{ $cultivo['emoji'] ?? '' }} {{ $cultivo['nombre'] }}
                             </span>
                             <span class="cultivo-stats">
                                 {{ $cultivo['cantidad'] }} parcela(s) • {{ $cultivo['porcentaje'] }}%
@@ -739,7 +739,7 @@
         @else
             <div class="chart-placeholder">
                 <div class="chart-placeholder-content">
-                    <div class="chart-placeholder-icon">🌱</div>
+                    <div class="chart-placeholder-icon"><x-icono name="parcela" :size="20" /></div>
                     <div class="chart-placeholder-title">Sin Cultivos</div>
                     <div class="chart-placeholder-subtitle">Crea tu primera parcela para ver datos</div>
                 </div>
@@ -750,11 +750,11 @@
 
 <!-- Pronóstico 5 días + Actividades -->
 <div class="charts-grid">
-    {{-- ✅ PRONÓSTICO 5 DÍAS - DESDE API --}}
+    {{-- PRONÓSTICO 5 DÍAS - DESDE API --}}
     <div class="chart-card">
         <div class="chart-header">
             <div class="chart-title">
-                <div class="chart-icon">📅</div>
+                <div class="chart-icon"><x-icono name="ciclo" :size="20" /></div>
                 <span>Pronóstico (5 días)</span>
             </div>
             <select class="filter-select" id="parcelaFilterPronostico">
@@ -766,7 +766,7 @@
         </div>
         <div class="chart-placeholder" id="chartPronostico">
             <div class="chart-placeholder-content">
-                <div class="chart-placeholder-icon">⛅</div>
+                <div class="chart-placeholder-icon"><x-icono name="lluvia" :size="20" /></div>
                 <div class="chart-placeholder-title">Cargando pronóstico...</div>
                 <div class="chart-placeholder-subtitle">Obteniendo datos climáticos</div>
             </div>
@@ -774,11 +774,11 @@
         <canvas id="pronosticoChart" style="display: none;"></canvas>
     </div>
 
-    {{-- ✅ ACTIVIDAD RECIENTE --}}
+    {{-- ACTIVIDAD RECIENTE --}}
     <div class="activity-card">
         <div class="activity-header">
             <div class="activity-title">
-                <div class="activity-title-icon">⚡</div>
+                <div class="activity-title-icon"></div>
                 <span>Actividad Reciente</span>
             </div>
         </div>
@@ -788,7 +788,7 @@
                 @foreach($actividadesRecientes as $actividad)
                     <div class="activity-item">
                         <div class="activity-icon" style="background: {{ $actividad['color'] }}; color: {{ $actividad['iconColor'] }};">
-                            {{ $actividad['icon'] }}
+                            <x-icono :name="$actividad['icon']" :size="20" />
                         </div>
                         <div class="activity-content">
                             <div class="activity-item-title">{{ $actividad['titulo'] }}</div>
@@ -798,7 +798,7 @@
                 @endforeach
             @else
                 <div class="activity-item">
-                    <div class="activity-icon" style="background: rgba(0, 123, 255, 0.1); color: #007bff;">🌱</div>
+                    <div class="activity-icon" style="background: rgba(0, 123, 255, 0.1); color: #007bff;"><x-icono name="parcela" :size="20" /></div>
                     <div class="activity-content">
                         <div class="activity-item-title">¡Sistema iniciado! Crea tu primera parcela para comenzar</div>
                         <div class="activity-time">Ahora</div>
@@ -835,7 +835,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // EVENTOS DE FILTROS
 // ═══════════════════════════════════════════════════════════
 document.getElementById('btnRefrescarClima')?.addEventListener('click', function() {
-    this.innerHTML = '⏳ Cargando...';
+    this.innerHTML = 'Cargando...';
     this.disabled = true;
     cargarComparativaClima();
 });
@@ -854,7 +854,7 @@ function cargarComparativaClima() {
         .then(response => response.json())
         .then(result => {
             if (!result.success || result.data.length === 0) {
-                mostrarMensajeSinDatos('chartComparativa', '❌ No hay datos de clima disponibles', 'Verifica que las parcelas tengan ubicación configurada');
+                mostrarMensajeSinDatos('chartComparativa', 'No hay datos de clima disponibles', 'Verifica que las parcelas tengan ubicación configurada');
                 return;
             }
 
@@ -1013,15 +1013,15 @@ function cargarComparativaClima() {
             });
 
             if (btn) {
-                btn.innerHTML = '🔄 Actualizar';
+                btn.innerHTML = 'Actualizar';
                 btn.disabled = false;
             }
         })
         .catch(error => {
             console.error('Error al cargar clima:', error);
-            mostrarMensajeSinDatos('chartComparativa', '⚠️ Error al cargar datos', 'Por favor, intenta nuevamente');
+            mostrarMensajeSinDatos('chartComparativa', 'Error al cargar datos', 'Por favor, intenta nuevamente');
             if (btn) {
-                btn.innerHTML = '🔄 Actualizar';
+                btn.innerHTML = 'Actualizar';
                 btn.disabled = false;
             }
         });
@@ -1037,7 +1037,7 @@ function cargarPronostico(parcelaId) {
     // Mostrar loading
     chartPlaceholder.innerHTML = `
         <div class="chart-placeholder-content">
-            <div class="chart-placeholder-icon">⏳</div>
+            <div class="chart-placeholder-icon"></div>
             <div class="chart-placeholder-title">Cargando pronóstico...</div>
             <div class="chart-placeholder-subtitle">Obteniendo datos climáticos</div>
         </div>
@@ -1049,7 +1049,7 @@ function cargarPronostico(parcelaId) {
         .then(response => response.json())
         .then(result => {
             if (!result.success || result.data.length === 0) {
-                mostrarMensajeSinDatos('chartPronostico', '❌ No hay pronóstico disponible', 'Verifica que la parcela tenga ubicación configurada');
+                mostrarMensajeSinDatos('chartPronostico', 'No hay pronóstico disponible', 'Verifica que la parcela tenga ubicación configurada');
                 return;
             }
 
@@ -1213,7 +1213,7 @@ function cargarPronostico(parcelaId) {
         })
         .catch(error => {
             console.error('Error al cargar pronóstico:', error);
-            mostrarMensajeSinDatos('chartPronostico', '⚠️ Error al cargar pronóstico', 'Por favor, intenta nuevamente');
+            mostrarMensajeSinDatos('chartPronostico', 'Error al cargar pronóstico', 'Por favor, intenta nuevamente');
         });
 }
 
@@ -1226,7 +1226,7 @@ function mostrarMensajeSinDatos(containerId, titulo, subtitulo) {
 
     container.innerHTML = `
         <div class="chart-placeholder-content">
-            <div class="chart-placeholder-icon" style="font-size: 48px;">📊</div>
+            <div class="chart-placeholder-icon" style="font-size: 48px;"></div>
             <div class="chart-placeholder-title">${titulo}</div>
             <div class="chart-placeholder-subtitle">${subtitulo}</div>
         </div>
@@ -1333,15 +1333,13 @@ function crearToast(alerta) {
 
     toast.innerHTML = `
         <div style="display: flex; gap: 15px; align-items: start;">
-            <div style="font-size: 32px; flex-shrink: 0;">
-                ${alerta.icono}
-            </div>
+            <div style="width: 6px; align-self: stretch; border-radius: 3px; background: ${alerta.nivel === 'critico' ? '#dc3545' : (alerta.nivel === 'alto' ? '#ffc107' : '#17a2b8')}; flex-shrink: 0;"></div>
             <div style="flex: 1; min-width: 0;">
                 <div style="font-weight: 700; font-size: 16px; color: #212529; margin-bottom: 5px;">
                     ${alerta.titulo}
                 </div>
                 <div style="font-size: 13px; color: #6c757d; margin-bottom: 5px;">
-                    🌾 ${alerta.parcela}
+                    ${alerta.parcela}
                 </div>
                 <div style="font-size: 14px; color: #495057; line-height: 1.4; margin-bottom: 10px;">
                     ${alerta.mensaje.substring(0, 120)}${alerta.mensaje.length > 120 ? '...' : ''}

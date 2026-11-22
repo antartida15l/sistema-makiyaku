@@ -35,9 +35,9 @@ class SistemaNotificacionesAlertas {
         try {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             this.audioContext = new AudioContext();
-            console.log('✅ Contexto de audio inicializado');
+            console.log('Contexto de audio inicializado');
         } catch (e) {
-            console.warn('⚠️ Audio no soportado en este navegador:', e);
+            console.warn('Audio no soportado en este navegador:', e);
         }
     }
 
@@ -83,7 +83,7 @@ class SistemaNotificacionesAlertas {
                     this.beepInformativo(oscilador, ganancia);
             }
         } catch (e) {
-            console.error('❌ Error reproduciendo sonido:', e);
+            console.error('Error reproduciendo sonido:', e);
         }
     }
 
@@ -201,13 +201,13 @@ class SistemaNotificacionesAlertas {
         `;
 
         toast.innerHTML = `
-            <div style="font-size: 28px;">${alerta.icono}</div>
+            <div style="width:6px;align-self:stretch;border-radius:3px;background:${alerta.nivel === "critico" ? "#dc3545" : (alerta.nivel === "alto" ? "#ffc107" : "#17a2b8")};flex-shrink:0;"></div>
             <div style="flex: 1;">
                 <div style="font-weight: 700; font-size: 14px; margin-bottom: 4px; color: #343a40;">
                     ${alerta.titulo}
                 </div>
                 <div style="font-size: 12px; color: #6c757d;">
-                    🌾 ${alerta.parcela}
+                    ${alerta.parcela}
                 </div>
             </div>
             <button onclick="this.parentElement.remove()" style="
@@ -269,7 +269,7 @@ class SistemaNotificacionesAlertas {
             });
 
             if (!response.ok) {
-                console.error('❌ Error en respuesta:', response.status);
+                console.error('Error en respuesta:', response.status);
                 return;
             }
 
@@ -279,7 +279,7 @@ class SistemaNotificacionesAlertas {
                 this.procesarAlertasNuevas(data.alertas);
             }
         } catch (error) {
-            console.error('❌ Error verificando alertas:', error);
+            console.error('Error verificando alertas:', error);
         }
     }
 
@@ -295,7 +295,7 @@ class SistemaNotificacionesAlertas {
             // Si es una alerta nueva que no hemos detectado
             if (!this.alertasCriticasDetectadas.has(alertaId)) {
                 
-                console.log(`🔔 Nueva alerta detectada: ${alerta.titulo} (Nivel: ${alerta.nivel})`);
+                console.log(`Nueva alerta detectada: ${alerta.titulo} (Nivel: ${alerta.nivel})`);
                 
                 // Reproducir sonido
                 this.reproducirSonido(alerta.nivel);
@@ -333,13 +333,13 @@ class SistemaNotificacionesAlertas {
         
         // Primera re-notificación: después de 10 minutos
         if (info.contadorNotificaciones === 1 && tiempoTranscurrido >= this.tiempoRenotificacion1) {
-            console.log(`🔔 RE-NOTIFICACIÓN (10 min): ${info.titulo}`);
+            console.log(`RE-NOTIFICACIÓN (10 min): ${info.titulo}`);
             
             this.reproducirSonido(info.nivel);
             this.mostrarToast({
                 icono: info.icono,
                 nivel: info.nivel,
-                titulo: `🔔 RECORDATORIO: ${info.titulo}`,
+                titulo: `RECORDATORIO: ${info.titulo}`,
                 parcela: info.parcela,
                 url: info.url
             });
@@ -350,13 +350,13 @@ class SistemaNotificacionesAlertas {
         }
         // Re-notificaciones subsiguientes: cada 5 minutos
         else if (info.contadorNotificaciones > 1 && tiempoTranscurrido >= this.tiempoRenotificacion2) {
-            console.log(`⚠️ RE-NOTIFICACIÓN (5 min) #${info.contadorNotificaciones}: ${info.titulo}`);
+            console.log(`RE-NOTIFICACIÓN (5 min) #${info.contadorNotificaciones}: ${info.titulo}`);
             
             this.reproducirSonido(info.nivel);
             this.mostrarToast({
                 icono: info.icono,
                 nivel: info.nivel,
-                titulo: `⚠️ URGENTE: ${info.titulo} (${info.contadorNotificaciones}° recordatorio)`,
+                titulo: `URGENTE: ${info.titulo} (${info.contadorNotificaciones}° recordatorio)`,
                 parcela: info.parcela,
                 url: info.url
             });
@@ -373,11 +373,11 @@ class SistemaNotificacionesAlertas {
     silenciarTemporal() {
         this.silenciadoGlobal = true;
         
-        console.log('🔕 Notificaciones silenciadas por 30 minutos');
+        console.log('Notificaciones silenciadas por 30 minutos');
         
         // Mostrar mensaje
         this.mostrarToast({
-            icono: '🔕',
+            icono: '',
             nivel: 'info',
             titulo: 'Notificaciones silenciadas',
             parcela: 'Se reanudarán en 30 minutos',
@@ -387,17 +387,17 @@ class SistemaNotificacionesAlertas {
         // Cambiar texto del botón
         const boton = document.getElementById('btn-silenciar-alertas');
         if (boton) {
-            boton.innerHTML = '🔕 Silenciado (30min)';
+            boton.innerHTML = 'Silenciado (30min)';
             boton.style.background = 'linear-gradient(135deg, #dc3545, #c82333)';
         }
 
         // Reactivar después de 30 minutos
         setTimeout(() => {
             this.silenciadoGlobal = false;
-            console.log('🔔 Notificaciones reactivadas');
+            console.log('Notificaciones reactivadas');
             
             this.mostrarToast({
-                icono: '🔔',
+                icono: '',
                 nivel: 'info',
                 titulo: 'Notificaciones reactivadas',
                 parcela: 'Recibirás alertas nuevamente',
@@ -406,7 +406,7 @@ class SistemaNotificacionesAlertas {
 
             // Restaurar botón
             if (boton) {
-                boton.innerHTML = '🔕 Silenciar 30min';
+                boton.innerHTML = 'Silenciar 30min';
                 boton.style.background = 'linear-gradient(135deg, #6c757d, #495057)';
             }
         }, 1800000); // 30 minutos
@@ -429,7 +429,7 @@ class SistemaNotificacionesAlertas {
                 });
             }
         } catch (error) {
-            console.error('❌ Error actualizando contador:', error);
+            console.error('Error actualizando contador:', error);
         }
     }
 
@@ -437,7 +437,7 @@ class SistemaNotificacionesAlertas {
      * Iniciar sistema
      */
     iniciar() {
-        console.log('🚀 Iniciando sistema de notificaciones...');
+        console.log('Iniciando sistema de notificaciones...');
         
         // Verificar alertas inmediatamente
         this.verificarAlertas();
@@ -452,9 +452,9 @@ class SistemaNotificacionesAlertas {
         // Botón de silenciar (agregar a la UI)
         this.crearBotonSilenciar();
 
-        console.log('✅ Sistema de notificaciones iniciado');
-        console.log(`⏰ Verificación cada ${this.intervaloVerificacion/1000} segundos`);
-        console.log(`🔔 Re-notificación: ${this.tiempoRenotificacion1/60000} min, luego cada ${this.tiempoRenotificacion2/60000} min`);
+        console.log('Sistema de notificaciones iniciado');
+        console.log(`Verificación cada ${this.intervaloVerificacion/1000} segundos`);
+        console.log(`Re-notificación: ${this.tiempoRenotificacion1/60000} min, luego cada ${this.tiempoRenotificacion2/60000} min`);
     }
 
     /**
@@ -468,7 +468,7 @@ class SistemaNotificacionesAlertas {
 
         const boton = document.createElement('button');
         boton.id = 'btn-silenciar-alertas';
-        boton.innerHTML = '🔕 Silenciar 30min';
+        boton.innerHTML = 'Silenciar 30min';
         boton.onclick = () => this.silenciarTemporal();
         
         document.body.appendChild(boton);
@@ -488,4 +488,4 @@ if (document.readyState === 'loading') {
     window.sistemaNotificaciones = new SistemaNotificacionesAlertas();
 }
 
-console.log('📦 Módulo de notificaciones cargado');
+console.log('Módulo de notificaciones cargado');

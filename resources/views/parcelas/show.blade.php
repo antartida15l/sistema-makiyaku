@@ -561,7 +561,7 @@
     {{-- HEADER --}}
     <div class="page-header">
         <div class="page-header-content">
-            <div class="page-icon">🌱</div>
+            <div class="page-icon"><x-icono name="parcela" :size="20" /></div>
             <div class="page-title-group">
                 <h1>{{ $parcela->nombre }}</h1>
                 @if($parcela->alertas()->activas()->exists())
@@ -580,7 +580,7 @@
                             box-shadow: 0 4px 10px rgba(220, 53, 69, 0.3);
                             transition: all 0.3s;
                         " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
-                            🔔 {{ $parcela->alertas()->activas()->count() }} alerta(s) activa(s)
+                            {{ $parcela->alertas()->activas()->count() }} alerta(s) activa(s)
                         </a>
                     </div>
                 @endif
@@ -593,7 +593,7 @@
                 <span>Volver</span>
             </a>
             <a href="{{ route('parcelas.edit', $parcela) }}" class="btn btn-edit">
-                <span>✏️</span>
+                
                 <span>Editar</span>
             </a>
             <form action="{{ route('parcelas.destroy', $parcela) }}" method="POST" style="display: inline;"
@@ -601,13 +601,13 @@
                 @csrf
                 @method('DELETE')
                 <button type="submit" class="btn btn-delete">
-                    <span>🗑️</span>
+                    
                     <span>Eliminar</span>
                 </button>
             </form>
             {{-- En el card de cada parcela o en la vista show --}}
             <a href="{{ route('recomendaciones.index', $parcela) }}" class="btn btn-primary">
-                <span>💡</span>
+                <span><x-icono name="consejo" :size="20" /></span>
                 <span>Ver Recomendaciones</span>
             </a>
 
@@ -617,7 +617,7 @@
     {{-- ALERTAS --}}
     @if(session('success'))
         <div class="alert alert-success">
-            <span style="font-size: 24px;">✅</span>
+            <span style="font-size: 24px;"><x-icono name="ok" :size="20" /></span>
             <strong>{{ session('success') }}</strong>
         </div>
     @endif
@@ -630,7 +630,7 @@
 
     @if($estadoRiego === 'critico')
         <div class="alerta-riego alerta-critica">
-            <div class="alerta-icon">🚨</div>
+            <div class="alerta-icon"><x-icono name="alerta" :size="20" /></div>
             <div class="alerta-content">
                 <div class="alerta-title">¡RIEGO URGENTE!</div>
                 <div class="alerta-description">
@@ -640,7 +640,7 @@
         </div>
     @elseif($estadoRiego === 'hoy')
         <div class="alerta-riego alerta-hoy">
-            <div class="alerta-icon">💧</div>
+            <div class="alerta-icon"><x-icono name="agua" :size="20" /></div>
             <div class="alerta-content">
                 <div class="alerta-title">Riego Programado para HOY</div>
                 <div class="alerta-description">
@@ -650,7 +650,7 @@
         </div>
     @elseif($estadoRiego === 'proximo')
         <div class="alerta-riego alerta-proximo">
-            <div class="alerta-icon">⏰</div>
+            <div class="alerta-icon"><x-icono name="reloj" :size="20" /></div>
             <div class="alerta-content">
                 <div class="alerta-title">Próximo Riego Cercano</div>
                 <div class="alerta-description">
@@ -660,7 +660,7 @@
         </div>
     @else
         <div class="alerta-riego alerta-ok">
-            <div class="alerta-icon">✅</div>
+            <div class="alerta-icon"><x-icono name="ok" :size="20" /></div>
             <div class="alerta-content">
                 <div class="alerta-title">Riego al Día</div>
                 <div class="alerta-description">
@@ -674,7 +674,7 @@
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-header">
-                <div class="stat-icon">📏</div>
+                <div class="stat-icon"></div>
                 <div class="stat-label">Área Total</div>
             </div>
             <div class="stat-value">
@@ -685,7 +685,7 @@
 
        <div class="stat-card">
             <div class="stat-header">
-                <div class="stat-icon">💧</div>
+                <div class="stat-icon"><x-icono name="agua" :size="20" /></div>
                 <div class="stat-label">Agua por Riego</div>
             </div>
             <div class="stat-value">
@@ -699,7 +699,7 @@
 
         <div class="stat-card">
             <div class="stat-header">
-                <div class="stat-icon">📅</div>
+                <div class="stat-icon"><x-icono name="ciclo" :size="20" /></div>
                 <div class="stat-label">Frecuencia de Riego</div>
             </div>
             <div class="stat-value">
@@ -710,7 +710,7 @@
 
         <div class="stat-card">
             <div class="stat-header">
-                <div class="stat-icon">🌾</div>
+                <div class="stat-icon"><x-icono name="parcela" :size="20" /></div>
                 <div class="stat-label">Días desde Siembra</div>
             </div>
             <div class="stat-value">
@@ -727,7 +727,7 @@
         {{-- INFORMACIÓN BÁSICA --}}
         <div class="form-section">
             <div class="section-header">
-                <div class="section-icon">📋</div>
+                <div class="section-icon"></div>
                 <div class="section-title">
                     <h3>Información Básica</h3>
                     <p class="section-description">Datos principales de la parcela</p>
@@ -737,18 +737,18 @@
             <div class="info-row">
                 <div class="info-item">
                     <div class="info-label">Nombre de la Parcela</div>
-                    <div class="info-value">🏷️ {{ $parcela->nombre }}</div>
+                    <div class="info-value">{{ $parcela->nombre }}</div>
                 </div>
 
                 <div class="info-item">
                     <div class="info-label">Estado</div>
                     <div class="info-value">
                         @if($parcela->estado === 'activa')
-                            <span class="estado-badge estado-activa">✅ Activa</span>
+                            <span class="estado-badge estado-activa">Activa</span>
                         @elseif($parcela->estado === 'inactiva')
-                            <span class="estado-badge estado-inactiva">⏸️ Inactiva</span>
+                            <span class="estado-badge estado-inactiva">Inactiva</span>
                         @else
-                            <span class="estado-badge estado-mantenimiento">🔧 Mantenimiento</span>
+                            <span class="estado-badge estado-mantenimiento">Mantenimiento</span>
                         @endif
                     </div>
                 </div>
@@ -756,14 +756,14 @@
                 <div class="info-item">
                     <div class="info-label">Tipo de Cultivo</div>
                     <div class="info-value">
-                        🌾 {{ $parcela->cultivo->nombreCultivo }}
+                        {{ $parcela->cultivo->nombreCultivo }}
                         <span class="badge badge-info">{{ $parcela->cultivo->tipo }}</span>
                     </div>
                 </div>
 
                 <div class="info-item">
                     <div class="info-label">Área</div>
-                    <div class="info-value">📏 {{ number_format($parcela->area, 2) }} m²</div>
+                    <div class="info-value">{{ number_format($parcela->area, 2) }} m²</div>
                 </div>
             </div>
 
@@ -784,7 +784,7 @@
         {{-- UBICACIÓN --}}
         <div class="form-section">
             <div class="section-header">
-                <div class="section-icon">📍</div>
+                <div class="section-icon"><x-icono name="parcela" :size="20" /></div>
                 <div class="section-title">
                     <h3>Ubicación</h3>
                     <p class="section-description">Localización geográfica</p>
@@ -813,7 +813,7 @@
                     <div class="info-item">
                         <div class="info-label">Coordenadas GPS</div>
                         <div class="info-value">
-                            🌍 {{ $parcela->ubicacion->coordenadaLatitud }}, {{ $parcela->ubicacion->coordenadaLongitud }}
+                            {{ $parcela->ubicacion->coordenadaLatitud }}, {{ $parcela->ubicacion->coordenadaLongitud }}
                         </div>
                     </div>
                 </div>
@@ -823,7 +823,7 @@
         {{-- INFORMACIÓN DE RIEGO --}}
         <div class="form-section">
             <div class="section-header">
-                <div class="section-icon">💧</div>
+                <div class="section-icon"><x-icono name="agua" :size="20" /></div>
                 <div class="section-title">
                     <h3>Gestión de Riego</h3>
                     <p class="section-description">Control y seguimiento del riego</p>
@@ -834,28 +834,28 @@
                 <div class="info-item">
                     <div class="info-label">Último Riego</div>
                     <div class="info-value">
-                        📅 {{ $parcela->ultimo_riego ? $parcela->ultimo_riego->format('d/m/Y H:i') : 'Sin registros' }}
+                        {{ $parcela->ultimo_riego ? $parcela->ultimo_riego->format('d/m/Y H:i') : 'Sin registros' }}
                     </div>
                 </div>
 
                 <div class="info-item">
                     <div class="info-label">Próximo Riego Estimado</div>
                     <div class="info-value">
-                        ⏰ {{ $parcela->proximo_riego_estimado->format('d/m/Y') }}
+                        {{ $parcela->proximo_riego_estimado->format('d/m/Y') }}
                     </div>
                 </div>
 
                 <div class="info-item">
                     <div class="info-label">Frecuencia de Riego</div>
                     <div class="info-value">
-                        🔄 Cada {{ $parcela->frecuencia_riego_dias }} días
+                        Cada {{ $parcela->frecuencia_riego_dias }} días
                     </div>
                 </div>
 
                 <div class="info-item">
                     <div class="info-label">Cantidad por Riego</div>
                     <div class="info-value">
-                        💧 {{ number_format($parcela->litros_por_riego, 2) }} litros
+                        {{ number_format($parcela->litros_por_riego, 2) }} litros
                     </div>
                 </div>
             </div>
@@ -865,14 +865,14 @@
                     <div class="info-item">
                         <div class="info-label">Total Agua Utilizada</div>
                         <div class="info-value">
-                            💦 {{ number_format($parcela->total_agua_utilizada, 2) }} litros
+                            {{ number_format($parcela->total_agua_utilizada, 2) }} litros
                         </div>
                     </div>
 
                     <div class="info-item">
                         <div class="info-label">Promedio por Riego</div>
                         <div class="info-value">
-                            📊 {{ number_format($parcela->promedio_agua_por_riego, 2) }} litros
+                            {{ number_format($parcela->promedio_agua_por_riego, 2) }} litros
                         </div>
                     </div>
                 </div>
@@ -880,7 +880,7 @@
 
             {{-- FORMULARIO DE REGISTRAR RIEGO --}}
             <div class="riego-form">
-                <h4 style="margin-bottom: 15px; font-weight: 800;">💧 Registrar Nuevo Riego</h4>
+                <h4 style="margin-bottom: 15px; font-weight: 800;">Registrar Nuevo Riego</h4>
                 <form action="{{ route('parcelas.registrar-riego', $parcela) }}" method="POST">
                     @csrf
                     <div class="form-group">
@@ -897,7 +897,7 @@
                     </div>
 
                     <button type="submit" class="btn btn-riego">
-                        <span>💧</span>
+                        <span><x-icono name="agua" :size="20" /></span>
                         <span>Registrar Riego Ahora</span>
                     </button>
                 </form>
@@ -908,7 +908,7 @@
         @if($parcela->tieneHidrogelAplicado)
             <div class="form-section">
                 <div class="section-header">
-                    <div class="section-icon">💧</div>
+                    <div class="section-icon"><x-icono name="agua" :size="20" /></div>
                     <div class="section-title">
                         <h3>Hidrogel Aplicado</h3>
                         <p class="section-description">Reduce consumo de agua hasta 25%</p>
@@ -919,27 +919,27 @@
                     <div class="info-item">
                         <div class="info-label">Estado</div>
                         <div class="info-value">
-                            <span class="badge badge-success">✅ Activo</span>
+                            <span class="badge badge-success">Activo</span>
                         </div>
                     </div>
 
                     <div class="info-item">
                         <div class="info-label">Fecha de Aplicación</div>
                         <div class="info-value">
-                            📅 {{ $parcela->hidrogel_fecha_aplicacion->format('d/m/Y') }}
+                            {{ $parcela->hidrogel_fecha_aplicacion->format('d/m/Y') }}
                         </div>
                     </div>
 
                     <div class="info-item">
                         <div class="info-label">Cantidad Aplicada</div>
                         <div class="info-value">
-                            ⚖️ {{ number_format($parcela->hidrogel_cantidad_kg, 2) }} kg
+                            {{ number_format($parcela->hidrogel_cantidad_kg, 2) }} kg
                         </div>
                     </div>
                 </div>
 
                 <div style="background: linear-gradient(135deg, #d1ecf1, #bee5eb); padding: 15px; border-radius: 10px; margin-top: 15px; border: 2px solid #17a2b8;">
-                    <span style="font-size: 20px;">💡</span>
+                    <span style="font-size: 20px;"><x-icono name="consejo" :size="20" /></span>
                     <span style="color: #0c5460; font-weight: 700; margin-left: 10px;">
                         El hidrogel extiende la frecuencia de riego en +2 días
                     </span>
@@ -951,7 +951,7 @@
         @if($parcela->fecha_siembra)
             <div class="form-section">
                 <div class="section-header">
-                    <div class="section-icon">📅</div>
+                    <div class="section-icon"><x-icono name="ciclo" :size="20" /></div>
                     <div class="section-title">
                         <h3>Fechas del Cultivo</h3>
                         <p class="section-description">Seguimiento del ciclo de vida</p>
@@ -962,14 +962,14 @@
                     <div class="info-item">
                         <div class="info-label">Fecha de Siembra</div>
                         <div class="info-value">
-                            🌱 {{ $parcela->fecha_siembra->format('d/m/Y') }}
+                            {{ $parcela->fecha_siembra->format('d/m/Y') }}
                         </div>
                     </div>
 
                     <div class="info-item">
                         <div class="info-label">Días Transcurridos</div>
                         <div class="info-value">
-                            ⏱️ {{ $parcela->dias_desde_siembra }} días
+                            {{ $parcela->dias_desde_siembra }} días
                         </div>
                     </div>
 
@@ -982,11 +982,11 @@
                         </div>
                     </div>
 
-                    @if($parcela->cultivo->cicloCultivoDias)
+                    @if($parcela->cultivo->cicloProductivo)
                         <div class="info-item">
                             <div class="info-label">Ciclo Total Estimado</div>
                             <div class="info-value">
-                                🔄 {{ $parcela->cultivo->cicloCultivoDias }} días
+                                {{ $parcela->cultivo->cicloProductivo }} días
                             </div>
                         </div>
                     @endif
@@ -998,7 +998,7 @@
         @if($parcela->notas_usuario)
             <div class="form-section">
                 <div class="section-header">
-                    <div class="section-icon">📝</div>
+                    <div class="section-icon"></div>
                     <div class="section-title">
                         <h3>Notas y Observaciones</h3>
                         <p class="section-description">Información adicional</p>
@@ -1016,7 +1016,7 @@
         {{-- HISTORIAL DE RIEGOS --}}
         <div class="form-section">
             <div class="section-header">
-                <div class="section-icon">📊</div>
+                <div class="section-icon"><x-icono name="ciclo" :size="20" /></div>
                 <div class="section-title">
                     <h3>Historial de Riegos</h3>
                     <p class="section-description">Últimos 20 riegos registrados</p>
@@ -1045,9 +1045,9 @@
                                     </td>
                                     <td>
                                         @if($evento->tipo_riego === 'manual')
-                                            <span class="badge badge-info">👤 Manual</span>
+                                            <span class="badge badge-info">Manual</span>
                                         @else
-                                            <span class="badge badge-success">🤖 Automático</span>
+                                            <span class="badge badge-success">Automático</span>
                                         @endif
                                     </td>
                                     <td>{{ $evento->notas ?? '-' }}</td>
@@ -1058,7 +1058,7 @@
                 </div>
             @else
                 <div class="empty-state">
-                    <div class="empty-state-icon">💧</div>
+                    <div class="empty-state-icon"><x-icono name="agua" :size="20" /></div>
                     <p style="font-weight: 700; color: var(--muted);">
                         Aún no hay riegos registrados para esta parcela
                     </p>

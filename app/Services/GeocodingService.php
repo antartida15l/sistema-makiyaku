@@ -8,58 +8,29 @@ use Exception;
 
 class GeocodingService
 {
-    protected string $apiKey;
-    protected string $baseUrl = 'https://api.openweathermap.org/geo/1.0';
     protected string $nominatimUrl = 'https://nominatim.openstreetmap.org';
 
-    public function __construct()
+    public function __construct(protected OpenMeteoService $meteo)
     {
-        $this->apiKey = config('services.openweather.key');
     }
 
     /**
-     * Buscar ciudades por nombre con autocompletado
-     * Retorna máximo 10 resultados
+     * Buscar ciudades por nombre con autocompletado (Open-Meteo, sin API key).
+     * Primero se buscan lugares de Peru; si no hay, se busca en todo el mundo.
      */
     public function searchCities(string $query, int $limit = 10): array
     {
-        // No buscar si el query es muy corto
-        if (strlen($query) < 2) {
+        if (mb_strlen(trim($query)) < 2) {
             return [];
         }
 
-        $cacheKey = "geocoding_search_" . md5(strtolower($query) . $limit);
-        
-        return Cache::remember($cacheKey, 3600, function () use ($query, $limit) {
-            try {
-                $response = Http::timeout(5)->get("{$this->baseUrl}/direct", [
-                    'q' => $query,
-                    'limit' => $limit,
-                    'appid' => $this->apiKey
-                ]);
+        $resultados = $this->meteo->buscarLugares($query, $limit, 'PE');
 
-                if ($response->successful()) {
-                    $results = $response->json();
-                    
-                    // Formatear resultados para el frontend
-                    return array_map(function ($city) {
-                        return [
-                            'name' => $city['name'],
-                            'country' => $city['country'] ?? '',
-                            'state' => $city['state'] ?? '',
-                            'lat' => $city['lat'],
-                            'lon' => $city['lon'],
-                            'display_name' => $this->formatCityName($city),
-                        ];
-                    }, $results);
-                }
+        if (empty($resultados)) {
+            $resultados = $this->meteo->buscarLugares($query, $limit);
+        }
 
-                return [];
-            } catch (Exception $e) {
-                report($e);
-                return [];
-            }
-        });
+        return $resultados;
     }
 
     /**
@@ -215,74 +186,42 @@ class GeocodingService
     }
 
     /**
-     * Buscar ciudades por código postal
-     */
-    public function searchByZipCode(string $zipCode, string $country = 'PE'): ?array
-    {
-        $cacheKey = "geocoding_zip_{$zipCode}_{$country}";
-        
-        return Cache::remember($cacheKey, 7200, function () use ($zipCode, $country) {
-            try {
-                $query = $country ? "{$zipCode},{$country}" : $zipCode;
-                
-                $response = Http::timeout(5)->get("{$this->baseUrl}/zip", [
-                    'zip' => $query,
-                    'appid' => $this->apiKey
-                ]);
-
-                if ($response->successful()) {
-                    $data = $response->json();
-                    return [
-                        'name' => $data['name'],
-                        'country' => $data['country'],
-                        'lat' => $data['lat'],
-                        'lon' => $data['lon'],
-                        'display_name' => "{$data['name']}, {$data['country']}",
-                    ];
-                }
-
-                return null;
-            } catch (Exception $e) {
-                report($e);
-                return null;
-            }
-        });
-    }
-
-    /**
-     * Geocodificación inversa: obtener ciudad por coordenadas
+     * Geocodificacion inversa: lugar a partir de coordenadas (Nominatim, gratuito).
      */
     public function reverseGeocode(float $lat, float $lon, int $limit = 1): array
     {
-        $cacheKey = "geocoding_reverse_{$lat}_{$lon}";
-        
-        return Cache::remember($cacheKey, 7200, function () use ($lat, $lon, $limit) {
-            try {
-                $response = Http::timeout(5)->get("{$this->baseUrl}/reverse", [
-                    'lat' => $lat,
-                    'lon' => $lon,
-                    'limit' => $limit,
-                    'appid' => $this->apiKey
-                ]);
+        $cacheKey = "geocoding_reverse_" . round($lat, 3) . "_" . round($lon, 3);
 
-                if ($response->successful()) {
-                    $results = $response->json();
-                    
-                    return array_map(function ($city) {
-                        return [
-                            'name' => $city['name'],
-                            'country' => $city['country'] ?? '',
-                            'state' => $city['state'] ?? '',
-                            'lat' => $city['lat'],
-                            'lon' => $city['lon'],
-                            'display_name' => $this->formatCityName($city),
-                        ];
-                    }, $results);
+        return Cache::remember($cacheKey, 7200, function () use ($lat, $lon) {
+            try {
+                $response = Http::timeout(6)
+                    ->withHeaders(['User-Agent' => 'Makiyaku/1.0 (Laravel)'])
+                    ->get("{$this->nominatimUrl}/reverse", [
+                        'lat' => $lat,
+                        'lon' => $lon,
+                        'format' => 'json',
+                        'zoom' => 10,
+                        'accept-language' => 'es',
+                    ]);
+
+                if (!$response->successful() || !$response->json('address')) {
+                    return [];
                 }
 
-                return [];
+                $a = $response->json('address');
+                $nombre = $a['city'] ?? $a['town'] ?? $a['village'] ?? $a['county'] ?? $a['state'] ?? 'Desconocido';
+
+                return [[
+                    'name' => $nombre,
+                    'country' => strtoupper($a['country_code'] ?? ''),
+                    'state' => $a['state'] ?? '',
+                    'lat' => $lat,
+                    'lon' => $lon,
+                    'display_name' => $response->json('display_name') ?? $nombre,
+                ]];
             } catch (Exception $e) {
                 report($e);
+
                 return [];
             }
         });

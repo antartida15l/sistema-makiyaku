@@ -46,7 +46,7 @@ class GenerarRecomendacionesExistentes extends Command
             return 0;
         }
 
-        $this->info("📊 Total de parcelas: {$parcelas->count()}");
+        $this->info("Total de parcelas: {$parcelas->count()}");
         $this->newLine();
 
         $totalGeneradas = 0;

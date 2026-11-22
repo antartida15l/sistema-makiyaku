@@ -126,7 +126,7 @@ class GeocodificarUbicaciones extends Command
         $this->info('═══════════════════════════════════════');
         $this->line(" Exitosas:  {$resultados['exitosas']}");
         $this->line(" Fallidas:  {$resultados['fallidas']}");
-        $this->line("⏭  Omitidas:  {$resultados['omitidas']}");
+        $this->line("Omitidas:  {$resultados['omitidas']}");
         $this->info('═══════════════════════════════════════');
 
         if ($this->option('test')) {

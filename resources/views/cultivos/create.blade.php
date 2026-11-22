@@ -410,7 +410,7 @@
     <!-- Header -->
     <div class="page-header">
         <div class="page-header-content">
-            <div class="page-icon">🌱</div>
+            <div class="page-icon"><x-icono name="parcela" :size="20" /></div>
             <div class="page-title-group">
                 <h1>Agregar Nuevo Cultivo</h1>
                 <p class="page-subtitle">Registra un nuevo tipo de cultivo con todos sus requerimientos</p>
@@ -427,7 +427,7 @@
         <div class="alert-errors">
             <div style="display: flex; align-items: center; justify-content: space-between;">
                 <strong>
-                    <span style="font-size: 24px;">⚠️</span>
+                    <span style="font-size: 24px;"><x-icono name="alerta" :size="20" /></span>
                     ¡Atención! Se encontraron {{ count($errors) }} error(es)
                 </strong>
                 <button type="button" class="alert-close-btn" onclick="this.parentElement.parentElement.remove()">×</button>
@@ -448,7 +448,7 @@
             <!-- 1. INFORMACIÓN BÁSICA -->
             <div class="form-section">
                 <div class="section-header">
-                    <div class="section-icon">📋</div>
+                    <div class="section-icon"></div>
                     <div class="section-title">
                         <h3>Información Básica</h3>
                         <p class="section-description">Datos generales e identificación del cultivo</p>
@@ -470,7 +470,7 @@
                                 required
                                 placeholder="Ej: Tomate, Maíz, Fresa..."
                             >
-                            <span class="input-icon">🏷️</span>
+                            
                         </div>
                         @error('nombreCultivo')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -490,7 +490,7 @@
                                 class="form-control @error('nombreCientifico') is-invalid @enderror" 
                                 placeholder="Ej: Solanum lycopersicum"
                             >
-                            <span class="input-icon">🔬</span>
+                            
                         </div>
                         @error('nombreCientifico')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -510,14 +510,14 @@
                             required
                         >
                             <option value="">-- Seleccione un tipo --</option>
-                            <option value="Hortalizas" {{ old('tipo') == 'Hortalizas' ? 'selected' : '' }}>🥬 Hortalizas</option>
-                            <option value="Cereales" {{ old('tipo') == 'Cereales' ? 'selected' : '' }}>🌾 Cereales</option>
-                            <option value="Frutales" {{ old('tipo') == 'Frutales' ? 'selected' : '' }}>🍎 Frutales</option>
-                            <option value="Legumbres" {{ old('tipo') == 'Legumbres' ? 'selected' : '' }}>🫘 Legumbres</option>
-                            <option value="Tubérculos" {{ old('tipo') == 'Tubérculos' ? 'selected' : '' }}>🥔 Tubérculos</option>
-                            <option value="Aromáticas" {{ old('tipo') == 'Aromáticas' ? 'selected' : '' }}>🌿 Aromáticas</option>
-                            <option value="Oleaginosas" {{ old('tipo') == 'Oleaginosas' ? 'selected' : '' }}>🌻 Oleaginosas</option>
-                            <option value="Otros" {{ old('tipo') == 'Otros' ? 'selected' : '' }}>🌾 Otros</option>
+                            <option value="Hortalizas" {{ old('tipo') == 'Hortalizas' ? 'selected' : '' }}>Hortalizas</option>
+                            <option value="Cereales" {{ old('tipo') == 'Cereales' ? 'selected' : '' }}>Cereales</option>
+                            <option value="Frutales" {{ old('tipo') == 'Frutales' ? 'selected' : '' }}>Frutales</option>
+                            <option value="Legumbres" {{ old('tipo') == 'Legumbres' ? 'selected' : '' }}>Legumbres</option>
+                            <option value="Tubérculos" {{ old('tipo') == 'Tubérculos' ? 'selected' : '' }}>Tubérculos</option>
+                            <option value="Aromáticas" {{ old('tipo') == 'Aromáticas' ? 'selected' : '' }}>Aromáticas</option>
+                            <option value="Oleaginosas" {{ old('tipo') == 'Oleaginosas' ? 'selected' : '' }}>Oleaginosas</option>
+                            <option value="Otros" {{ old('tipo') == 'Otros' ? 'selected' : '' }}>Otros</option>
                         </select>
                         @error('tipo')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -534,10 +534,10 @@
                             class="form-select @error('region') is-invalid @enderror"
                         >
                             <option value="">-- Seleccione región --</option>
-                            <option value="Costa Norte" {{ old('region') == 'Costa Norte' ? 'selected' : '' }}>🏖️ Costa Norte</option>
-                            <option value="Costa Central y Sur" {{ old('region') == 'Costa Central y Sur' ? 'selected' : '' }}>🌊 Costa Central y Sur</option>
-                            <option value="Sierra" {{ old('region') == 'Sierra' ? 'selected' : '' }}>⛰️ Sierra</option>
-                            <option value="Selva" {{ old('region') == 'Selva' ? 'selected' : '' }}>🌴 Selva</option>
+                            <option value="Costa Norte" {{ old('region') == 'Costa Norte' ? 'selected' : '' }}>Costa Norte</option>
+                            <option value="Costa Central y Sur" {{ old('region') == 'Costa Central y Sur' ? 'selected' : '' }}>Costa Central y Sur</option>
+                            <option value="Sierra" {{ old('region') == 'Sierra' ? 'selected' : '' }}>Sierra</option>
+                            <option value="Selva" {{ old('region') == 'Selva' ? 'selected' : '' }}>Selva</option>
                         </select>
                         @error('region')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -549,7 +549,7 @@
             <!-- 2. REQUERIMIENTOS DE RIEGO -->
             <div class="form-section">
                 <div class="section-header">
-                    <div class="section-icon">💧</div>
+                    <div class="section-icon"><x-icono name="agua" :size="20" /></div>
                     <div class="section-title">
                         <h3>Requerimientos de Riego</h3>
                         <p class="section-description">Frecuencia, consumo de agua y niveles de humedad</p>
@@ -572,7 +572,7 @@
                                 class="form-control @error('frecuenciaRiegoMin') is-invalid @enderror" 
                                 required
                             >
-                            <span class="input-icon">⏱️</span>
+                            <span class="input-icon"><x-icono name="reloj" :size="20" /></span>
                         </div>
                         @error('frecuenciaRiegoMin')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -595,7 +595,7 @@
                                 class="form-control @error('frecuenciaRiegoMax') is-invalid @enderror" 
                                 required
                             >
-                            <span class="input-icon">⏰</span>
+                            <span class="input-icon"><x-icono name="reloj" :size="20" /></span>
                         </div>
                         @error('frecuenciaRiegoMax')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -619,7 +619,7 @@
                                 class="form-control @error('litrosPorM2Dia') is-invalid @enderror" 
                                 required
                             >
-                            <span class="input-icon">💦</span>
+                            
                         </div>
                         @error('litrosPorM2Dia')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -645,7 +645,7 @@
                                 class="form-control @error('humedadOptimaMin') is-invalid @enderror" 
                                 required
                             >
-                            <span class="input-icon">📊</span>
+                            <span class="input-icon"><x-icono name="ciclo" :size="20" /></span>
                         </div>
                         @error('humedadOptimaMin')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -668,7 +668,7 @@
                                 class="form-control @error('humedadOptimaMax') is-invalid @enderror" 
                                 required
                             >
-                            <span class="input-icon">📈</span>
+                            <span class="input-icon"><x-icono name="ciclo" :size="20" /></span>
                         </div>
                         @error('humedadOptimaMax')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -715,7 +715,7 @@
                                 class="form-control @error('diasCriticosSinAgua') is-invalid @enderror" 
                                 required
                             >
-                            <span class="input-icon">⚠️</span>
+                            <span class="input-icon"><x-icono name="alerta" :size="20" /></span>
                         </div>
                         @error('diasCriticosSinAgua')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -738,7 +738,7 @@
                             required
                             placeholder="Ej: Floración y fructificación"
                         >
-                        <span class="input-icon">🌸</span>
+                        
                     </div>
                     @error('etapaMayorConsumo')
                         <div class="invalid-feedback">{{ $message }}</div>
@@ -760,7 +760,7 @@
                                 class="form-control @error('diasEtapaConsumoMin') is-invalid @enderror"
                                 placeholder="Ej: 30"
                             >
-                            <span class="input-icon">📅</span>
+                            <span class="input-icon"><x-icono name="ciclo" :size="20" /></span>
                         </div>
                         @error('diasEtapaConsumoMin')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -781,7 +781,7 @@
                                 class="form-control @error('diasEtapaConsumoMax') is-invalid @enderror"
                                 placeholder="Ej: 60"
                             >
-                            <span class="input-icon">📅</span>
+                            <span class="input-icon"><x-icono name="ciclo" :size="20" /></span>
                         </div>
                         @error('diasEtapaConsumoMax')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -804,7 +804,7 @@
                                 class="form-control @error('reduccionConHidrogel') is-invalid @enderror"
                                 placeholder="Ej: 30"
                             >
-                            <span class="input-icon">🧪</span>
+                            <span class="input-icon"><x-icono name="hidrogel" :size="20" /></span>
                         </div>
                         @error('reduccionConHidrogel')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -817,7 +817,7 @@
             <!-- 3. CONDICIONES CLIMÁTICAS CRÍTICAS -->
             <div class="form-section">
                 <div class="section-header">
-                    <div class="section-icon">🌡️</div>
+                    <div class="section-icon"><x-icono name="calor" :size="20" /></div>
                     <div class="section-title">
                         <h3>Condiciones Climáticas Críticas</h3>
                         <p class="section-description">Temperaturas límite y sensibilidad a heladas</p>
@@ -841,7 +841,7 @@
                                 class="form-control @error('tempCriticaMinima') is-invalid @enderror" 
                                 required
                             >
-                            <span class="input-icon">🥶</span>
+                            
                         </div>
                         @error('tempCriticaMinima')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -865,7 +865,7 @@
                                 class="form-control @error('tempCriticaMaxima') is-invalid @enderror" 
                                 required
                             >
-                            <span class="input-icon">🥵</span>
+                            
                         </div>
                         @error('tempCriticaMaxima')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -911,7 +911,7 @@
                                 class="form-control @error('efectoTempMinima') is-invalid @enderror"
                                 placeholder="Ej: Daño foliar, detención del crecimiento..."
                             >
-                            <span class="input-icon">❄️</span>
+                            <span class="input-icon"><x-icono name="helada" :size="20" /></span>
                         </div>
                         @error('efectoTempMinima')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -932,7 +932,7 @@
                                 class="form-control @error('efectoTempMaxima') is-invalid @enderror"
                                 placeholder="Ej: Quemadura de hojas, caída de flores..."
                             >
-                            <span class="input-icon">🔥</span>
+                            <span class="input-icon"><x-icono name="calor" :size="20" /></span>
                         </div>
                         @error('efectoTempMaxima')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -945,7 +945,7 @@
             <!-- 4. INFORMACIÓN ADICIONAL -->
             <div class="form-section">
                 <div class="section-header">
-                    <div class="section-icon">📝</div>
+                    <div class="section-icon"></div>
                     <div class="section-title">
                         <h3>Información Adicional</h3>
                         <p class="section-description">Ciclo productivo y observaciones generales</p>
@@ -967,7 +967,7 @@
                             class="form-control @error('cicloProductivo') is-invalid @enderror"
                             placeholder="90"
                         >
-                        <span class="input-icon">⏱️</span>
+                        <span class="input-icon"><x-icono name="reloj" :size="20" /></span>
                     </div>
                     @error('cicloProductivo')
                         <div class="invalid-feedback">{{ $message }}</div>
@@ -1015,7 +1015,7 @@
                     <span>Cancelar</span>
                 </a>
                 <button type="submit" class="btn btn-submit">
-                    <span>💾</span>
+                    
                     <span>Guardar Cultivo</span>
                 </button>
             </div>
@@ -1151,7 +1151,7 @@
             }
 
             const submitBtn = this.querySelector('.btn-submit');
-            submitBtn.innerHTML = '<span>⏳</span><span>Guardando...</span>';
+            submitBtn.innerHTML = '<span>Guardando...</span>';
             submitBtn.style.pointerEvents = 'none';
             submitBtn.style.opacity = '0.7';
         });

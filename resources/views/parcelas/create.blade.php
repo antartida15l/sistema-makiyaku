@@ -410,7 +410,7 @@
     {{-- HEADER --}}
     <div class="page-header">
         <div class="page-header-content">
-            <div class="page-icon">🌾</div>
+            <div class="page-icon"><x-icono name="parcela" :size="20" /></div>
             <div class="page-title-group">
                 <h1>Nueva Parcela</h1>
                 <p class="page-subtitle">Registra una nueva parcela de cultivo</p>
@@ -425,7 +425,7 @@
     {{-- ALERTAS --}}
     @if($errors->any())
         <div class="alert alert-danger">
-            <span style="font-size: 24px;">⚠️</span>
+            <span style="font-size: 24px;"><x-icono name="alerta" :size="20" /></span>
             <div style="flex: 1;">
                 <strong style="display: block; margin-bottom: 10px;">Se encontraron errores:</strong>
                 <ul style="margin: 0; padding-left: 20px;">
@@ -445,7 +445,7 @@
             {{-- INFORMACIÓN BÁSICA --}}
             <div class="form-section">
                 <div class="section-header">
-                    <div class="section-icon">📋</div>
+                    <div class="section-icon"></div>
                     <div class="section-title">
                         <h3>Información Básica</h3>
                         <p class="section-description">Datos generales de la parcela</p>
@@ -467,7 +467,7 @@
                             placeholder="Ej: Parcela Norte, Lote 5, Terraza Alta..."
                             maxlength="255"
                         >
-                        <span class="input-icon">📍</span>
+                        <span class="input-icon"><x-icono name="parcela" :size="20" /></span>
                     </div>
                     @error('nombreParcela')
                         <div class="invalid-feedback">{{ $message }}</div>
@@ -492,7 +492,7 @@
                                 min="0.01"
                                 placeholder="100.00"
                             >
-                            <span class="input-icon">📐</span>
+                            
                         </div>
                         @error('area')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -530,7 +530,7 @@
             {{-- UBICACIÓN --}}
             <div class="form-section">
                 <div class="section-header">
-                    <div class="section-icon">🗺️</div>
+                    <div class="section-icon"></div>
                     <div class="section-title">
                         <h3>Ubicación</h3>
                         <p class="section-description">Localización geográfica de la parcela</p>
@@ -641,7 +641,7 @@
                 </div>
 
                 <div class="info-box">
-                    <span class="info-box-icon">💡</span>
+                    <span class="info-box-icon"><x-icono name="consejo" :size="20" /></span>
                     <span>Las coordenadas GPS se buscarán automáticamente al escribir la ubicación. También puedes ingresarlas manualmente.</span>
                 </div>
             </div>
@@ -649,7 +649,7 @@
             {{-- DATOS DE SIEMBRA Y RIEGO --}}
             <div class="form-section">
                 <div class="section-header">
-                    <div class="section-icon">💧</div>
+                    <div class="section-icon"><x-icono name="agua" :size="20" /></div>
                     <div class="section-title">
                         <h3>Datos de Cultivo y Riego</h3>
                         <p class="section-description">Información sobre siembra y riego</p>
@@ -698,7 +698,7 @@
             {{-- HIDROGEL --}}
             <div class="form-section">
                 <div class="section-header">
-                    <div class="section-icon">💎</div>
+                    <div class="section-icon"></div>
                     <div class="section-title">
                         <h3>Aplicación de Hidrogel</h3>
                         <p class="section-description">Tecnología de retención de agua</p>
@@ -708,7 +708,7 @@
                 {{-- RECUADRO INFORMATIVO SOBRE HIDROGEL --}}
                 <div style="background: linear-gradient(135deg, #e3f2fd, #bbdefb); border: 2px solid #2196f3; border-left: 5px solid #2196f3; border-radius: 12px; padding: 20px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(33, 150, 243, 0.15);">
                     <div style="display: flex; align-items: flex-start; gap: 15px;">
-                        <div style="font-size: 32px; flex-shrink: 0;">💧</div>
+                        <div style="font-size: 32px; flex-shrink: 0;"><x-icono name="agua" :size="20" /></div>
                         <div>
                             <h4 style="margin: 0 0 12px 0; color: #0d47a1; font-size: 18px; font-weight: 800;">
                                 ¿Qué es el Hidrogel y para qué sirve?
@@ -717,15 +717,15 @@
                                 El <strong>hidrogel agrícola</strong> es un polímero superabsorbente que retiene hasta 400 veces su peso en agua. Funciona como una "esponja inteligente" en el suelo que:
                             </p>
                             <ul style="margin: 0 0 15px 0; padding-left: 25px; color: #1565c0; font-size: 14px; line-height: 1.8; font-weight: 600;">
-                                <li><strong>💧 Reduce el consumo de agua:</strong> Ahorra hasta un 25-30% en riego</li>
-                                <li><strong>🌱 Mejora el crecimiento:</strong> Las plantas absorben agua gradualmente según necesitan</li>
-                                <li><strong>⏰ Espacía los riegos:</strong> Permite regar con menos frecuencia</li>
-                                <li><strong>🛡️ Protege en sequías:</strong> Actúa como reserva de agua en períodos críticos</li>
-                                <li><strong>♻️ Es reutilizable:</strong> Dura de 3 a 5 años en el suelo</li>
+                                <li><strong>Reduce el consumo de agua:</strong> Ahorra hasta un 25-30% en riego</li>
+                                <li><strong>Mejora el crecimiento:</strong> Las plantas absorben agua gradualmente según necesitan</li>
+                                <li><strong>Espacía los riegos:</strong> Permite regar con menos frecuencia</li>
+                                <li><strong>Protege en sequías:</strong> Actúa como reserva de agua en períodos críticos</li>
+                                <li><strong>Es reutilizable:</strong> Dura de 3 a 5 años en el suelo</li>
                             </ul>
                             <div style="background: rgba(255, 255, 255, 0.5); padding: 12px 15px; border-radius: 8px; border-left: 3px solid #1976d2;">
                                 <p style="margin: 0; color: #0d47a1; font-size: 13px; font-weight: 700;">
-                                    <span style="font-size: 16px;">📊</span> <strong>Cómo usar:</strong> Se aplica mezclado con el suelo al momento de sembrar o trasplantar, típicamente 2-5 kg por cada 100 m² dependiendo del cultivo.
+                                    <span style="font-size: 16px;"><x-icono name="ciclo" :size="20" /></span> <strong>Cómo usar:</strong> Se aplica mezclado con el suelo al momento de sembrar o trasplantar, típicamente 2-5 kg por cada 100 m² dependiendo del cultivo.
                                 </p>
                             </div>
                         </div>
@@ -787,7 +787,7 @@
                     </div>
 
                     <div class="info-box">
-                        <span class="info-box-icon">📊</span>
+                        <span class="info-box-icon"><x-icono name="ciclo" :size="20" /></span>
                         <span>El hidrogel reducirá automáticamente las necesidades de riego en un 25%.</span>
                     </div>
                 </div>
@@ -795,7 +795,7 @@
             {{-- NOTAS --}}
             <div class="form-section">
                 <div class="section-header">
-                    <div class="section-icon">📝</div>
+                    <div class="section-icon"></div>
                     <div class="section-title">
                         <h3>Notas y Observaciones</h3>
                         <p class="section-description">Información adicional</p>
@@ -828,7 +828,7 @@
                     <span>Cancelar</span>
                 </a>
                 <button type="submit" class="btn btn-submit">
-                    <span>💾</span>
+                    
                     <span>Crear Parcela</span>
                 </button>
             </div>
@@ -841,7 +841,7 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // ============================================
-        // 🌍 GEOCODIFICACIÓN AUTOMÁTICA
+        // GEOCODIFICACIÓN AUTOMÁTICA
         // ============================================
         
         const regionInput = document.getElementById('region');
@@ -901,7 +901,7 @@
          * Realizar la búsqueda AJAX (VERSIÓN MEJORADA CON REDONDEO)
          */
         async function realizarBusqueda(distrito, provincia, region) {
-            mostrarIndicador('buscando', '🔍 Buscando coordenadas GPS...');
+            mostrarIndicador('buscando', 'Buscando coordenadas GPS...');
             
             try {
                 const response = await fetch('{{ route("api.geocodificar") }}', {
@@ -921,7 +921,7 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    // ✅ Redondear a 6 decimales para evitar problemas de validación
+                    // Redondear a 6 decimales para evitar problemas de validación
                     const latRedondeada = parseFloat(data.data.latitud).toFixed(6);
                     const lonRedondeada = parseFloat(data.data.longitud).toFixed(6);
                     
@@ -943,7 +943,7 @@
                     mostrarIndicador('success', `
                         ${data.mensaje}<br>
                         <small style="opacity: 0.8;">
-                            📍 ${latRedondeada}, ${lonRedondeada}<br>
+                            ${latRedondeada}, ${lonRedondeada}<br>
                             ${data.data.display_name}
                         </small>
                     `);
@@ -962,7 +962,7 @@
                 
             } catch (error) {
                 console.error('Error en geocodificación:', error);
-                mostrarIndicador('error', '❌ Error al buscar coordenadas. Intenta manualmente.');
+                mostrarIndicador('error', 'Error al buscar coordenadas. Intenta manualmente.');
                 
                 setTimeout(() => {
                     ocultarIndicador();
@@ -1013,7 +1013,7 @@
             searchIndicator.style.display = 'none';
         }
         
-        // 🎯 Escuchar cambios en los campos de ubicación
+        // Escuchar cambios en los campos de ubicación
         regionInput.addEventListener('input', buscarCoordenadas);
         provinciaInput.addEventListener('input', buscarCoordenadas);
         distritoInput.addEventListener('input', buscarCoordenadas);
@@ -1025,7 +1025,7 @@
             }
         });
         
-        // 🔒 Si el usuario edita manualmente las coordenadas, detener búsqueda automática
+        // Si el usuario edita manualmente las coordenadas, detener búsqueda automática
         latitudInput.addEventListener('input', function() {
             if (searchTimeout) {
                 clearTimeout(searchTimeout);
@@ -1039,7 +1039,7 @@
         });
 
         // ============================================
-        // 💎 TOGGLE CAMPOS DE HIDROGEL
+        // TOGGLE CAMPOS DE HIDROGEL
         // ============================================
         
         const hidrogelCheckbox = document.getElementById('tieneHidrogelAplicado');
@@ -1063,7 +1063,7 @@
         toggleHidrogelFields();
 
         // ============================================
-        // ✅ VALIDACIÓN EN TIEMPO REAL
+        // VALIDACIÓN EN TIEMPO REAL
         // ============================================
         
         const inputs = document.querySelectorAll('.form-control, .form-select');
@@ -1084,7 +1084,7 @@
         });
 
         // ============================================
-        // 🚫 PREVENIR ENVÍO CON ERRORES
+        // PREVENIR ENVÍO CON ERRORES
         // ============================================
         
         const form = document.querySelector('form');

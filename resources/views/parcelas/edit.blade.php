@@ -404,7 +404,7 @@
     {{-- HEADER --}}
     <div class="page-header">
         <div class="page-header-content">
-            <div class="page-icon">✏️</div>
+            <div class="page-icon"></div>
             <div class="page-title-group">
                 <h1>Editar Parcela</h1>
                 <p class="page-subtitle">Modifica la información de: {{ $parcela->nombre }}</p>
@@ -419,7 +419,7 @@
     {{-- ALERTAS --}}
     @if($errors->any())
         <div class="alert alert-danger">
-            <span style="font-size: 24px;">⚠️</span>
+            <span style="font-size: 24px;"><x-icono name="alerta" :size="20" /></span>
             <div style="flex: 1;">
                 <strong style="display: block; margin-bottom: 10px;">Se encontraron errores:</strong>
                 <ul style="margin: 0; padding-left: 20px;">
@@ -440,7 +440,7 @@
             {{-- INFORMACIÓN BÁSICA --}}
             <div class="form-section">
                 <div class="section-header">
-                    <div class="section-icon">📋</div>
+                    <div class="section-icon"></div>
                     <div class="section-title">
                         <h3>Información Básica</h3>
                         <p class="section-description">Datos principales de tu parcela</p>
@@ -461,7 +461,7 @@
                             required
                             placeholder="Ej: Parcela Norte, Chacra 1..."
                         >
-                        <span class="input-icon">🏷️</span>
+                        
                     </div>
                     @error('nombreParcela')
                         <div class="invalid-feedback">{{ $message }}</div>
@@ -485,7 +485,7 @@
                                 required
                                 placeholder="100.00"
                             >
-                            <span class="input-icon">📏</span>
+                            
                         </div>
                         @error('area')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -511,7 +511,7 @@
                                     </option>
                                 @endforeach
                             </select>
-                            <span class="input-icon">🌾</span>
+                            <span class="input-icon"><x-icono name="parcela" :size="20" /></span>
                         </div>
                         @error('idCultivo')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -525,13 +525,13 @@
                     </label>
                     <select name="estado" id="estado" class="form-select @error('estado') is-invalid @enderror" required>
                         <option value="activa" {{ old('estado', $parcela->estado) == 'activa' ? 'selected' : '' }}>
-                            ✅ Activa
+                            Activa
                         </option>
                         <option value="inactiva" {{ old('estado', $parcela->estado) == 'inactiva' ? 'selected' : '' }}>
-                            ⏸️ Inactiva
+                            Inactiva
                         </option>
                         <option value="mantenimiento" {{ old('estado', $parcela->estado) == 'mantenimiento' ? 'selected' : '' }}>
-                            🔧 En Mantenimiento
+                            En Mantenimiento
                         </option>
                     </select>
                     @error('estado')
@@ -543,7 +543,7 @@
             {{-- UBICACIÓN --}}
             <div class="form-section">
                 <div class="section-header">
-                    <div class="section-icon">📍</div>
+                    <div class="section-icon"><x-icono name="parcela" :size="20" /></div>
                     <div class="section-title">
                         <h3>Ubicación</h3>
                         <p class="section-description">Localización geográfica</p>
@@ -640,7 +640,7 @@
             {{-- FECHAS DE SIEMBRA --}}
             <div class="form-section">
                 <div class="section-header">
-                    <div class="section-icon">📅</div>
+                    <div class="section-icon"><x-icono name="ciclo" :size="20" /></div>
                     <div class="section-title">
                         <h3>Fecha de Siembra</h3>
                         <p class="section-description">Información para tracking del cultivo</p>
@@ -665,7 +665,7 @@
 
                 @if($parcela->fecha_siembra && $parcela->dias_desde_siembra)
                 <div class="info-box">
-                    <span class="info-box-icon">📊</span>
+                    <span class="info-box-icon"><x-icono name="ciclo" :size="20" /></span>
                     <span>Actualmente: {{ $parcela->dias_desde_siembra }} días desde la siembra (Etapa: {{ ucfirst($parcela->etapa_crecimiento) }})</span>
                 </div>
                 @endif
@@ -674,7 +674,7 @@
             {{-- HIDROGEL --}}
             <div class="form-section">
                 <div class="section-header">
-                    <div class="section-icon">💧</div>
+                    <div class="section-icon"><x-icono name="agua" :size="20" /></div>
                     <div class="section-title">
                         <h3>Aplicación de Hidrogel</h3>
                         <p class="section-description">Reduce el consumo de agua hasta 25%</p>
@@ -738,7 +738,7 @@
                 </div>
 
                 <div class="info-box">
-                    <span class="info-box-icon">💡</span>
+                    <span class="info-box-icon"><x-icono name="consejo" :size="20" /></span>
                     <span>El hidrogel aumenta la frecuencia de riego automáticamente (+2 días)</span>
                 </div>
             </div>
@@ -746,7 +746,7 @@
             {{-- NOTAS --}}
             <div class="form-section">
                 <div class="section-header">
-                    <div class="section-icon">📝</div>
+                    <div class="section-icon"></div>
                     <div class="section-title">
                         <h3>Notas y Observaciones</h3>
                         <p class="section-description">Información adicional (opcional)</p>
@@ -776,7 +776,7 @@
                     <span>Cancelar</span>
                 </a>
                 <button type="submit" class="btn btn-submit">
-                    <span>💾</span>
+                    
                     <span>Actualizar Parcela</span>
                 </button>
             </div>

@@ -2,7 +2,8 @@
 
 namespace App\Models;
 
-use App\Services\OpenWeatherService;
+use App\Services\ClimaService;
+use App\Services\RiegoService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -253,11 +254,11 @@ class Parcela extends Model
 
     public function getProgresoSiembraAttribute(): ?int
     {
-        if (!$this->fecha_siembra || !$this->cultivo || !$this->cultivo->cicloCultivoDias) {
+        if (!$this->fecha_siembra || !$this->cultivo || !$this->cultivo->cicloProductivo) {
             return null;
         }
 
-        $progreso = ($this->dias_desde_siembra / $this->cultivo->cicloCultivoDias) * 100;
+        $progreso = ($this->dias_desde_siembra / $this->cultivo->cicloProductivo) * 100;
         
         return min(100, (int) $progreso);
     }
@@ -333,13 +334,15 @@ class Parcela extends Model
 
     public function scopeOrdenarPorUrgencia($query)
     {
+        $hoy = Carbon::today()->toDateString();
+
         return $query->orderByRaw("
             CASE 
-                WHEN proximo_riego_estimado < CURDATE() THEN 1
-                WHEN proximo_riego_estimado = CURDATE() THEN 2
+                WHEN proximo_riego_estimado < ? THEN 1
+                WHEN proximo_riego_estimado = ? THEN 2
                 ELSE 3
             END
-        ")->orderBy('proximo_riego_estimado', 'asc');
+        ", [$hoy, $hoy])->orderBy('proximo_riego_estimado', 'asc');
     }
 
     /**
@@ -425,23 +428,12 @@ class Parcela extends Model
     }
 
     /**
-     * Calcula los litros por riego según área y cultivo
-     * @return float
+     * Litros para un riego normal de esta parcela.
+     * Usa RiegoService, la misma formula que las alertas y recomendaciones.
      */
     public function calcularLitrosPorRiego(): float
     {
-        if (!$this->cultivo || !$this->area) {
-            return 0;
-        }
-
-        // Fórmula: litros/m² según requerimiento de humedad del cultivo
-        $litrosPorM2 = ($this->cultivo->requerimientoHumedad / 100) * 9;
-        
-        // Ajuste por hidrogel (reduce 25% el consumo)
-        $factorHidrogel = $this->tieneHidrogelAplicado ? 0.75 : 1.0;
-        
-        // Calcular total
-        return round($this->area * $litrosPorM2 * $factorHidrogel, 2);
+        return app(RiegoService::class)->litrosPorRiego($this, $this->climaActual);
     }
 
     private function ajustarFrecuenciaConHidrogel(): void
@@ -450,16 +442,9 @@ class Parcela extends Model
             return;
         }
 
-        $frecuenciaBase = match(true) {
-            $this->cultivo->requerimientoHumedad >= 80 => 3,
-            $this->cultivo->requerimientoHumedad >= 65 => 5,
-            $this->cultivo->requerimientoHumedad >= 50 => 7,
-            default => 10,
-        };
-
-        $nuevaFrecuencia = $this->tieneHidrogelAplicado ? $frecuenciaBase + 2 : $frecuenciaBase;
-        
-        $this->update(['frecuencia_riego_dias' => $nuevaFrecuencia]);
+        $this->update([
+            'frecuencia_riego_dias' => app(RiegoService::class)->frecuenciaDias($this, $this->climaActual),
+        ]);
     }
 
     public function obtenerEstadisticasRiego(): array
@@ -486,120 +471,16 @@ class Parcela extends Model
     }
 
     /**
-     * Fuerza actualización del clima en tiempo real
+     * Fuerza actualizacion del clima desde Open-Meteo.
      */
     public function actualizarClimaAhora(): ?ClimaHistorial
     {
-        $service = app(OpenWeatherService::class);
-        
-        //  Usar la relación renombrada
-        $ubicacionData = $this->ubicacionRelacion;
-        
-        if (!$ubicacionData) {
-            return null;
-        }
-
         try {
-            $clima = $service->forceRefresh(
-                "{$ubicacionData->distrito}, {$ubicacionData->provincia}",
-                'PE'
-            );
-
-            if (!$clima) {
-                return null;
-            }
-
-            // Obtener pronóstico
-            $pronostico = $service->getWeatherSummaryForIrrigation(
-                $clima['lat'] ?? 0,
-                $clima['lon'] ?? 0
-            );
-
-            // Detectar alertas
-            $alertas = $this->detectarAlertas($clima, $pronostico);
-
-            // Crear registro
-            return $this->climaHistorial()->create([
-                'ciudad' => $clima['name'],
-                'distrito' => $ubicacionData->distrito,
-                'lat' => $clima['lat'],
-                'lon' => $clima['lon'],
-                'temperatura' => $clima['temp'],
-                'sensacion_termica' => $clima['feels_like'],
-                'temp_minima' => $clima['temp_min'],
-                'temp_maxima' => $clima['temp_max'],
-                'humedad' => $clima['humidity'],
-                'presion' => $clima['pressure'],
-                'viento_velocidad' => $clima['wind_speed'],
-                'viento_direccion' => $clima['wind_deg'],
-                'viento_direccion_texto' => $clima['wind_direction'],
-                'viento_rafaga' => $clima['wind_gust'],
-                'lluvia_1h' => $clima['rain_1h'],
-                'lluvia_3h' => $clima['rain_3h'],
-                'lluvia_24h' => $pronostico['rain_forecast_24h'] ?? 0,
-                'probabilidad_lluvia_24h' => $pronostico['rain_probability_24h'] ?? 0,
-                'condicion_principal' => $clima['weather_main'],
-                'descripcion' => $clima['weather_description'],
-                'icono_codigo' => $clima['weather_icon'],
-                'nubosidad' => $clima['clouds'],
-                'visibilidad' => $clima['visibility'],
-                'amanecer' => $clima['sunrise_formatted'],
-                'atardecer' => $clima['sunset_formatted'],
-                'alerta_helada' => $alertas['helada'],
-                'alerta_calor_extremo' => $alertas['calor_extremo'],
-                'alerta_lluvia_proxima' => $alertas['lluvia_proxima'],
-                'necesita_riego_urgente' => $alertas['riego_urgente'],
-                'fecha_registro' => now(),
-                'tipo_actualizacion' => 'manual',
-            ]);
-
-        } catch (\Exception $e) {
+            return app(ClimaService::class)->actualizarClimaParcela($this, true, 'manual');
+        } catch (\Throwable $e) {
             report($e);
+
             return null;
         }
-    }
-
-    /**
-     * Detecta alertas climáticas
-     */
-    private function detectarAlertas(array $clima, array $pronostico): array
-    {
-        $alertas = [
-            'helada' => false,
-            'calor_extremo' => false,
-            'lluvia_proxima' => false,
-            'riego_urgente' => false,
-        ];
-
-        if (!$this->cultivo) {
-            return $alertas;
-        }
-
-        if ($clima['temp'] <= $this->cultivo->tempCriticaMinima) {
-            $alertas['helada'] = true;
-        }
-
-        if ($clima['temp'] >= $this->cultivo->tempCriticaMaxima) {
-            $alertas['calor_extremo'] = true;
-        }
-
-        if (($pronostico['rain_probability_24h'] ?? 0) > 50) {
-            $alertas['lluvia_proxima'] = true;
-        }
-
-        $necesitaRiego = false;
-        if ($clima['temp'] > 28 && $clima['humidity'] < 40) {
-            $necesitaRiego = true;
-        }
-        if ($this->riego_atrasado && ($pronostico['rain_probability_24h'] ?? 0) < 30) {
-            $necesitaRiego = true;
-        }
-        if (($clima['wind_speed'] ?? 0) > 8 && $clima['humidity'] < 50) {
-            $necesitaRiego = true;
-        }
-
-        $alertas['riego_urgente'] = $necesitaRiego;
-
-        return $alertas;
     }
 }

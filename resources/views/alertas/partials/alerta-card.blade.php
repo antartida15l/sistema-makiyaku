@@ -41,18 +41,18 @@
     {{-- Badge especial para alertas de RIEGO --}}
     @if($esAlertaRiego)
         <div class="badge-riego" style="background: {{ $configRiego['badge_bg'] }};">
-            💧 {{ $configRiego['badge'] }}
+            {{ $configRiego['badge'] }}
         </div>
     @endif
 
     <div class="alerta-header">
-        <div class="alerta-icon" style="font-size: {{ $esAlertaRiego ? $configRiego['icon_size'] : '48px' }};">
-            {{ $alerta->icono }}
+        <div class="alerta-icon">
+            <x-icono :name="$alerta->icono" :size="$esAlertaRiego ? (int) $configRiego['icon_size'] : 48" />
         </div>
         
         <div class="alerta-content">
             <div class="alerta-parcela">
-                🌾 {{ $alerta->parcela->nombre }}
+                {{ $alerta->parcela->nombre }}
                 @if($alerta->parcela->cultivo)
                     • {{ $alerta->parcela->cultivo->nombreCultivo }}
                 @endif
@@ -71,19 +71,33 @@
     {{-- Detalles adicionales --}}
     @if($alerta->datos_adicionales)
         <div class="alerta-detalles {{ $esAlertaRiego ? 'alerta-detalles-riego' : '' }}">
-            <strong>📊 Información detallada:</strong>
+            <strong>Informacion detallada:</strong>
             <div class="detalles-grid">
                 @if(isset($alerta->datos_adicionales['litros_recomendados']))
                     <div class="detalle-item">
-                        <span class="detalle-icon">💧</span>
+                        <span class="detalle-icon"><x-icono name="agua" :size="20" /></span>
                         <span class="detalle-label">Litros necesarios:</span>
                         <span class="detalle-valor">{{ number_format($alerta->datos_adicionales['litros_recomendados'], 0) }}L</span>
                     </div>
                 @endif
                 
+                @if(isset($alerta->datos_adicionales['baldes']) && ($alerta->datos_adicionales['litros_recomendados'] ?? 0) > 0 && $alerta->datos_adicionales['litros_recomendados'] < 1000)
+                    <div class="detalle-item">
+                        <span class="detalle-label">Equivale a:</span>
+                        <span class="detalle-valor">{{ rtrim(rtrim(number_format($alerta->datos_adicionales['baldes'], 1, ',', ''), '0'), ',') }} baldes de 20 L</span>
+                    </div>
+                @endif
+
+                @if(isset($alerta->datos_adicionales['litros_por_m2']) && ($alerta->datos_adicionales['litros_recomendados'] ?? 0) > 0)
+                    <div class="detalle-item">
+                        <span class="detalle-label">Por metro cuadrado:</span>
+                        <span class="detalle-valor">{{ rtrim(rtrim(number_format($alerta->datos_adicionales['litros_por_m2'], 1, ',', ''), '0'), ',') }} L</span>
+                    </div>
+                @endif
+
                 @if(isset($alerta->datos_adicionales['dias_sin_regar']))
                     <div class="detalle-item">
-                        <span class="detalle-icon">📅</span>
+                        <span class="detalle-icon"><x-icono name="ciclo" :size="20" /></span>
                         <span class="detalle-label">Días sin regar:</span>
                         <span class="detalle-valor">{{ $alerta->datos_adicionales['dias_sin_regar'] }} días</span>
                     </div>
@@ -91,7 +105,7 @@
                 
                 @if(isset($alerta->datos_adicionales['temperatura']))
                     <div class="detalle-item">
-                        <span class="detalle-icon">🌡️</span>
+                        <span class="detalle-icon"><x-icono name="calor" :size="20" /></span>
                         <span class="detalle-label">Temperatura:</span>
                         <span class="detalle-valor">{{ $alerta->datos_adicionales['temperatura'] }}°C</span>
                     </div>
@@ -99,7 +113,7 @@
                 
                 @if(isset($alerta->datos_adicionales['humedad']))
                     <div class="detalle-item">
-                        <span class="detalle-icon">💨</span>
+                        
                         <span class="detalle-label">Humedad:</span>
                         <span class="detalle-valor">{{ $alerta->datos_adicionales['humedad'] }}%</span>
                     </div>
@@ -107,7 +121,7 @@
                 
                 @if(isset($alerta->datos_adicionales['probabilidad_lluvia']))
                     <div class="detalle-item">
-                        <span class="detalle-icon">🌧️</span>
+                        <span class="detalle-icon"><x-icono name="lluvia" :size="20" /></span>
                         <span class="detalle-label">Prob. lluvia:</span>
                         <span class="detalle-valor">{{ $alerta->datos_adicionales['probabilidad_lluvia'] }}%</span>
                     </div>
@@ -115,7 +129,7 @@
                 
                 @if(isset($alerta->datos_adicionales['puntaje_desglose']))
                     <div class="detalle-item detalle-urgencia">
-                        <span class="detalle-icon">⚡</span>
+                        
                         <span class="detalle-label">Urgencia:</span>
                         <span class="detalle-valor">{{ $alerta->puntaje_urgencia }}/100</span>
                         <div class="barra-urgencia">
@@ -129,13 +143,13 @@
 
     <div class="alerta-footer">
         <div class="alerta-tiempo">
-            🕐 {{ $alerta->tiempo_transcurrido }}
+            {{ $alerta->tiempo_transcurrido }}
         </div>
 
         <div class="alerta-acciones">
             @if($alerta->accion_url)
                 <a href="{{ $alerta->accion_url }}" class="btn btn-primary">
-                    {{ $esAlertaRiego ? '💧 Registrar Riego' : ($alerta->accion_texto ?? 'Ver Detalles') }}
+                    {{ $alerta->accion_texto ?? 'Ver detalles' }}
                 </a>
             @endif
             
@@ -144,7 +158,7 @@
                 data-alerta-id="{{ $alerta->id }}"
                 onclick="marcarComoLeida({{ $alerta->id }})"
             >
-                ✓ Marcar como leída
+                Marcar como leída
             </button>
         </div>
     </div>

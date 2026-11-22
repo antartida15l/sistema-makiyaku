@@ -8,27 +8,34 @@ use App\Models\Alerta;
 use App\Models\Cultivo;
 use App\Models\ClimaHistorial;
 use App\Services\AlertaService;
-use App\Services\OpenWeatherService;
+use App\Services\MonitoreoService;
+use App\Services\OpenMeteoService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
     protected AlertaService $alertaService;
-    protected OpenWeatherService $weatherService;
+    protected OpenMeteoService $weatherService;
+    protected MonitoreoService $monitoreo;
 
-    public function __construct(AlertaService $alertaService, OpenWeatherService $weatherService)
-    {
+    public function __construct(
+        AlertaService $alertaService,
+        OpenMeteoService $weatherService,
+        MonitoreoService $monitoreo
+    ) {
         $this->alertaService = $alertaService;
         $this->weatherService = $weatherService;
+        $this->monitoreo = $monitoreo;
     }
 
     public function index()
     {
         $userId = auth()->id();
 
-        // Generar alertas automáticamente
-        $this->alertaService->generarAlertasUsuario($userId);
+        // Sin cron (XAMPP local) esto mantiene clima y alertas al dia, maximo cada 15 minutos.
+        // Con `php artisan schedule:work` activo, el scheduler ya lo hace cada 30 minutos.
+        $this->monitoreo->refrescarSiHaceFalta($userId);
 
         // Estadísticas de parcelas
         $totalParcelas = Parcela::where('user_id', $userId)
@@ -73,6 +80,17 @@ class DashboardController extends Controller
             'actividadesRecientes',
             'distribucionCultivos'
         ));
+    }
+
+    /**
+     * Clima promedio de las parcelas del usuario (JSON). Antes la ruta existia sin metodo.
+     */
+    public function getHumedadData()
+    {
+        return response()->json([
+            'success' => true,
+            'data' => $this->obtenerClimaPromedioRealTime(auth()->id()),
+        ]);
     }
 
     private function obtenerClimaPromedioRealTime(int $userId): array
@@ -331,7 +349,7 @@ class DashboardController extends Controller
 
         foreach ($riegosRecientes as $riego) {
             $actividades[] = [
-                'icon' => $riego->tipo_riego === 'automatico' ? '🤖' : '💧',
+                'icon' => $riego->tipo_riego === 'automatico' ? 'auto' : 'agua',
                 'titulo' => "Riego {$riego->tipo_riego} en {$riego->nombre} - " . 
                            number_format($riego->cantidad_agua, 0) . " litros",
                 'tiempo' => Carbon::parse($riego->fecha_riego)->diffForHumans(),
@@ -349,7 +367,7 @@ class DashboardController extends Controller
 
         foreach ($parcelasNuevas as $parcela) {
             $actividades[] = [
-                'icon' => '🌱',
+                'icon' => 'parcela',
                 'titulo' => "Nueva parcela creada: {$parcela->nombre}",
                 'tiempo' => $parcela->created_at->diffForHumans(),
                 'color' => 'rgba(40, 167, 69, 0.1)',
@@ -381,30 +399,12 @@ class DashboardController extends Controller
 
         $totalArea = $distribucion->sum('area_total');
 
-        // Mapeo de emojis por cultivo
-        $emojis = [
-            'Maíz' => '🌽',
-            'Trigo' => '🌾',
-            'Arroz' => '🌾',
-            'Papa' => '🥔',
-            'Tomate' => '🍅',
-            'Lechuga' => '🥬',
-            'Zanahoria' => '🥕',
-            'Cebolla' => '🧅',
-            'Fresa' => '🍓',
-            'Uva' => '🍇',
-            'Manzana' => '🍎',
-            'Naranja' => '🍊',
-            'Café' => '☕',
-            'Cacao' => '🍫',
-            'Caña de azúcar' => '🎋',
-            'Algodón' => '☁️',
-        ];
+        $emojis = [];
 
         return $distribucion->map(function($item) use ($totalArea, $emojis) {
             return [
                 'nombre' => $item->nombreCultivo,
-                'emoji' => $emojis[$item->nombreCultivo] ?? '🌱',
+                'emoji' => '',
                 'cantidad' => $item->cantidad,
                 'area' => round($item->area_total, 2),
                 'porcentaje' => $totalArea > 0 ? round(($item->area_total / $totalArea) * 100, 1) : 0,
@@ -412,18 +412,12 @@ class DashboardController extends Controller
         })->toArray();
     }
 
+    /**
+     * Ya no se usan emojis: se devuelve la clave del icono local (public/img/clima).
+     */
     private function getEmojiClima(string $condition): string
     {
-        return match($condition) {
-            'Clear' => '☀️',
-            'Clouds' => '☁️',
-            'Rain' => '🌧️',
-            'Drizzle' => '🌦️',
-            'Thunderstorm' => '⛈️',
-            'Snow' => '❄️',
-            'Mist', 'Fog' => '🌫️',
-            default => '🌤️',
-        };
+        return '';
     }
 
     private function getColorByNivel(string $nivel): string

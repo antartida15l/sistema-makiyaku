@@ -5,9 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Parcela;
 use App\Models\Cultivo;
 use App\Models\Ubicacion;
-use App\Services\OpenWeatherService;
+use App\Models\Alerta;
 use App\Services\GeocodingService;
-use App\Services\AlertaService; 
+use App\Services\AlertaService;
+use App\Services\RiegoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Artisan;
@@ -18,18 +19,18 @@ class ParcelaController extends Controller
 {
     use AuthorizesRequests;
 
-    protected OpenWeatherService $weatherService;
     protected GeocodingService $geocodingService;
     protected AlertaService $alertaService;
+    protected RiegoService $riegoService;
 
     public function __construct(
-        OpenWeatherService $weatherService,
         GeocodingService $geocodingService,
-        AlertaService $alertaService 
+        AlertaService $alertaService,
+        RiegoService $riegoService
     ) {
-        $this->weatherService = $weatherService;
         $this->geocodingService = $geocodingService;
-        $this->alertaService = $alertaService; 
+        $this->alertaService = $alertaService;
+        $this->riegoService = $riegoService;
     }
 
     /**
@@ -41,25 +42,26 @@ class ParcelaController extends Controller
             ->with(['cultivo', 'ubicacion', 'climaActual'])
             ->orderByRaw("
                 CASE 
-                    WHEN proximo_riego_estimado < CURDATE() THEN 1
-                    WHEN proximo_riego_estimado = CURDATE() THEN 2
+                    WHEN proximo_riego_estimado < ? THEN 1
+                    WHEN proximo_riego_estimado = ? THEN 2
                     ELSE 3
                 END
-            ")
+            ", [Carbon::today()->toDateString(), Carbon::today()->toDateString()])
             ->orderBy('proximo_riego_estimado', 'asc')
             ->paginate(12);
 
-        // Contar alertas por urgencia
+        // Los contadores salen de la misma tabla de alertas que ve el usuario,
+        // asi nunca se contradicen con la pantalla de alertas.
+        $activas = Alerta::porUsuario(Auth::id())->activas();
+
         $alertas = [
-            'criticas' => Parcela::where('user_id', Auth::id())
-                ->whereDate('proximo_riego_estimado', '<', Carbon::today())
-                ->count(),
-            'hoy' => Parcela::where('user_id', Auth::id())
-                ->whereDate('proximo_riego_estimado', '=', Carbon::today())
-                ->count(),
-            'climaticas' => Parcela::where('user_id', Auth::id())
-                ->conAlertasClimaticas()
-                ->count(),
+            'criticas' => (clone $activas)->where('grupo', Alerta::GRUPO_RIEGO)
+                ->where('nivel', Alerta::NIVEL_CRITICO)->count(),
+            'hoy' => (clone $activas)->where('grupo', Alerta::GRUPO_RIEGO)
+                ->where('nivel', Alerta::NIVEL_ALTO)->count(),
+            'climaticas' => (clone $activas)->whereIn('grupo', [
+                Alerta::GRUPO_HELADA, Alerta::GRUPO_CALOR, Alerta::GRUPO_LLUVIA,
+            ])->count(),
         ];
 
         return view('parcelas.index', compact('parcelas', 'alertas'));
@@ -117,7 +119,7 @@ class ParcelaController extends Controller
                     
                     session()->flash('geocodificacion', [
                         'success' => true,
-                        'mensaje' => "📍 Coordenadas encontradas automáticamente (confianza: " . round($geoResult['confianza'] * 100) . "%)",
+                        'mensaje' => "Coordenadas encontradas automáticamente (confianza: " . round($geoResult['confianza'] * 100) . "%)",
                     ]);
                 }
             } catch (\Exception $e) {
@@ -148,14 +150,14 @@ class ParcelaController extends Controller
         // Calcular valores automáticos
         $frecuenciaRiego = $this->calcularFrecuenciaRiego($cultivo, $request->has('tieneHidrogelAplicado'));
 
-        $ultimoRiego = $validated['ultimo_riego'] 
-            ? Carbon::parse($validated['ultimo_riego']) 
+        $ultimoRiego = ($validated['ultimo_riego'] ?? null) 
+            ? Carbon::parse(($validated['ultimo_riego'] ?? null)) 
             : Carbon::today()->subDays($frecuenciaRiego);
         
         $proximoRiego = $ultimoRiego->copy()->addDays($frecuenciaRiego);
 
-        $diasDesdeSiembra = $validated['fecha_siembra'] 
-            ? Carbon::parse($validated['fecha_siembra'])->diffInDays(Carbon::today())
+        $diasDesdeSiembra = ($validated['fecha_siembra'] ?? null) 
+            ? Carbon::parse(($validated['fecha_siembra'] ?? null))->diffInDays(Carbon::today())
             : 0;
 
         // Crear la parcela
@@ -168,8 +170,8 @@ class ParcelaController extends Controller
             'area' => $validated['area'],
             'ubicacion' => "{$validated['distrito']}, {$validated['provincia']}, {$validated['region']}",
             'tipo_cultivo' => $cultivo->nombreCultivo,
-            'humedad_minima' => $cultivo->humedadMinima,
-            'humedad_maxima' => $cultivo->requerimientoHumedad + 10,
+            'humedad_minima' => $cultivo->humedadOptimaMin,
+            'humedad_maxima' => $cultivo->humedadOptimaMax,
             'ultimo_riego' => $ultimoRiego,
             'frecuencia_riego_dias' => $frecuenciaRiego,
             'litros_por_riego' => null,
@@ -182,13 +184,13 @@ class ParcelaController extends Controller
             'notas_usuario' => $validated['notas_usuario'] ?? null,
         ]);
 
+        // Litros por riego con la formula unica del sistema
+        $parcela->load('cultivo');
+        $parcela->update(['litros_por_riego' => $this->riegoService->litrosPorRiego($parcela)]);
+
         // Si ya regó, crear el evento de riego
-        if ($validated['ultimo_riego']) {
-            $litrosIniciales = $parcela->calcularLitrosPorRiego();
-            
-            if ($litrosIniciales == 0) {
-                $litrosIniciales = $parcela->area * 5;
-            }
+        if (($validated['ultimo_riego'] ?? null)) {
+            $litrosIniciales = $parcela->litros_por_riego ?: ($parcela->area * 5);
             
             $parcela->eventosRiego()->create([
                 'fecha_riego' => $ultimoRiego,
@@ -222,10 +224,10 @@ class ParcelaController extends Controller
             logger()->error("Error generando alertas para parcela {$parcela->id}: {$e->getMessage()}");
         }
 
-        $mensaje = '✅ Parcela creada exitosamente. Próximo riego: ' . $proximoRiego->format('d/m/Y');
+        $mensaje = 'Parcela creada exitosamente. Próximo riego: ' . $proximoRiego->format('d/m/Y');
         
         if ($ubicacion->tieneCoordenadasGPS()) {
-            $mensaje .= ' 🌤️ Datos climáticos obtenidos.';
+            $mensaje .= 'Datos climáticos obtenidos.';
         }
 
         return redirect()->route('parcelas.index')->with('success', $mensaje);
@@ -349,14 +351,14 @@ class ParcelaController extends Controller
 
         if ($recalcular) {
             $frecuenciaRiego = $this->calcularFrecuenciaRiego($cultivo, $request->has('tieneHidrogelAplicado'));
-            $litrosPorRiego = null;
+            $litrosPorRiego = null; // se recalcula justo despues de guardar
         } else {
             $litrosPorRiego = $parcela->litros_por_riego;
             $frecuenciaRiego = $parcela->frecuencia_riego_dias;
         }
 
-        $diasDesdeSiembra = $validated['fecha_siembra'] 
-            ? Carbon::parse($validated['fecha_siembra'])->diffInDays(Carbon::today())
+        $diasDesdeSiembra = ($validated['fecha_siembra'] ?? null) 
+            ? Carbon::parse(($validated['fecha_siembra'] ?? null))->diffInDays(Carbon::today())
             : 0;
 
         $parcela->update([
@@ -376,6 +378,11 @@ class ParcelaController extends Controller
             'hidrogel_cantidad_kg' => $validated['hidrogel_cantidad_kg'] ?? null,
             'notas_usuario' => $validated['notas_usuario'] ?? null,
         ]);
+
+        if ($litrosPorRiego === null) {
+            $parcela->load('cultivo');
+            $parcela->update(['litros_por_riego' => $this->riegoService->litrosPorRiego($parcela)]);
+        }
 
         // Si cambió ubicación, actualizar clima
         if ($ubicacionCambio && $ubicacion->tieneCoordenadasGPS()) {
@@ -429,7 +436,10 @@ class ParcelaController extends Controller
             'notas' => 'nullable|string|max:500',
         ]);
 
-        $litrosUsados = $validated['cantidad_agua'] ?? $parcela->litros_por_riego;
+        // Si no indica cantidad se registra la recomendada hoy (misma cifra que la alerta).
+        $parcela->loadMissing('cultivo');
+        $litrosUsados = $validated['cantidad_agua']
+            ?? ($this->riegoService->calcular($parcela, $parcela->climaActual)['litros_total'] ?: $parcela->litros_por_riego);
 
         // 1. Registrar el riego
         $parcela->registrarRiego($litrosUsados);
@@ -544,13 +554,6 @@ class ParcelaController extends Controller
      */
     private function calcularFrecuenciaRiego(Cultivo $cultivo, bool $tieneHidrogel): int
     {
-        $frecuenciaBase = match(true) {
-            $cultivo->requerimientoHumedad >= 80 => 3,
-            $cultivo->requerimientoHumedad >= 65 => 5,
-            $cultivo->requerimientoHumedad >= 50 => 7,
-            default => 10,
-        };
-
-        return $tieneHidrogel ? $frecuenciaBase + 2 : $frecuenciaBase;
+        return max(1, $cultivo->calcularFrecuenciaRiego($tieneHidrogel));
     }
 }

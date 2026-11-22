@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Alerta;
 use App\Services\AlertaService;
+use App\Services\MonitoreoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -11,10 +12,12 @@ use Carbon\Carbon;
 class AlertaController extends Controller
 {
     protected AlertaService $alertaService;
+    protected MonitoreoService $monitoreo;
 
-    public function __construct(AlertaService $alertaService)
+    public function __construct(AlertaService $alertaService, MonitoreoService $monitoreo)
     {
         $this->alertaService = $alertaService;
+        $this->monitoreo = $monitoreo;
     }
 
     /**
@@ -22,13 +25,9 @@ class AlertaController extends Controller
      */
     public function index()
     {
-        // Regenerar alertas solo si han pasado más de 15 minutos
-        $ultimaActualizacion = session('ultima_actualizacion_alertas');
-        
-        if (!$ultimaActualizacion || $ultimaActualizacion->diffInMinutes(now()) >= 15) {
-            $this->alertaService->generarAlertasUsuario(Auth::id());
-            session(['ultima_actualizacion_alertas' => now()]);
-        }
+        // Al entrar se actualiza clima y alertas si pasaron mas de 15 minutos
+        // (la marca se guarda en cache, ya no en la sesion, que se perdia al cerrar sesion).
+        $this->monitoreo->refrescarSiHaceFalta(Auth::id());
 
         // Obtener alertas activas agrupadas por nivel
         $alertasPorNivel = [
@@ -70,10 +69,16 @@ class AlertaController extends Controller
     public function obtenerRecientes()
     {
         try {
-            // Obtener alertas de las últimas 2 horas que no han sido leídas
+            // Alertas activas sin leer que aparecieron o subieron de nivel hace poco.
+            // Una alerta que solo cambio de texto no vuelve a sonar.
             $alertas = Alerta::porUsuario(Auth::id())
                 ->activas()
-                ->where('created_at', '>=', now()->subHours(2))
+                ->where(function ($q) {
+                    $q->where('actualizada_en', '>=', now()->subHours(3))
+                      ->orWhere(function ($q2) {
+                          $q2->whereNull('actualizada_en')->where('created_at', '>=', now()->subHours(3));
+                      });
+                })
                 ->noLeidas()
                 ->ordenarPorUrgencia()
                 ->get()
@@ -87,7 +92,8 @@ class AlertaController extends Controller
                         'parcela' => $alerta->parcela->nombre ?? 'Sin parcela',
                         'url' => $alerta->accion_url ?? route('alertas.index'),
                         'created_at' => $alerta->created_at->toISOString(),
-                        'es_nueva' => $alerta->created_at->isAfter(now()->subMinutes(5)),
+                        'grupo' => $alerta->grupo,
+                        'es_nueva' => ($alerta->actualizada_en ?? $alerta->created_at)->isAfter(now()->subMinutes(5)),
                     ];
                 });
 
@@ -189,13 +195,10 @@ class AlertaController extends Controller
     public function refrescar()
     {
         try {
-            $alertasGeneradas = $this->alertaService->generarAlertasUsuario(Auth::id());
+            // El boton "actualizar" si pide clima nuevo (ignora el limite de 15 minutos)
+            $alertasGeneradas = $this->monitoreo->monitorearUsuario(Auth::id(), true);
+            $this->monitoreo->olvidarRefresco(Auth::id());
             
-            session([
-                'ultima_actualizacion_alertas' => now(),
-                'alertas_nuevas' => $alertasGeneradas
-            ]);
-
             return redirect()->route('alertas.index')
                 ->with('success', " Alertas actualizadas. {$alertasGeneradas} nueva(s) generada(s)");
         } catch (\Exception $e) {

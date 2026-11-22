@@ -474,20 +474,20 @@
     <div class="header-content">
         <div class="header-info">
             <h1>
-                <span>💡</span>
+                <span><x-icono name="consejo" :size="20" /></span>
                 <span>Recomendaciones para {{ $parcela->nombre }}</span>
             </h1>
             <div class="header-subtitle">
-                <span>🌱</span>
+                <span><x-icono name="parcela" :size="20" /></span>
                 <span>{{ $parcela->cultivo->nombreCultivo ?? 'Sin cultivo' }}</span>
                 <span>•</span>
-                <span>📍 {{ $parcela->ubicacion_completa }}</span>
+                <span>{{ $parcela->ubicacion_completa }}</span>
             </div>
         </div>
         <form action="{{ route('recomendaciones.regenerar', $parcela) }}" method="POST">
             @csrf
             <button type="submit" class="btn-regenerar">
-                <span>🔄</span>
+                
                 <span>Actualizar Recomendaciones</span>
             </button>
         </form>
@@ -497,7 +497,7 @@
 {{-- ESTADÍSTICAS --}}
 <div class="stats-grid">
     <div class="stat-card">
-        <div class="stat-icon total">📊</div>
+        <div class="stat-icon total"><x-icono name="ciclo" :size="20" /></div>
         <div class="stat-content">
             <div class="stat-value">{{ $estadisticas['total'] }}</div>
             <div class="stat-label">Total</div>
@@ -505,7 +505,7 @@
     </div>
 
     <div class="stat-card">
-        <div class="stat-icon critica">🚨</div>
+        <div class="stat-icon critica"><x-icono name="alerta" :size="20" /></div>
         <div class="stat-content">
             <div class="stat-value">{{ $estadisticas['criticas'] }}</div>
             <div class="stat-label">Críticas</div>
@@ -513,7 +513,7 @@
     </div>
 
     <div class="stat-card">
-        <div class="stat-icon alta">⚠️</div>
+        <div class="stat-icon alta"><x-icono name="alerta" :size="20" /></div>
         <div class="stat-content">
             <div class="stat-value">{{ $estadisticas['altas'] }}</div>
             <div class="stat-label">Prioridad Alta</div>
@@ -521,9 +521,7 @@
     </div>
 
     <div class="stat-card">
-        <div class="stat-icon" style="background: linear-gradient(135deg, #d4edda, #c3e6cb);">
-            ✅
-        </div>
+        <div class="stat-icon" style="background: linear-gradient(135deg, #d4edda, #c3e6cb);"><x-icono name="ok" :size="20" /></div>
         <div class="stat-content">
             <div class="stat-value">{{ $historico->where('aplicada', true)->count() }}</div>
             <div class="stat-label">Aplicadas</div>
@@ -542,10 +540,10 @@
 <div class="tabs-container">
     <div class="tabs">
         <button class="tab active" data-tab="activas">
-            📋 Activas ({{ $recomendaciones->count() }})
+            Activas ({{ $recomendaciones->count() }})
         </button>
         <button class="tab" data-tab="historico">
-            📜 Histórico ({{ $historico->count() }})
+            Histórico ({{ $historico->count() }})
         </button>
     </div>
 </div>
@@ -559,7 +557,7 @@
                     <div class="recomendacion-header">
                         <div class="recomendacion-icon-wrapper">
                             <div class="recomendacion-icon {{ $rec->prioridad }}">
-                                {{ $rec->icono }}
+                                <x-icono :name="$rec->icono" :size="28" />
                             </div>
                             <div class="recomendacion-title-group">
                                 <h3 class="recomendacion-title">{{ $rec->titulo }}</h3>
@@ -571,7 +569,7 @@
                                         {{ $rec->etiqueta_categoria }}
                                     </span>
                                     <span class="badge badge-categoria">
-                                        📊 {{ $rec->puntaje_relevancia }}/100
+                                        {{ $rec->puntaje_relevancia }}/100
                                     </span>
                                 </div>
                             </div>
@@ -606,7 +604,7 @@
                     <div class="recomendacion-actions">
                         @if($rec->accion_url)
                             <a href="{{ $rec->accion_url }}" class="btn btn-primary">
-                                <span>🎯</span>
+                                
                                 <span>{{ $rec->accion_texto ?? 'Ver Más' }}</span>
                             </a>
                         @endif
@@ -616,7 +614,7 @@
                               style="display: inline;">
                             @csrf
                             <button type="submit" class="btn btn-success">
-                                <span>✅</span>
+                                <span><x-icono name="ok" :size="20" /></span>
                                 <span>Marcar como Aplicada</span>
                             </button>
                         </form>
@@ -626,7 +624,7 @@
                               style="display: inline;">
                             @csrf
                             <button type="submit" class="btn btn-secondary">
-                                <span>❌</span>
+                                
                                 <span>Descartar</span>
                             </button>
                         </form>
@@ -636,7 +634,7 @@
         </div>
     @else
         <div class="empty-state">
-            <div class="empty-icon">🎉</div>
+            <div class="empty-icon"></div>
             <div class="empty-title">¡Todo en orden!</div>
             <div class="empty-text">
                 No hay recomendaciones activas en este momento. Tu parcela está siendo manejada correctamente.
@@ -644,7 +642,7 @@
             <form action="{{ route('recomendaciones.regenerar', $parcela) }}" method="POST">
                 @csrf
                 <button type="submit" class="btn btn-primary">
-                    <span>🔄</span>
+                    
                     <span>Generar Nuevas Recomendaciones</span>
                 </button>
             </form>
@@ -658,23 +656,23 @@
             <div class="historico-card {{ $rec->descartada ? 'descartada' : '' }}">
                 <div class="historico-header">
                     <div class="historico-titulo">
-                        {{ $rec->icono }} {{ $rec->titulo }}
+                        {{ $rec->titulo }}
                     </div>
                     <div class="historico-fecha">
-                        {{ $rec->aplicada ? '✅ Aplicada' : '❌ Descartada' }} 
+                        {{ $rec->aplicada ? 'Aplicada' : 'Descartada' }} 
                         {{ $rec->aplicada ? $rec->aplicada_en->diffForHumans() : $rec->descartada_en->diffForHumans() }}
                     </div>
                 </div>
                 @if($rec->notas_usuario)
                     <div class="historico-notas">
-                        💭 "{{ $rec->notas_usuario }}"
+                        "{{ $rec->notas_usuario }}"
                     </div>
                 @endif
             </div>
         @endforeach
     @else
         <div class="empty-state">
-            <div class="empty-icon">📋</div>
+            <div class="empty-icon"></div>
             <div class="empty-title">Sin histórico aún</div>
             <div class="empty-text">
                 Las recomendaciones aplicadas o descartadas aparecerán aquí.

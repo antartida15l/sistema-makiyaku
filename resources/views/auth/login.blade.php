@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Iniciar Sesión - MAKIYAKU</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2328a745'/%3E%3Cpath d='M20 44c2-14 10-22 26-24-1 16-9 24-24 26' fill='%23fff'/%3E%3C/svg%3E">
     
     <style>
         :root {
@@ -42,7 +42,7 @@
 
         /* Animated Background Elements */
         body::before {
-            content: '🌱';
+            content: '';
             position: absolute;
             font-size: 200px;
             opacity: 0.05;
@@ -52,7 +52,7 @@
         }
 
         body::after {
-            content: '💧';
+            content: '';
             position: absolute;
             font-size: 150px;
             opacity: 0.05;
@@ -496,14 +496,14 @@
 
             @if (session('status'))
                 <div class="alert alert-success">
-                    <span class="alert-icon">✅</span>
+                    <span class="alert-icon"><x-icono name="ok" :size="20" /></span>
                     <div>{{ session('status') }}</div>
                 </div>
             @endif
 
             @if ($errors->any())
                 <div class="alert alert-danger">
-                    <span class="alert-icon">❌</span>
+                    
                     <div>
                         <strong>Error al iniciar sesión</strong>
                         <div style="margin-top: 4px;">{{ $errors->first() }}</div>
@@ -529,11 +529,11 @@
                             autocomplete="username"
                             placeholder="tu@email.com"
                         >
-                        <span class="input-icon">📧</span>
+                        
                     </div>
                     @error('email')
                         <div class="error-message">
-                            <span>⚠️</span>
+                            <span><x-icono name="alerta" :size="20" /></span>
                             <span>{{ $message }}</span>
                         </div>
                     @enderror
@@ -552,12 +552,12 @@
                             autocomplete="current-password"
                             placeholder="••••••••"
                         >
-                        <span class="input-icon">🔒</span>
-                        <span class="toggle-password" onclick="togglePassword()">👁️</span>
+                        
+                        <span class="toggle-password" onclick="togglePassword()"></span>
                     </div>
                     @error('password')
                         <div class="error-message">
-                            <span>⚠️</span>
+                            <span><x-icono name="alerta" :size="20" /></span>
                             <span>{{ $message }}</span>
                         </div>
                     @enderror
@@ -596,15 +596,15 @@
             <!-- Features -->
             <div class="features">
                 <div class="feature-item">
-                    <div class="feature-icon">💧</div>
+                    <div class="feature-icon"><x-icono name="agua" :size="20" /></div>
                     <span>Monitoreo de humedad en tiempo real</span>
                 </div>
                 <div class="feature-item">
-                    <div class="feature-icon">🌡️</div>
+                    <div class="feature-icon"><x-icono name="calor" :size="20" /></div>
                     <span>Control de clima>
                 </div>
                 <div class="feature-item">
-                    <div class="feature-icon">📊</div>
+                    <div class="feature-icon"><x-icono name="ciclo" :size="20" /></div>
                     <span>Alertas y recomendaciones</span>
                 </div>
             </div>
@@ -619,10 +619,10 @@
             
             if (passwordInput.type === 'password') {
                 passwordInput.type = 'text';
-                toggleBtn.textContent = '🙈';
+                toggleBtn.textContent = '';
             } else {
                 passwordInput.type = 'password';
-                toggleBtn.textContent = '👁️';
+                toggleBtn.textContent = '';
             }
         }
 

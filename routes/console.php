@@ -1,65 +1,43 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
+use App\Models\ClimaHistorial;
 use Illuminate\Support\Facades\Schedule;
 
-/**
- * ═══════════════════════════════════════════════════════
- * 💬 COMANDOS ARTISAN
- * ═══════════════════════════════════════════════════════
- */
+/*
+|--------------------------------------------------------------------------
+| Tareas programadas
+|--------------------------------------------------------------------------
+| Laravel 12 solo lee este archivo (app/Console/Kernel.php ya no se usa).
+|
+| En local, para que corran sin configurar cron, deja abierta una terminal con:
+|     php artisan schedule:work
+|
+| En un servidor real basta con una linea de cron:
+|     * * * * * cd /ruta/del/proyecto && php artisan schedule:run >> /dev/null 2>&1
+*/
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
-
-/**
- * ═══════════════════════════════════════════════════════
- * ⏰ TAREAS PROGRAMADAS (CRON JOBS)
- * ═══════════════════════════════════════════════════════
- */
-
-// ✅ Actualizar clima de todas las parcelas activas todos los días a las 9 AM
+// Clima de Open-Meteo y alertas, cada 30 minutos (las alertas siempre se
+// recalculan justo despues de bajar el clima nuevo, asi no llegan desfasadas).
 Schedule::command('parcelas:actualizar-clima')
-    ->dailyAt('09:00')
-    ->timezone('America/Lima')
-    ->name('Actualización diaria de clima')
-    ->description('Actualiza el clima de todas las parcelas activas')
-    ->onSuccess(function () {
-        logger()->info('✅ Actualización de clima completada exitosamente');
-    })
-    ->onFailure(function () {
-        logger()->error('❌ Falló la actualización de clima programada');
-    });
+    ->everyThirtyMinutes()
+    ->name('clima-y-alertas')
+    ->withoutOverlapping(20)
+    ->onFailure(fn () => logger()->error('Fallo la actualizacion programada de clima y alertas'));
 
-// 🧹 OPCIONAL: Limpieza mensual de registros climáticos antiguos (mantener solo últimos 90 días)
+// Archivar alertas vencidas y borrar historial viejo.
+Schedule::command('alertas:limpiar')
+    ->hourlyAt(10)
+    ->name('limpiar-alertas')
+    ->withoutOverlapping();
+
+// Geocodificar ubicaciones sin coordenadas (una vez por semana).
+Schedule::command('ubicaciones:geocodificar')
+    ->weeklyOn(0, '02:00')
+    ->name('geocodificar-ubicaciones')
+    ->withoutOverlapping();
+
+// Mantener solo 30 dias de historial de clima.
 Schedule::call(function () {
-    $eliminados = \App\Models\ClimaHistorial::limpiarHistorialAntiguo(90);
-    logger()->info("🧹 Limpieza de historial climático: {$eliminados} registros eliminados");
-})
-    ->monthlyOn(1, '03:00')
-    ->timezone('America/Lima')
-    ->name('Limpieza mensual de historial climático')
-    ->description('Elimina registros climáticos mayores a 90 días');
-
-/**
- * ═══════════════════════════════════════════════════════
- * 📝 NOTAS IMPORTANTES
- * ═══════════════════════════════════════════════════════
- * 
- * Para que estos comandos se ejecuten automáticamente, debes configurar
- * un CRON job en tu servidor con este comando:
- * 
- * * * * * * cd /ruta-de-tu-proyecto && php artisan schedule:run >> /dev/null 2>&1
- * 
- * En servidor local puedes probar manualmente con:
- * php artisan parcelas:actualizar-clima
- * 
- * Para ver todas las tareas programadas:
- * php artisan schedule:list
- * 
- * Para probar el schedule localmente:
- * php artisan schedule:work
- * ═══════════════════════════════════════════════════════
- */
+    $n = ClimaHistorial::where('fecha_registro', '<', now()->subDays(30))->delete();
+    logger()->info("Historial de clima: {$n} registros antiguos eliminados");
+})->dailyAt('03:30')->name('limpiar-clima');

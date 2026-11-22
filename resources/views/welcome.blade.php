@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>MAKIYAKU - Sistema de Riego Inteligente</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2328a745'/%3E%3Cpath d='M20 44c2-14 10-22 26-24-1 16-9 24-24 26' fill='%23fff'/%3E%3C/svg%3E">
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -490,7 +490,7 @@
         <!-- Features -->
         <div class="features">
             <div class="feature-card">
-                <div class="feature-icon">💧</div>
+                <div class="feature-icon"><x-icono name="agua" :size="20" /></div>
                 <h3 class="feature-title">Monitoreo en Tiempo Real</h3>
                 <p class="feature-description">
                     Supervisa la humedad y las condiciones ambientales en tiempo real desde cualquier lugar
@@ -498,7 +498,7 @@
             </div>
 
             <div class="feature-card">
-                <div class="feature-icon">🌡️</div>
+                <div class="feature-icon"><x-icono name="calor" :size="20" /></div>
                 <h3 class="feature-title">Control</h3>
                 <p class="feature-description">
                     Sistema inteligente que ajusta el riego según las necesidades específicas de cada parcela
@@ -506,7 +506,7 @@
             </div>
 
             <div class="feature-card">
-                <div class="feature-icon">📊</div>
+                <div class="feature-icon"><x-icono name="ciclo" :size="20" /></div>
                 <h3 class="feature-title">Reportes Detallados</h3>
                 <p class="feature-description">
                     Accede a estadísticas completas y análisis históricos para optimizar el rendimiento de tus cultivos
@@ -514,7 +514,7 @@
             </div>
 
             <div class="feature-card">
-                <div class="feature-icon">🔔</div>
+                <div class="feature-icon"><x-icono name="alerta" :size="20" /></div>
                 <h3 class="feature-title">Alertas Inteligentes</h3>
                 <p class="feature-description">
                     Recibe notificaciones instantáneas sobre eventos importantes y condiciones críticas en tus parcelas
@@ -522,7 +522,7 @@
             </div>
 
             <div class="feature-card">
-                <div class="feature-icon">⚡</div>
+                <div class="feature-icon"></div>
                 <h3 class="feature-title">Ahorro de Recursos</h3>
                 <p class="feature-description">
                     Optimiza el uso de agua con decisiones basadas en datos precisos y análisis predictivo
@@ -530,7 +530,7 @@
             </div>
 
             <div class="feature-card">
-                <div class="feature-icon">📱</div>
+                <div class="feature-icon"></div>
                 <h3 class="feature-title">Acceso completo</h3>
                 <p class="feature-description">
                     Gestiona tus parcelas con un catalogo amplio de cultivos a nivel nacional, y si no lo encuentras simplemente añadelo
@@ -539,7 +539,7 @@
         </div>
 
         <div class="scroll-indicator">
-            <span></span>
+            
         </div>
     </section>
 

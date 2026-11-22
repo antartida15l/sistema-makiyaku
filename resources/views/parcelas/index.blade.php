@@ -510,11 +510,11 @@
 @section('content')
 <div class="header-actions">
     <div class="header-title">
-        <span>🌱</span>
+        <span><x-icono name="parcela" :size="20" /></span>
         <span>Mis Parcelas</span>
     </div>
     <a href="{{ route('parcelas.create') }}" class="btn-add">
-        <span>➕</span>
+        
         <span>Nueva Parcela</span>
     </a>
 </div>
@@ -522,7 +522,7 @@
 {{-- ESTADÍSTICAS GENERALES --}}
 <div class="header-stats">
     <div class="stat-card">
-        <div class="stat-card-icon">📊</div>
+        <div class="stat-card-icon"><x-icono name="ciclo" :size="20" /></div>
         <div class="stat-card-content">
             <div class="stat-card-label">Total Parcelas</div>
             <div class="stat-card-value">{{ $parcelas->total() }}</div>
@@ -530,7 +530,7 @@
     </div>
 
     <div class="stat-card">
-        <div class="stat-card-icon">🚨</div>
+        <div class="stat-card-icon"><x-icono name="alerta" :size="20" /></div>
         <div class="stat-card-content">
             <div class="stat-card-label">Riego Crítico</div>
             <div class="stat-card-value">{{ $alertas['criticas'] }}</div>
@@ -538,7 +538,7 @@
     </div>
 
     <div class="stat-card">
-        <div class="stat-card-icon">💧</div>
+        <div class="stat-card-icon"><x-icono name="agua" :size="20" /></div>
         <div class="stat-card-content">
             <div class="stat-card-label">Riego Hoy</div>
             <div class="stat-card-value">{{ $alertas['hoy'] }}</div>
@@ -546,7 +546,7 @@
     </div>
 
     <div class="stat-card clima">
-        <div class="stat-card-icon">🌤️</div>
+        <div class="stat-card-icon"><x-icono name="calor" :size="20" /></div>
         <div class="stat-card-content">
             <div class="stat-card-label">Alertas Climáticas</div>
             <div class="stat-card-value">{{ $alertas['climaticas'] }}</div>
@@ -557,7 +557,7 @@
 {{-- ALERTAS --}}
 @if(session('success'))
     <div class="alert-banner success">
-        <span class="alert-icon">✅</span>
+        <span class="alert-icon"><x-icono name="ok" :size="20" /></span>
         <div class="alert-content">
             <div class="alert-title">{{ session('success') }}</div>
         </div>
@@ -566,7 +566,7 @@
 
 @if(session('error'))
     <div class="alert-banner danger">
-        <span class="alert-icon">❌</span>
+        
         <div class="alert-content">
             <div class="alert-title">{{ session('error') }}</div>
         </div>
@@ -582,32 +582,32 @@
                     <div class="cultivo-icon">
                         @if($parcela->cultivo)
                             @switch($parcela->cultivo->tipo)
-                                @case('Hortalizas') 🥬 @break
-                                @case('Cereales') 🌾 @break
-                                @case('Frutales') 🍎 @break
-                                @case('Legumbres') 🫘 @break
-                                @case('Tubérculos') 🥔 @break
-                                @case('Aromáticas') 🌿 @break
-                                @case('Oleaginosas') 🌻 @break
-                                @default 🌱
+                                @case('Hortalizas') @break
+                                @case('Cereales') @break
+                                @case('Frutales') @break
+                                @case('Legumbres') @break
+                                @case('Tubérculos') @break
+                                @case('Aromáticas') @break
+                                @case('Oleaginosas') @break
+                                @default 
                             @endswitch
                         @else
-                            🌱
+                            
                         @endif
                     </div>
                     <div class="cultivo-badges">
                         @switch($parcela->estado_riego)
                             @case('critico')
-                                <span class="badge" style="background: #dc3545; color: white;">🚨 CRÍTICO</span>
+                                <span class="badge" style="background: #dc3545; color: white;">CRÍTICO</span>
                                 @break
                             @case('hoy')
-                                <span class="badge" style="background: #ffc107; color: #000;">💧 RIEGO HOY</span>
+                                <span class="badge" style="background: #ffc107; color: #000;">RIEGO HOY</span>
                                 @break
                             @case('proximo')
-                                <span class="badge" style="background: #17a2b8; color: white;">📅 PRÓXIMO</span>
+                                <span class="badge" style="background: #17a2b8; color: white;">PRÓXIMO</span>
                                 @break
                             @default
-                                <span class="badge badge-tipo">✅ OK</span>
+                                <span class="badge badge-tipo">OK</span>
                         @endswitch
                     </div>
                 </div>
@@ -615,7 +615,7 @@
                 {{-- TÍTULO Y UBICACIÓN --}}
                 <div class="cultivo-title">{{ $parcela->nombre }}</div>
                 <div class="cultivo-cientifico">
-                    <span>📍</span>
+                    <span><x-icono name="parcela" :size="20" /></span>
                     <span>{{ $parcela->ubicacion_completa }}</span>
                 </div>
 
@@ -624,7 +624,7 @@
                     <div class="stat-item">
                         <div class="stat-label">Área</div>
                         <div class="stat-value">
-                            <span>📏</span>
+                            
                             <span>{{ number_format($parcela->area, 0) }} m²</span>
                         </div>
                     </div>
@@ -632,7 +632,7 @@
                     <div class="stat-item">
                         <div class="stat-label">Cultivo</div>
                         <div class="stat-value">
-                            <span>🌾</span>
+                            <span><x-icono name="parcela" :size="20" /></span>
                             <span style="font-size: 13px;">{{ Str::limit($parcela->cultivo->nombreCultivo ?? 'N/A', 12) }}</span>
                         </div>
                     </div>
@@ -640,7 +640,7 @@
                     <div class="stat-item">
                         <div class="stat-label">Próximo Riego</div>
                         <div class="stat-value">
-                            <span>💧</span>
+                            <span><x-icono name="agua" :size="20" /></span>
                             <span>{{ $parcela->proximo_riego_estimado?->format('d/m') ?? 'N/A' }}</span>
                         </div>
                     </div>
@@ -648,7 +648,7 @@
                     <div class="stat-item">
                         <div class="stat-label">Litros/Riego</div>
                         <div class="stat-value">
-                            <span>🚰</span>
+                            <span><x-icono name="agua" :size="20" /></span>
                             <span>{{ number_format($parcela->litros_por_riego ?? 0, 0) }}L</span>
                         </div>
                     </div>
@@ -664,7 +664,7 @@
                                          alt="Clima" 
                                          class="clima-icon">
                                 @else
-                                    <span style="font-size: 40px;">🌤️</span>
+                                    <span style="font-size: 40px;"><x-icono name="calor" :size="20" /></span>
                                 @endif
                                 <div>
                                     <div class="temp-principal">{{ number_format($parcela->climaActual->temperatura, 1) }}°C</div>
@@ -678,22 +678,22 @@
                                   style="margin: 0;">
                                 @csrf
                                 <button type="submit" class="btn-actualizar-clima" title="Actualizar clima ahora">
-                                    <span>🔄</span>
+                                    
                                 </button>
                             </form>
                         </div>
 
                         <div class="clima-detalles">
                             <div class="clima-item">
-                                <span>💧</span>
+                                <span><x-icono name="agua" :size="20" /></span>
                                 <span>Humedad {{ $parcela->climaActual->humedad }}%</span>
                             </div>
                             <div class="clima-item">
-                                <span>🌬️</span>
+                                
                                 <span>Viento {{ number_format($parcela->climaActual->viento_velocidad, 1) }} m/s</span>
                             </div>
                             <div class="clima-item">
-                                <span>☁️</span>
+                                <span><x-icono name="lluvia" :size="20" /></span>
                                 <span>Nubes {{ $parcela->climaActual->nubosidad }}%</span>
                             </div>
                         </div>
@@ -710,19 +710,19 @@
                         @endif
 
                         <div class="clima-timestamp">
-                            <span>🕐</span>
+                            <span><x-icono name="reloj" :size="20" /></span>
                             <span>Actualizado: {{ $parcela->climaActual->fecha_registro->diffForHumans() }}</span>
                         </div>
                     </div>
                 @else
                     <div class="clima-sin-datos">
-                        <div style="margin-bottom: 8px;">🌤️ Sin datos climáticos</div>
+                        <div style="margin-bottom: 8px;">Sin datos climáticos</div>
                         <form action="{{ route('parcelas.actualizar-clima', $parcela) }}" 
                               method="POST" 
                               style="display: inline;">
                             @csrf
                             <button type="submit" class="btn-actualizar-clima">
-                                <span>🔄</span>
+                                
                                 <span>Obtener Clima</span>
                             </button>
                         </form>
@@ -732,11 +732,11 @@
                 {{-- ACCIONES --}}
                 <div class="cultivo-actions">
                     <a href="{{ route('parcelas.show', $parcela) }}" class="btn btn-primary">
-                        <span>👁️</span>
+                        
                         <span>Ver</span>
                     </a>
                     <a href="{{ route('parcelas.edit', $parcela) }}" class="btn btn-secondary">
-                        <span>✏️</span>
+                        
                         <span>Editar</span>
                     </a>
                     <form action="{{ route('parcelas.destroy', $parcela) }}" 
@@ -746,7 +746,7 @@
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="btn btn-danger" style="width: 100%;">
-                            <span>🗑️</span>
+                            
                         </button>
                     </form>
                 </div>
@@ -760,13 +760,13 @@
     </div>
 @else
     <div class="empty-state">
-        <div class="empty-icon">🌱</div>
+        <div class="empty-icon"><x-icono name="parcela" :size="20" /></div>
         <div class="empty-title">No hay parcelas registradas</div>
         <div class="empty-text">
             Comienza agregando tu primera parcela para gestionar el riego y monitorear el clima
         </div>
         <a href="{{ route('parcelas.create') }}" class="btn-add">
-            <span>➕</span>
+            
             <span>Crear Primera Parcela</span>
         </a>
     </div>

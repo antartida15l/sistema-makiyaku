@@ -615,48 +615,48 @@
 <!-- Header -->
 <div class="cultivos-header">
     <div class="cultivos-title">
-        <div class="cultivos-icon">🌾</div>
+        <div class="cultivos-icon"><x-icono name="parcela" :size="20" /></div>
         <div class="cultivos-title-text">
             <h1>Catálogo de Cultivos</h1>
             <p class="cultivos-subtitle">Gestiona los tipos de cultivos para tus parcelas</p>
         </div>
     </div>
     <a href="{{ route('cultivos.create') }}" class="btn-add-cultivo">
-        <span>➕</span>
+        
         <span>Agregar Cultivo</span>
     </a>
 </div>
 
 <!-- Filtros -->
 <div class="filters-section">
-    <span class="filters-label">🔍 Filtrar por tipo:</span>
+    <span class="filters-label">Filtrar por tipo:</span>
     <div class="filters-buttons">
         <a href="{{ route('cultivos.index') }}" class="filter-btn all">
             Todos
         </a>
         <a href="{{ route('cultivos.index', ['tipo' => 'Hortalizas']) }}" class="filter-btn hortalizas">
-            🥬 Hortalizas
+            Hortalizas
         </a>
         <a href="{{ route('cultivos.index', ['tipo' => 'Cereales']) }}" class="filter-btn cereales">
-            🌾 Cereales
+            Cereales
         </a>
         <a href="{{ route('cultivos.index', ['tipo' => 'Frutales']) }}" class="filter-btn frutales">
-            🍎 Frutales
+            Frutales
         </a>
         <a href="{{ route('cultivos.index', ['tipo' => 'Legumbres']) }}" class="filter-btn legumbres">
-            🫘 Legumbres
+            Legumbres
         </a>
         <a href="{{ route('cultivos.index', ['tipo' => 'Tubérculos']) }}" class="filter-btn tuberculos">
-            🥔 Tubérculos
+            Tubérculos
         </a>
         <a href="{{ route('cultivos.index', ['tipo' => 'Aromáticas']) }}" class="filter-btn aromaticas">
-            🌿 Aromáticas
+            Aromáticas
         </a>
         <a href="{{ route('cultivos.index', ['tipo' => 'Oleaginosas']) }}" class="filter-btn oleaginosas">
-            🌻 Oleaginosas
+            Oleaginosas
         </a>
         <a href="{{ route('cultivos.index', ['tipo' => 'Otros']) }}" class="filter-btn otros">
-            🌾 Otros
+            Otros
         </a>
     </div>
 </div>
@@ -664,13 +664,13 @@
 @if($cultivos->isEmpty())
     <!-- Estado Vacío -->
     <div class="empty-state">
-        <div class="empty-icon">🌾</div>
+        <div class="empty-icon"><x-icono name="parcela" :size="20" /></div>
         <div class="empty-title">No hay cultivos registrados</div>
         <div class="empty-text">
             Comienza agregando tu primer cultivo al catálogo
         </div>
         <a href="{{ route('cultivos.create') }}" class="btn-add-cultivo">
-            <span>➕</span>
+            
             <span>Agregar Primer Cultivo</span>
         </a>
     </div>
@@ -680,7 +680,7 @@
         @foreach($cultivos as $cultivo)
             <div class="cultivo-card">
                 <div class="cultivo-header">
-                    <div class="cultivo-icon-circle">🌱</div>
+                    <div class="cultivo-icon-circle"><x-icono name="parcela" :size="20" /></div>
                     <span class="cultivo-tipo-badge tipo-{{ strtolower($cultivo->tipo) }}">
                         {{ $cultivo->tipo }}
                     </span>
@@ -691,7 +691,7 @@
 
                 @if($cultivo->region)
                     <div class="cultivo-region-badge">
-                        <span>📍</span>
+                        <span><x-icono name="parcela" :size="20" /></span>
                         <span>{{ $cultivo->region }}</span>
                     </div>
                 @endif
@@ -700,7 +700,7 @@
                     <div class="stat-item">
                         <div class="stat-label">Riego</div>
                         <div class="stat-value">
-                            <span>💧</span>
+                            <span><x-icono name="agua" :size="20" /></span>
                             <span>{{ $cultivo->frecuenciaRiegoMin }}-{{ $cultivo->frecuenciaRiegoMax }}d</span>
                         </div>
                     </div>
@@ -708,7 +708,7 @@
                     <div class="stat-item">
                         <div class="stat-label">Consumo L/m²/día</div>
                         <div class="stat-value">
-                            <span>💦</span>
+                            
                             <span>{{ number_format($cultivo->litrosPorM2Dia, 2) }}</span>
                         </div>
                     </div>
@@ -716,7 +716,7 @@
                     <div class="stat-item">
                         <div class="stat-label">Humedad Óptima</div>
                         <div class="stat-value">
-                            <span>📊</span>
+                            <span><x-icono name="ciclo" :size="20" /></span>
                             <span>{{ $cultivo->humedadOptimaMin }}-{{ $cultivo->humedadOptimaMax }}%</span>
                         </div>
                     </div>
@@ -724,7 +724,7 @@
                     <div class="stat-item">
                         <div class="stat-label">Ciclo</div>
                         <div class="stat-value">
-                            <span>📅</span>
+                            <span><x-icono name="ciclo" :size="20" /></span>
                             <span>{{ $cultivo->cicloProductivo ?? 'N/A' }} días</span>
                         </div>
                     </div>
@@ -732,26 +732,26 @@
 
                 <div class="cultivo-info-extra">
                     <div class="info-extra-item">
-                        <span>🌡️</span>
+                        <span><x-icono name="calor" :size="20" /></span>
                         <span>{{ $cultivo->tempCriticaMinima }}°C - {{ $cultivo->tempCriticaMaxima }}°C</span>
                     </div>
                     <div class="info-extra-item">
-                        <span>⚠️</span>
+                        <span><x-icono name="alerta" :size="20" /></span>
                         <span>{{ $cultivo->diasCriticosSinAgua }}d sin agua</span>
                     </div>
                     <div class="info-extra-item" style="grid-column: span 2;">
-                        <span>🌸</span>
+                        
                         <span style="font-size: 11px;">{{ Str::limit($cultivo->etapaMayorConsumo, 35) }}</span>
                     </div>
                 </div>
 
                 <div class="cultivo-actions">
                     <a href="{{ route('cultivos.show', $cultivo) }}" class="btn-action btn-view">
-                        <span>👁️</span>
+                        
                         <span>Ver</span>
                     </a>
                     <a href="{{ route('cultivos.edit', $cultivo) }}" class="btn-action btn-edit">
-                        <span>✏️</span>
+                        
                         <span>Editar</span>
                     </a>
                     <form action="{{ route('cultivos.destroy', $cultivo) }}" method="POST" style="flex: 1;"
@@ -759,7 +759,7 @@
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="btn-action btn-delete" style="width: 100%;">
-                            <span>🗑️</span>
+                            
                             <span>Eliminar</span>
                         </button>
                     </form>
