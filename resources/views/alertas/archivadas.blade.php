@@ -1,56 +1,22 @@
 @extends('layouts.app')
-
 @section('title', 'Alertas archivadas')
-
-@push('styles')
-<style>
-    .arch-wrap { max-width: 980px; margin: 0 auto; padding: 24px 16px 48px; }
-    .arch-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
-    .arch-head h1 { font-size: 24px; margin: 0; }
-    .arch-volver { padding: 8px 16px; border-radius: 10px; background: #28a745; color: #fff; text-decoration: none; font-weight: 600; }
-    .arch-item { display: flex; gap: 14px; background: #fff; border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; border-left: 6px solid #adb5bd; box-shadow: 0 2px 10px rgba(0,0,0,.05); }
-    .arch-item.critico { border-left-color: #dc3545; }
-    .arch-item.alto { border-left-color: #ffc107; }
-    .arch-item.medio { border-left-color: #17a2b8; }
-    .arch-item.info { border-left-color: #007bff; }
-    .arch-icono { color: #6c757d; flex-shrink: 0; }
-    .arch-titulo { font-weight: 700; }
-    .arch-meta { font-size: 12px; color: #6c757d; margin-top: 4px; }
-    .arch-vacio { text-align: center; padding: 48px 0; color: #6c757d; }
-</style>
-@endpush
-
 @section('content')
-<div class="arch-wrap">
-    <div class="arch-head">
-        <h1>Alertas archivadas</h1>
-        <a class="arch-volver" href="{{ route('alertas.index') }}">Volver a alertas</a>
-    </div>
-
-    @forelse($alertas as $alerta)
-        <div class="arch-item {{ $alerta->nivel }}">
-            <div class="arch-icono"><x-icono :name="$alerta->icono" :size="28" /></div>
-            <div>
-                <div class="arch-titulo">{{ $alerta->titulo }}</div>
-                <div>{{ $alerta->mensaje }}</div>
-                <div class="arch-meta">
-                    {{ $alerta->parcela->nombre ?? 'Parcela eliminada' }}
-                    - nivel {{ $alerta->etiqueta_nivel }}
-                    - archivada {{ optional($alerta->archivada_en)->diffForHumans() }}
-                    @if($alerta->archivada_por)
-                        ({{ match($alerta->archivada_por) {
-                            'usuario' => 'por ti',
-                            'riego' => 'al registrar un riego',
-                            default => 'el sistema, ya no aplicaba',
-                        } }})
-                    @endif
-                </div>
-            </div>
-        </div>
-    @empty
-        <div class="arch-vacio">No tienes alertas archivadas.</div>
-    @endforelse
-
-    <div style="margin-top: 16px;">{{ $alertas->links() }}</div>
+<header class="page-head">
+    <div><h1>Alertas archivadas</h1><p>Historial de alertas que ya cerraste o que dejaron de aplicar. Se borran solas a los 30 días.</p></div>
+    <div class="head-actions"><a href="{{ route('alertas.index') }}" class="btn">Volver a alertas</a></div>
+</header>
+<div class="table-frame">
+@if($alertas->count())
+    <div class="table-scroll"><table class="tbl"><thead><tr><th>Alerta</th><th>Parcela</th><th>Nivel</th><th>Archivada</th><th>Cómo se cerró</th></tr></thead><tbody>
+    @foreach($alertas as $a)
+        <tr><td><div class="row" style="flex-wrap:nowrap;align-items:flex-start;gap:12px"><span class="item lvl lvl-{{ $a->nivel }}" style="padding:0"><span class="ic" style="width:32px;height:32px"><x-icono :name="$a->icono" :size="16" /></span></span><div><strong>{{ $a->titulo }}</strong><div class="t-sec muted" style="max-width:56ch">{{ \Illuminate\Support\Str::limit($a->mensaje, 120) }}</div></div></div></td>
+        <td>{{ $a->parcela->nombre ?? 'Parcela eliminada' }}</td><td><span class="tag lvl lvl-{{ $a->nivel }}">{{ $a->etiqueta_nivel }}</span></td><td>{{ optional($a->archivada_en)->diffForHumans() }}</td>
+        <td>{{ match($a->archivada_por) { 'usuario' => 'La archivaste tú', 'riego' => 'Al registrar un riego', default => 'Ya no aplicaba' } }}</td></tr>
+    @endforeach
+    </tbody></table></div>
+@else
+    <div class="empty"><x-icono name="archivo" :size="40" :stroke="1.5" /><h3>No hay alertas archivadas</h3><p>Cuando archives una alerta o deje de aplicar, la verás aquí.</p><a href="{{ route('alertas.index') }}" class="btn">Volver a alertas</a></div>
+@endif
+{{ $alertas->links() }}
 </div>
 @endsection

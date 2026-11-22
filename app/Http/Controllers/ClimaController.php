@@ -2,476 +2,218 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\OpenMeteoService;
+use App\Models\Parcela;
+use App\Services\ClimaCompletoService;
 use App\Services\GeocodingService;
+use App\Services\OpenMeteoService;
+use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class ClimaController extends Controller
 {
-    protected $weatherService;
-    protected $geocodingService;
-
     public function __construct(
-        OpenMeteoService $weatherService,
-        GeocodingService $geocodingService
+        private ClimaCompletoService $clima,
+        private OpenMeteoService $meteo,
+        private GeocodingService $geocoding,
     ) {
-        $this->weatherService = $weatherService;
-        $this->geocodingService = $geocodingService;
     }
 
     /**
-     * Muestra el clima actual de una ciudad con gráficos
+     * Pantalla de clima. El lugar sale de (en este orden): una parcela, unas coordenadas,
+     * un nombre de ciudad o, si no hay nada, la primera parcela del usuario.
      */
     public function index(Request $request)
     {
-        // Obtener parámetros
-        $ciudad = $request->input('ciudad', 'Puno');
-        $pais = $request->input('pais', 'PE');
-        $lat = $request->input('lat');
-        $lon = $request->input('lon');
+        $parcelas = Parcela::where('user_id', $request->user()->id)
+            ->activas()->with('ubicacion')->orderBy('nombre')->get()
+            ->filter(fn ($p) => $p->ubicacion && $p->ubicacion->tieneCoordenadasGPS())->values();
 
-        // Si vienen coordenadas, usarlas directamente
-        if ($lat && $lon) {
-            $climaActual = $this->weatherService->getCurrentWeatherByCoordinates($lat, $lon);
-            $pronostico = $this->weatherService->getForecastByCoordinates($lat, $lon);
-        } else {
-            // Obtener datos del clima por ciudad
-            $climaActual = $this->weatherService->getCurrentWeather($ciudad, $pais);
-            $pronostico = $this->weatherService->getForecast($ciudad, $pais);
+        $lugar = $this->resolverLugar($request, $parcelas);
+
+        if ($request->boolean('refrescar') && $lugar) {
+            foreach (['', ':stale'] as $s) {
+                Cache::forget(sprintf('om:full:%.2f:%.2f', $lugar['lat'], $lugar['lon']) . $s);
+            }
+            Cache::forget(sprintf('om:aire:%.2f:%.2f', $lugar['lat'], $lugar['lon']));
         }
 
-        // Si no se encontraron datos
-        if (!$climaActual) {
-            return view('clima.index', [
-                'error' => 'No se pudieron obtener datos del clima para ' . $ciudad,
-                'ciudad' => $ciudad,
-                'pais' => $pais,
-                'ciudades_principales' => $this->geocodingService->getCiudadesPrincipalesPeru(),
-            ]);
-        }
-
-        // Preparar datos adicionales
-        $pronosticoHora = $this->prepararPronosticoHorario($pronostico);
-        $pronosticoDiario = $this->prepararPronosticoDiario($pronostico);
-        $alertas = $this->generarAlertas($climaActual, $pronostico);
-        $graficos = $this->prepararDatosGraficos($pronostico);
+        $datos = $lugar ? $this->clima->paraCoordenadas($lugar['lat'], $lugar['lon'], $lugar['nombre'], $lugar['region'] ?? null) : null;
 
         return view('clima.index', [
-            'datos' => $climaActual,
-            'pronostico' => $pronostico['list'] ?? [],
-            'pronostico_horario' => $pronosticoHora,
-            'pronostico_diario' => $pronosticoDiario,
-            'alertas' => $alertas,
-            'ciudad' => $climaActual['name'],
-            'pais' => $climaActual['country'],
-            'graficos' => $graficos,
-            'ciudades_principales' => $this->geocodingService->getCiudadesPrincipalesPeru(),
+            'datos' => $datos,
+            'lugar' => $lugar,
+            'parcelas' => $parcelas,
+            'parcelaId' => $lugar['parcela_id'] ?? null,
+            'ciudades' => $this->geocoding->getCiudadesPrincipalesPeru(),
+            'avisos' => $datos ? $this->avisos($datos) : [],
+            'serie' => $datos ? $this->serieGraficos($datos) : null,
         ]);
     }
 
-    /**
-     * Preparar pronóstico horario (próximas 24 horas)
-     */
-    protected function prepararPronosticoHorario(?array $pronostico): array
+    /** Autocompletado de ciudades. */
+    public function buscarCiudades(Request $request): JsonResponse
     {
-        if (!$pronostico || empty($pronostico['list'])) {
-            return [];
-        }
-
-        $horario = [];
-        $datos = array_slice($pronostico['list'], 0, 8); // 8 registros = 24 horas
-
-        foreach ($datos as $item) {
-            $horario[] = [
-                'hora' => date('H:i', $item['dt']),
-                'hora_corta' => date('H', $item['dt']) . 'h',
-                'temp' => $item['temp'],
-                'icon' => $item['weather_icon'],
-                'icon_url' => $item['icon_url'],
-                'pop' => $item['pop'],
-                'lluvia' => $item['rain_3h'],
-                'viento' => $item['wind_speed'],
-                'descripcion' => $item['weather_description'],
-            ];
-        }
-
-        return $horario;
+        return response()->json($this->geocoding->searchCities((string) $request->input('q', ''), 8));
     }
 
-    /**
-     * Preparar pronóstico diario (próximos 5 días)
-     */
-    protected function prepararPronosticoDiario(?array $pronostico): array
+    /** Datos completos en JSON (para integraciones y pruebas). */
+    public function datos(Request $request): JsonResponse
     {
-        if (!$pronostico || empty($pronostico['list'])) {
-            return [];
-        }
+        $request->validate(['lat' => ['required', 'numeric', 'between:-90,90'], 'lon' => ['required', 'numeric', 'between:-180,180']]);
 
-        $dias = [];
-        $diaActual = null;
+        $d = $this->clima->paraCoordenadas((float) $request->lat, (float) $request->lon, $request->input('nombre'));
 
-        foreach ($pronostico['list'] as $item) {
-            $fecha = date('Y-m-d', $item['dt']);
-            
-            if ($fecha === $diaActual) {
-                continue; // Solo queremos un registro por día (mediodía aprox)
-            }
-
-            // Buscar el registro más cercano al mediodía (12:00)
-            $hora = (int)date('H', $item['dt']);
-            if ($hora >= 12 && $hora <= 15) {
-                $diaActual = $fecha;
-                
-                // Calcular temp max/min del día
-                $tempsDia = array_filter($pronostico['list'], function($i) use ($fecha) {
-                    return date('Y-m-d', $i['dt']) === $fecha;
-                });
-                
-                $tempMax = max(array_column($tempsDia, 'temp_max'));
-                $tempMin = min(array_column($tempsDia, 'temp_min'));
-                
-                // Calcular probabilidad máxima de lluvia del día
-                $popMax = max(array_column($tempsDia, 'pop'));
-                
-                $dias[] = [
-                    'fecha' => $fecha,
-                    'dia_semana' => $this->getDiaSemana($item['dt']),
-                    'dia_mes' => date('d/m', $item['dt']),
-                    'temp' => $item['temp'],
-                    'temp_max' => $tempMax,
-                    'temp_min' => $tempMin,
-                    'icon' => $item['weather_icon'],
-                    'icon_url' => $item['icon_url'],
-                    'descripcion' => $item['weather_description'],
-                    'pop' => $popMax,
-                    'humedad' => $item['humidity'],
-                    'viento' => $item['wind_speed'],
-                ];
-                
-                if (count($dias) >= 5) break;
-            }
-        }
-
-        return $dias;
+        return $d ? response()->json($d) : response()->json(['error' => 'No se pudo obtener el clima.'], 503);
     }
 
-    /**
-     * Avisos del clima pensados para quien trabaja el campo.
-     */
-    protected function generarAlertas(array $climaActual, ?array $pronostico): array
+    // =========================================================
+
+    private function resolverLugar(Request $request, $parcelas): ?array
     {
-        $alertas = [];
-
-        // Lluvia en las proximas 12 horas
-        if ($pronostico && !empty($pronostico['list'])) {
-            $lluviaProxima = null;
-            $minutos = 0;
-
-            foreach (array_slice($pronostico['list'], 0, 4) as $i => $item) {
-                $minutos = ($i + 1) * 180;
-
-                if ($item['pop'] > 50 || $item['rain_3h'] >= 1) {
-                    $lluviaProxima = $item;
-                    break;
-                }
-            }
-
-            if ($lluviaProxima) {
-                $horas = floor($minutos / 60);
-                $alertas[] = [
-                    'tipo' => 'lluvia',
-                    'icono' => '',
-                    'clase' => 'info',
-                    'titulo' => 'Lluvia proxima',
-                    'mensaje' => sprintf(
-                        'Se espera lluvia en unas %d horas (probabilidad %d%%). Si ibas a regar, conviene esperar.',
-                        $horas,
-                        $lluviaProxima['pop']
-                    ),
-                ];
-            } else {
-                $alertas[] = [
-                    'tipo' => 'sin-lluvia',
-                    'icono' => '',
-                    'clase' => 'success',
-                    'titulo' => 'Sin lluvia proxima',
-                    'mensaje' => 'No se espera lluvia en las proximas 12 horas.',
+        if ($request->filled('parcela')) {
+            $p = $parcelas->firstWhere('id', (int) $request->parcela);
+            if ($p) {
+                return [
+                    'lat' => (float) $p->ubicacion->coordenadaLatitud, 'lon' => (float) $p->ubicacion->coordenadaLongitud,
+                    'nombre' => $p->nombre . ' - ' . $p->ubicacion->distrito, 'region' => $p->ubicacion->region, 'parcela_id' => $p->id,
                 ];
             }
         }
 
-        // Frio (helada) segun la minima prevista de las proximas 24 horas
-        $minima = $pronostico
-            ? collect(array_slice($pronostico['list'] ?? [], 0, 8))->min('temp_min')
-            : null;
-        $minima = $minima ?? $climaActual['temp'];
-
-        if ($minima <= 3) {
-            $alertas[] = [
-                'tipo' => 'frio',
-                'icono' => '',
-                'clase' => $minima <= 0 ? 'danger' : 'warning',
-                'titulo' => $minima <= 0 ? 'Riesgo de helada' : 'Noche muy fria',
-                'mensaje' => sprintf('Se espera una minima de %s C. Cubre los cultivos sensibles antes del anochecer.', $minima),
-            ];
+        if ($request->filled('lat') && $request->filled('lon')) {
+            return ['lat' => (float) $request->lat, 'lon' => (float) $request->lon, 'nombre' => $request->input('nombre') ?: null];
         }
 
-        if ($climaActual['temp'] > 30) {
-            $alertas[] = [
-                'tipo' => 'calor',
-                'icono' => '',
-                'clase' => 'warning',
-                'titulo' => 'Temperatura alta',
-                'mensaje' => sprintf('Temperatura actual de %s C. Riega temprano o al atardecer para no perder agua.', $climaActual['temp']),
-            ];
+        if ($request->filled('ciudad')) {
+            $r = $this->meteo->buscarLugares((string) $request->ciudad, 1, 'PE') ?: $this->meteo->buscarLugares((string) $request->ciudad, 1);
+            if ($r) {
+                return ['lat' => (float) $r[0]['lat'], 'lon' => (float) $r[0]['lon'], 'nombre' => $r[0]['display_name']];
+            }
         }
 
-        if ($climaActual['wind_speed'] > 10) {
-            $alertas[] = [
-                'tipo' => 'viento',
-                'icono' => '',
-                'clase' => 'warning',
-                'titulo' => 'Viento fuerte',
-                'mensaje' => sprintf('Viento de %s m/s. Evita fumigar o regar por aspersion; el agua y el producto se pierden.', $climaActual['wind_speed']),
-            ];
-        }
-
-        if ($climaActual['humidity'] > 85) {
-            $alertas[] = [
-                'tipo' => 'humedad',
-                'icono' => '',
-                'clase' => 'info',
-                'titulo' => 'Humedad alta',
-                'mensaje' => sprintf('Humedad relativa de %d%%. Vigila hongos y enfermedades en las hojas.', $climaActual['humidity']),
-            ];
-        }
-
-        if (!empty($climaActual['desactualizado'])) {
-            $alertas[] = [
-                'tipo' => 'sin-conexion',
-                'icono' => '',
-                'clase' => 'warning',
-                'titulo' => 'Datos guardados',
-                'mensaje' => 'No hay conexion a internet. Se muestran los ultimos datos disponibles, pueden estar atrasados.',
-            ];
-        }
-
-        return $alertas;
-    }
-
-    /**
-     * Obtener día de la semana en español
-     */
-    protected function getDiaSemana(int $timestamp): string
-    {
-        $dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-        return $dias[date('w', $timestamp)];
-    }
-
-    /**
-     * Buscar ciudades por nombre (AJAX - autocompletado)
-     */
-    public function buscarCiudades(Request $request)
-    {
-        $query = $request->input('q', '');
-        
-        if (strlen($query) < 2) {
-            return response()->json([]);
-        }
-
-        $ciudades = $this->geocodingService->searchCities($query, 10);
-
-        return response()->json($ciudades);
-    }
-
-    /**
-     * Obtener clima por coordenadas (AJAX)
-     */
-    public function climaPorCoordenadas(Request $request)
-    {
-        $lat = $request->input('lat');
-        $lon = $request->input('lon');
-
-        if (!$lat || !$lon) {
-            return response()->json([
-                'error' => 'Se requieren coordenadas (lat y lon)'
-            ], 400);
-        }
-
-        $clima = $this->weatherService->getCurrentWeatherByCoordinates($lat, $lon);
-
-        if (!$clima) {
-            return response()->json([
-                'error' => 'No se pudo obtener el clima para esas coordenadas'
-            ], 404);
-        }
-
-        return response()->json($clima);
-    }
-
-    /**
-     * Actualizar clima (forzar refresco - AJAX)
-     */
-    public function refrescarClima(Request $request)
-    {
-        $ciudad = $request->input('ciudad');
-        $pais = $request->input('pais', '');
-
-        if (!$ciudad) {
-            return response()->json([
-                'error' => 'Se requiere el nombre de la ciudad'
-            ], 400);
-        }
-
-        $clima = $this->weatherService->forceRefresh($ciudad, $pais);
-
-        if (!$clima) {
-            return response()->json([
-                'error' => 'No se pudo actualizar el clima'
-            ], 500);
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Clima actualizado correctamente',
-            'data' => $clima,
-            'updated_at' => now()->format('d/m/Y H:i:s')
-        ]);
-    }
-
-    /**
-     * Obtener pronóstico extendido (AJAX)
-     */
-    public function pronosticoExtendido(Request $request)
-    {
-        $ciudad = $request->input('ciudad');
-        $pais = $request->input('pais', '');
-
-        if (!$ciudad) {
-            return response()->json([
-                'error' => 'Se requiere el nombre de la ciudad'
-            ], 400);
-        }
-
-        $pronostico = $this->weatherService->getForecast($ciudad, $pais);
-
-        if (!$pronostico) {
-            return response()->json([
-                'error' => 'No se pudo obtener el pronóstico'
-            ], 500);
-        }
-
-        return response()->json($pronostico);
-    }
-
-    /**
-     * Preparar datos para los gráficos de Chart.js
-     */
-    protected function prepararDatosGraficos(?array $pronostico): array
-    {
-        if (!$pronostico || empty($pronostico['list'])) {
+        if ($p = $parcelas->first()) {
             return [
-                'temperatura' => ['labels' => [], 'data' => []],
-                'lluvia' => ['labels' => [], 'data' => [], 'probabilidad' => []],
-                'humedad' => ['labels' => [], 'data' => []],
-                'viento' => ['labels' => [], 'data' => []],
+                'lat' => (float) $p->ubicacion->coordenadaLatitud, 'lon' => (float) $p->ubicacion->coordenadaLongitud,
+                'nombre' => $p->nombre . ' - ' . $p->ubicacion->distrito, 'region' => $p->ubicacion->region, 'parcela_id' => $p->id,
             ];
         }
 
-        $labels = [];
-        $temperaturas = [];
-        $lluvias = [];
-        $probabilidadesLluvia = [];
-        $humedades = [];
-        $vientos = [];
+        return ['lat' => -15.8402, 'lon' => -70.0219, 'nombre' => 'Puno'];
+    }
 
-        // Tomar datos de las próximas 48 horas (16 registros de 3h cada uno)
-        $datos = array_slice($pronostico['list'], 0, 16);
+    /**
+     * Lo que importa hoy para el campo, en frases cortas y con nivel.
+     *
+     * @return array<int, array{nivel:string, titulo:string, texto:string}>
+     */
+    private function avisos(array $d): array
+    {
+        $a = $d['agro'];
+        $act = $d['actual'];
+        $avisos = [];
+        $kmh = fn ($ms) => round(($ms ?? 0) * 3.6);
 
-        foreach ($datos as $item) {
-            $labels[] = $item['date_formatted'] ?? date('d/m H:i', $item['dt'] ?? time());
-            $temperaturas[] = $item['temp'] ?? 0;
-            $lluvias[] = $item['rain_3h'] ?? 0;
-            $probabilidadesLluvia[] = $item['pop'] ?? 0;
-            $humedades[] = $item['humidity'] ?? 0;
-            $vientos[] = $item['wind_speed'] ?? 0;
+        if ($a['min_24h'] && $a['min_24h']['valor'] <= 3) {
+            $m = $a['min_24h']['valor'];
+            $mt = number_format($m, 1, ',', '');
+            $avisos[] = [
+                'nivel' => $m <= -2 ? 'critico' : ($m <= 0 ? 'alto' : 'medio'), 'icono' => 'helada',
+                'titulo' => $m <= 0 ? 'Riesgo de helada' : 'Noche muy fría',
+                'texto' => "Mínima de {$mt} °C hacia las {$a['min_24h']['hora']}. Hay {$a['horas_helada_72h']} h bajo 0 °C en las próximas 72 h. Cubre los cultivos sensibles antes del anochecer.",
+            ];
         }
+
+        if ($a['lluvia_24h'] >= 1 && $a['prob_lluvia_24h'] >= 40) {
+            $avisos[] = [
+                'nivel' => $a['lluvia_24h'] >= 20 ? 'alto' : 'medio', 'icono' => 'lluvia', 'titulo' => 'Lluvia en las próximas 24 horas',
+                'texto' => 'Se esperan ' . number_format($a['lluvia_24h'], 1, ',', '') . " mm (probabilidad hasta {$a['prob_lluvia_24h']}%). Si ibas a regar, conviene esperar.",
+            ];
+        }
+
+        if (($act['tmax_hoy'] ?? 0) >= 30) {
+            $avisos[] = ['nivel' => $act['tmax_hoy'] >= 34 ? 'alto' : 'medio', 'icono' => 'calor', 'titulo' => 'Calor',
+                'texto' => "Máxima de " . number_format($act['tmax_hoy'], 1, ',', '') . " °C. Riega temprano o al atardecer y cubre el suelo para que no pierda humedad."];
+        }
+
+        if ($kmh(max($act['viento'] ?? 0, $act['rafaga'] ?? 0)) >= 36) {
+            $avisos[] = ['nivel' => 'medio', 'icono' => 'viento', 'titulo' => 'Viento fuerte',
+                'texto' => 'Con este viento se pierde agua y producto: evita fumigar o regar por aspersión.'];
+        }
+
+        if (($act['uv'] ?? 0) >= 8) {
+            $avisos[] = ['nivel' => 'medio', 'icono' => 'sol', 'titulo' => 'Radiación UV muy alta',
+                'texto' => 'Usa sombrero y manga larga si trabajas entre las 10:00 y las 15:00.'];
+        }
+
+        if (($d['aire']['aqi'] ?? 0) > 100) {
+            $avisos[] = ['nivel' => 'alto', 'icono' => 'aire', 'titulo' => 'Aire con partículas', 'texto' => 'La calidad del aire es ' . mb_strtolower($d['aire']['categoria'][0]) . '. Evita quemas y esfuerzo prolongado al aire libre.'];
+        }
+
+        if (!empty($a['ventanas_riego'])) {
+            $avisos[] = ['nivel' => 'ok', 'icono' => 'agua', 'titulo' => 'Mejor momento para regar', 'texto' => implode(' y ', array_slice($a['ventanas_riego'], 0, 3)) . ' (poco viento, sin lluvia y temperatura moderada).'];
+        }
+
+        if (!empty($a['ventanas_fumigar'])) {
+            $avisos[] = ['nivel' => 'ok', 'icono' => 'tierra', 'titulo' => 'Mejor momento para fumigar', 'texto' => implode(' y ', array_slice($a['ventanas_fumigar'], 0, 3)) . ' (viento bajo y Delta T entre 2 y 8).'];
+        }
+
+        if (!empty($d['desactualizado'])) {
+            array_unshift($avisos, ['nivel' => 'alto', 'icono' => 'aviso', 'titulo' => 'Datos guardados', 'texto' => 'No hay conexión a internet. Se muestran los últimos datos disponibles y pueden estar atrasados.']);
+        }
+
+        return $avisos;
+    }
+
+    /**
+     * Series ya preparadas para los graficos (viento en km/h, humedad del suelo en %, etc.).
+     */
+    private function serieGraficos(array $d): array
+    {
+        $z = $d['lugar']['zona'];
+        $h = $d['horas'];
+        $col = fn (string $k, int $dec = 1) => array_map(fn ($x) => isset($x[$k]) ? round($x[$k], $dec) : null, $h);
+        $kmh = fn (string $k) => array_map(fn ($x) => isset($x[$k]) ? round($x[$k] * 3.6, 1) : null, $h);
+        $pct = fn (string $k) => array_map(fn ($x) => isset($x[$k]) ? round($x[$k] * 100, 1) : null, $h);
+
+        $dias = $d['dias'];
+        $dcol = fn (string $k, int $dec = 1) => array_map(fn ($x) => isset($x[$k]) ? round($x[$k], $dec) : null, $dias);
+
+        $hist = $d['historial']['dias'] ?? [];
+        $hcol = fn (string $k) => array_map(fn ($x) => $x[$k] ?? null, $hist);
 
         return [
-            'temperatura' => [
-                'labels' => $labels,
-                'data' => $temperaturas,
+            'h' => [
+                'lab' => array_map(fn ($x) => Carbon::createFromTimestamp($x['ts'], $z)->translatedFormat('D G\\h'), $h),
+                'tit' => array_map(fn ($x) => Carbon::createFromTimestamp($x['ts'], $z)->translatedFormat('D j, H:i'), $h),
+                'temp' => $col('temperature_2m'), 'sens' => $col('apparent_temperature'), 'rocio' => $col('dew_point_2m'), 'hum' => $col('relative_humidity_2m', 0),
+                'lluvia' => $col('precipitation'), 'prob' => $col('precipitation_probability', 0),
+                'v10' => $kmh('wind_speed_10m'), 'v80' => $kmh('wind_speed_80m'), 'v120' => $kmh('wind_speed_120m'), 'raf' => $kmh('wind_gusts_10m'),
+                'pres' => $col('pressure_msl'), 'pres_est' => $col('surface_pressure'),
+                'nub' => $col('cloud_cover', 0), 'nub_b' => $col('cloud_cover_low', 0), 'nub_m' => $col('cloud_cover_mid', 0), 'nub_a' => $col('cloud_cover_high', 0),
+                'vis' => array_map(fn ($x) => isset($x['visibility']) ? round($x['visibility'] / 1000, 1) : null, $h),
+                'uv' => $col('uv_index'), 'rad' => $col('shortwave_radiation', 0), 'rad_dir' => $col('direct_radiation', 0), 'rad_dif' => $col('diffuse_radiation', 0),
+                'et0' => $col('et0_fao_evapotranspiration', 2), 'vpd' => $col('vapour_pressure_deficit', 2),
+                's0' => $col('soil_temperature_0cm'), 's6' => $col('soil_temperature_6cm'), 's18' => $col('soil_temperature_18cm'), 's54' => $col('soil_temperature_54cm'),
+                'iso0' => $col('freezing_level_height', 0), 'cape' => $col('cape', 0),
             ],
-            'lluvia' => [
-                'labels' => $labels,
-                'data' => $lluvias,
-                'probabilidad' => $probabilidadesLluvia,
+            'd' => [
+                'lab' => array_map(fn ($x) => Carbon::parse($x['fecha'])->translatedFormat('D j'), $dias),
+                'tit' => array_map(fn ($x) => Carbon::parse($x['fecha'])->translatedFormat('l j \\d\\e F'), $dias),
+                'tmax' => $dcol('temperature_2m_max'), 'tmin' => $dcol('temperature_2m_min'), 'lluvia' => $dcol('precipitation_sum'),
+                'prob' => $dcol('precipitation_probability_max', 0), 'et0' => $dcol('et0_fao_evapotranspiration', 1),
+                'uv' => $dcol('uv_index_max'), 'sol' => array_map(fn ($x) => round(($x['sunshine_duration'] ?? 0) / 3600, 1), $dias),
+                'rad' => $dcol('shortwave_radiation_sum'),
             ],
-            'humedad' => [
-                'labels' => $labels,
-                'data' => $humedades,
+            'hist' => [
+                'lab' => array_map(fn ($x) => Carbon::parse($x['fecha'])->format('d/m'), $hist),
+                'tmax' => $hcol('tmax'), 'tmin' => $hcol('tmin'), 'tmedia' => $hcol('tmedia'), 'lluvia' => $hcol('lluvia'), 'et0' => $hcol('et0'),
             ],
-            'viento' => [
-                'labels' => $labels,
-                'data' => $vientos,
+            'aire' => [
+                'lab' => array_map(fn ($x) => Carbon::parse($x['iso'], $z)->translatedFormat('D G\\h'), $d['aire']['horas'] ?? []),
+                'aqi' => array_column($d['aire']['horas'] ?? [], 'aqi'), 'pm25' => array_column($d['aire']['horas'] ?? [], 'pm25'),
             ],
         ];
-    }
-
-    /**
-     * Obtener resumen de lluvia (AJAX)
-     */
-    public function resumenLluvia(Request $request)
-    {
-        $ciudad = $request->input('ciudad');
-        $pais = $request->input('pais', '');
-
-        if (!$ciudad) {
-            return response()->json([
-                'error' => 'Se requiere el nombre de la ciudad'
-            ], 400);
-        }
-
-        $pronostico = $this->weatherService->getForecast($ciudad, $pais);
-
-        if (!$pronostico) {
-            return response()->json([
-                'error' => 'No se pudo obtener el pronóstico'
-            ], 500);
-        }
-
-        // Calcular resumen de lluvia
-        $lluviaTotal = 0;
-        $lluviaDias = [];
-        $probabilidadMaxima = 0;
-
-        foreach ($pronostico['list'] as $item) {
-            $fecha = date('Y-m-d', $item['dt']);
-            
-            if (!isset($lluviaDias[$fecha])) {
-                $lluviaDias[$fecha] = [
-                    'fecha' => $fecha,
-                    'fecha_formatted' => date('d/m', $item['dt']),
-                    'lluvia' => 0,
-                    'probabilidad_max' => 0,
-                ];
-            }
-
-            $lluviaDias[$fecha]['lluvia'] += $item['rain_3h'] ?? 0;
-            $lluviaDias[$fecha]['probabilidad_max'] = max(
-                $lluviaDias[$fecha]['probabilidad_max'],
-                $item['pop'] ?? 0
-            );
-            
-            $lluviaTotal += $item['rain_3h'] ?? 0;
-            $probabilidadMaxima = max($probabilidadMaxima, $item['pop'] ?? 0);
-        }
-
-        return response()->json([
-            'lluvia_total_pronostico' => round($lluviaTotal, 2),
-            'probabilidad_maxima' => $probabilidadMaxima,
-            'lluvia_por_dia' => array_values($lluviaDias),
-            'dias_con_lluvia' => count(array_filter($lluviaDias, fn($dia) => $dia['lluvia'] > 0)),
-        ]);
     }
 }

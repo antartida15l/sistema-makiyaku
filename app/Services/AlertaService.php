@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Cache;
  *     calor, lluvia y ciclo se miden igual, asi nivel, prioridad y color
  *     nunca se contradicen.
  *  2. Una sola alerta activa por parcela y grupo. Si el riego pasa de
- *     "proximo" a "hoy" se actualiza la misma alerta, ya no se acumulan.
+ *     "próximo" a "hoy" se actualiza la misma alerta, ya no se acumulan.
  *  3. Las alertas se coordinan: si hay lluvia que cubre el riego no se pide
  *     regar; si el riego es critico no se sugiere esperar la lluvia.
  *  4. Solo se avisa de nuevo cuando la alerta SUBE de nivel; los cambios
@@ -41,7 +41,7 @@ class AlertaService
         Alerta::GRUPO_HIDROGEL => 72,
     ];
 
-    /** Horas despues de las cuales el clima guardado ya no es confiable. */
+    /** Horas después de las cuales el clima guardado ya no es confiable. */
     private const CLIMA_VENCE_HORAS = 6;
 
     public function __construct(private RiegoService $riego)
@@ -184,11 +184,11 @@ class AlertaService
     private function evaluarRiego(Parcela $parcela, ?ClimaHistorial $clima): array
     {
         $cultivo = $parcela->cultivo;
-        $dias = $this->riego->diasSinRegar($parcela);
+        $días = $this->riego->diasSinRegar($parcela);
 
         $vacio = ['candidata' => null, 'suprimida_por_lluvia' => false, 'puntaje' => 0];
 
-        if ($dias === null) {
+        if ($días === null) {
             return $vacio; // sin dato de ultimo riego: no se inventa una alerta
         }
 
@@ -197,9 +197,9 @@ class AlertaService
         $criticos = max($criticos, $frecuencia + 1);
         $consumo = max(0.5, $this->riego->consumoDiarioPorM2($parcela, $clima));
 
-        // La lluvia reciente cuenta como riego: 6 mm con un consumo de 3 mm/dia = 2 dias menos.
+        // La lluvia reciente cuenta como riego: 6 mm con un consumo de 3 mm/día = 2 días menos.
         $lluviaUtil = $clima ? (float) $clima->lluvia_72h_mm * 0.75 : 0.0;
-        $diasEfectivos = max(0.0, $dias - $lluviaUtil / $consumo);
+        $diasEfectivos = max(0.0, $días - $lluviaUtil / $consumo);
 
         $desglose = [
             'dias_sin_regar' => 0.0,
@@ -217,7 +217,7 @@ class AlertaService
         } elseif ($ratio < 0.8) {
             $base = 40 * ($ratio - 0.6) / 0.2;            // 0 a 40
         } elseif ($ratio < 1.0) {
-            $base = 40 + 25 * ($ratio - 0.8) / 0.2;       // 40 a 65 (llega el dia)
+            $base = 40 + 25 * ($ratio - 0.8) / 0.2;       // 40 a 65 (llega el día)
         } elseif ($diasEfectivos < $criticos) {
             $base = 65 + 20 * ($diasEfectivos - $frecuencia) / max(1, $criticos - $frecuencia); // 65 a 85
         } else {
@@ -227,7 +227,7 @@ class AlertaService
         $desglose['dias_sin_regar'] = round($base, 1);
 
         // Los ajustes solo suman cuando ya hay algo de necesidad: un cultivo
-        // sensible no debe alertar el mismo dia que se rego.
+        // sensible no debe alertar el mismo día que se rego.
         if ($base > 0) {
             if ($clima) {
                 $factor = $this->riego->factorClima($parcela, $clima);
@@ -281,10 +281,10 @@ class AlertaService
         [$tipo, $titulo] = match ($nivel) {
             Alerta::NIVEL_CRITICO => [Alerta::TIPO_RIEGO_URGENTE, 'Riego urgente'],
             Alerta::NIVEL_ALTO => [Alerta::TIPO_RIEGO_HOY, 'Riego recomendado hoy'],
-            default => [Alerta::TIPO_RIEGO_PROXIMO, 'Riego en uno o dos dias'],
+            default => [Alerta::TIPO_RIEGO_PROXIMO, 'Riego en uno o dos días'],
         };
 
-        $mensaje = $this->mensajeRiego($parcela, $nivel, $dias, $frecuencia, $calculo, $clima, $lluviaPrevista);
+        $mensaje = $this->mensajeRiego($parcela, $nivel, $días, $frecuencia, $calculo, $clima, $lluviaPrevista);
 
         return [
             'candidata' => [
@@ -299,7 +299,7 @@ class AlertaService
                     'litros_recomendados' => $calculo['litros_total'],
                     'litros_por_m2' => $calculo['litros_m2'],
                     'baldes' => $calculo['baldes'],
-                    'dias_sin_regar' => $dias,
+                    'dias_sin_regar' => $días,
                     'frecuencia_ideal' => $frecuencia,
                     'factor_clima' => $calculo['factor_clima'],
                     'lluvia_aprovechada_mm' => $calculo['lluvia_aprovechada_mm'],
@@ -315,7 +315,7 @@ class AlertaService
     private function mensajeRiego(
         Parcela $parcela,
         string $nivel,
-        int $dias,
+        int $días,
         int $frecuencia,
         array $calculo,
         ?ClimaHistorial $clima,
@@ -324,22 +324,22 @@ class AlertaService
         $nombre = $parcela->nombre;
         $cultivo = $parcela->cultivo->nombreCultivo;
         $cantidad = $this->riego->textoCantidad($calculo);
-        $diasTxt = $dias === 1 ? '1 dia' : "{$dias} dias";
+        $diasTxt = $días === 1 ? '1 día' : "{$días} días";
 
         $caluroso = $clima && ($clima->temp_max_prevista ?? $clima->temp_maxima ?? 0) >= 28;
         $hora = $caluroso
-            ? 'Riega temprano (antes de las 9:00) o despues de las 17:00 para no perder agua por el calor.'
-            : 'Lo mejor es regar temprano en la manana.';
+            ? 'Riega temprano (antes de las 9:00) o después de las 17:00 para no perder agua por el calor.'
+            : 'Lo mejor es regar temprano en la mañana.';
 
         $texto = match ($nivel) {
             Alerta::NIVEL_CRITICO =>
-                "{$nombre} ({$cultivo}): lleva {$diasTxt} sin riego y el cultivo esta en riesgo. " .
+                "{$nombre} ({$cultivo}): lleva {$diasTxt} sin riego y el cultivo está en riesgo. " .
                 "Riega ahora: {$cantidad}. {$hora}",
             Alerta::NIVEL_ALTO =>
-                "{$nombre} ({$cultivo}): hoy toca regar (lo normal es cada {$frecuencia} dias, van {$diasTxt}). " .
+                "{$nombre} ({$cultivo}): hoy toca regar (lo normal es cada {$frecuencia} días, van {$diasTxt}). " .
                 "Aplica {$cantidad}. {$hora}",
             default =>
-                "{$nombre} ({$cultivo}): el riego sera necesario en uno o dos dias (van {$diasTxt}). " .
+                "{$nombre} ({$cultivo}): el riego será necesario en uno o dos días (van {$diasTxt}). " .
                 "Ve preparando {$cantidad}.",
         };
 
@@ -348,7 +348,7 @@ class AlertaService
         }
 
         if ($lluviaPrevista) {
-            $texto .= ' Se espera lluvia, pero el cultivo esta muy seco: no esperes a que llueva.';
+            $texto .= ' Se espera lluvia, pero el cultivo está muy seco: no esperes a que llueva.';
         }
 
         return $texto;
@@ -372,8 +372,8 @@ class AlertaService
         $tmin = (float) $tmin;
         $margen = $tmin - $crit;
 
-        // Histeresis: una alerta ya activa se mantiene hasta que la minima
-        // supere el limite en 3 grados, asi no aparece y desaparece cada hora.
+        // Histeresis: una alerta ya activa se mantiene hasta que la mínima
+        // supere el límite en 3 grados, asi no aparece y desaparece cada hora.
         $activa = $this->alertaActiva($parcela, Alerta::GRUPO_HELADA) !== null;
         $avisoHasta = $activa ? 3.0 : 2.0;
 
@@ -393,13 +393,13 @@ class AlertaService
         $cuando = $this->describirMomento($clima->hora_temp_min);
         $minAire = $clima->temp_min_prevista !== null ? (float) $clima->temp_min_prevista : $tmin;
 
-        $mensaje = "Se espera una minima de {$this->n($minAire)} C {$cuando} " .
-            "(a nivel del suelo puede sentirse cerca de {$this->n($tmin)} C). " .
-            "El limite de {$parcela->cultivo->nombreCultivo} es {$this->n($crit)} C. ";
+        $mensaje = "Se espera una mínima de {$this->n($minAire)} °C {$cuando} " .
+            "(a nivel del suelo puede sentirse cerca de {$this->n($tmin)} °C). " .
+            "El límite de {$parcela->cultivo->nombreCultivo} es {$this->n($crit)} °C. ";
 
         $mensaje .= $margen <= 0
-            ? 'Antes del anochecer cubre las plantas con paja, plastico o mantas y evita dejar el suelo desnudo. '
-            : 'Prepara coberturas por si la temperatura baja mas de lo previsto. ';
+            ? 'Antes del anochecer, cubre las plantas con paja, plástico o mantas y evita dejar el suelo desnudo. '
+            : 'Prepara coberturas por si la temperatura baja más de lo previsto. ';
 
         if ($esHelada) {
             $mensaje .= 'Un riego ligero por la tarde ayuda a conservar el calor del suelo durante la noche.';
@@ -458,15 +458,15 @@ class AlertaService
             return null;
         }
 
-        $mensaje = "Se esperan hasta {$this->n($tmax)} C en las proximas 24 horas; " .
-            "el limite de {$parcela->cultivo->nombreCultivo} es {$this->n($crit)} C. " .
+        $mensaje = "Se esperan hasta {$this->n($tmax)} °C en las próximas 24 horas; " .
+            "el límite de {$parcela->cultivo->nombreCultivo} es {$this->n($crit)} °C. " .
             'Riega temprano o al atardecer, da sombra si puedes y cubre el suelo con paja o rastrojo para que no se seque.';
 
         return [
             'grupo' => Alerta::GRUPO_CALOR,
             'tipo' => Alerta::TIPO_CALOR_EXTREMO,
             'puntaje' => $puntaje,
-            'titulo' => $margen >= 0 ? 'Calor extremo' : 'Calor cerca del limite',
+            'titulo' => $margen >= 0 ? 'Calor extremo' : 'Calor cerca del límite',
             'mensaje' => $mensaje,
             'icono' => 'calor',
             'accion_texto' => 'Ver parcela',
@@ -507,11 +507,11 @@ class AlertaService
 
         $cuando = $clima->lluvia_inicio
             ? 'desde las ' . Carbon::parse($clima->lluvia_inicio)->format('H:i')
-            : 'en las proximas 24 horas';
+            : 'en las próximas 24 horas';
 
         if ($fuerte) {
             $mensaje = "Se esperan unos {$this->n($mm)} mm de lluvia {$cuando} (probabilidad {$prob}%). " .
-                'No riegues. Revisa que las acequias y el drenaje esten despejados para evitar encharcamiento y arrastre de suelo.';
+                'No riegues. Revisa que las acequias y el drenaje estén despejados para evitar encharcamiento y arrastre de suelo.';
             $puntaje = 65;
             $titulo = 'Lluvia fuerte prevista';
         } else {
@@ -520,7 +520,7 @@ class AlertaService
                 'Puedes posponer el riego de ' . $parcela->nombre . '.' .
                 ($ahorro > 0 ? ' Ahorras alrededor de ' . number_format($ahorro, 0, ',', '.') . ' L de agua.' : '');
             $puntaje = 30;
-            $titulo = 'Lluvia prevista: pospon el riego';
+            $titulo = 'Lluvia prevista: pospón el riego';
         }
 
         return [
@@ -561,7 +561,7 @@ class AlertaService
                 'tipo' => Alerta::TIPO_CICLO_COMPLETADO,
                 'puntaje' => 45,
                 'titulo' => 'Cultivo listo para cosechar',
-                'mensaje' => "{$parcela->nombre}: {$cultivo} ya cumplio su ciclo ({$diasCultivo} dias). Revisa el estado de los frutos o granos y programa la cosecha.",
+                'mensaje' => "{$parcela->nombre}: {$cultivo} ya cumplió su ciclo ({$diasCultivo} días). Revisa el estado de los frutos o granos y programa la cosecha.",
                 'icono' => 'ciclo',
                 'accion_texto' => 'Ver parcela',
                 'datos' => ['dias_cultivo' => $diasCultivo, 'ciclo_dias' => $ciclo, 'progreso' => round($progreso)],
@@ -577,7 +577,7 @@ class AlertaService
                 'tipo' => Alerta::TIPO_FIN_CICLO,
                 'puntaje' => 30,
                 'titulo' => 'Se acerca la cosecha',
-                'mensaje' => "{$parcela->nombre}: {$cultivo} esta al " . round($progreso) . "% de su ciclo; faltan unos {$faltan} dias. Ve organizando la cosecha.",
+                'mensaje' => "{$parcela->nombre}: {$cultivo} está al " . round($progreso) . "% de su ciclo; faltan unos {$faltan} días. Ve organizando la cosecha.",
                 'icono' => 'ciclo',
                 'accion_texto' => 'Ver parcela',
                 'datos' => ['dias_cultivo' => $diasCultivo, 'ciclo_dias' => $ciclo, 'progreso' => round($progreso)],
@@ -594,9 +594,9 @@ class AlertaService
             return null;
         }
 
-        $dias = (int) Carbon::parse($parcela->hidrogel_fecha_aplicacion)->startOfDay()->diffInDays(Carbon::today());
+        $días = (int) Carbon::parse($parcela->hidrogel_fecha_aplicacion)->startOfDay()->diffInDays(Carbon::today());
 
-        if ($dias < 90) {
+        if ($días < 90) {
             return null;
         }
 
@@ -605,10 +605,10 @@ class AlertaService
             'tipo' => Alerta::TIPO_RENOVAR_HIDROGEL,
             'puntaje' => 45,
             'titulo' => 'Renovar hidrogel',
-            'mensaje' => "{$parcela->nombre}: el hidrogel se aplico hace {$dias} dias. Con el tiempo pierde capacidad de retener agua; considera renovarlo.",
+            'mensaje' => "{$parcela->nombre}: el hidrogel se aplicó hace {$días} días. Con el tiempo pierde capacidad de retener agua; considera renovarlo.",
             'icono' => 'hidrogel',
             'accion_texto' => 'Ver parcela',
-            'datos' => ['dias_desde_aplicacion' => $dias],
+            'datos' => ['dias_desde_aplicacion' => $días],
             'expira' => null,
         ];
     }
@@ -744,16 +744,16 @@ class AlertaService
     private function describirMomento($hora): string
     {
         if (!$hora) {
-            return 'en las proximas 24 horas';
+            return 'en las próximas 24 horas';
         }
 
         $h = Carbon::parse($hora);
-        $dia = match (true) {
+        $día = match (true) {
             $h->isToday() => 'hoy',
-            $h->isTomorrow() => 'manana',
+            $h->isTomorrow() => 'mañana',
             default => 'el ' . $h->format('d/m'),
         };
 
-        return "{$dia} hacia las " . $h->format('H:i');
+        return "{$día} hacia las " . $h->format('H:i');
     }
 }

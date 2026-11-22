@@ -2,240 +2,198 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Parcela;
-use App\Models\Cultivo;
-use App\Models\Ubicacion;
+use App\Http\Requests\ParcelaRequest;
 use App\Models\Alerta;
-use App\Services\GeocodingService;
+use App\Models\Cultivo;
+use App\Models\Parcela;
+use App\Models\Ubicacion;
 use App\Services\AlertaService;
+use App\Services\ClimaCompletoService;
+use App\Services\GeocodingService;
+use App\Services\MonitoreoService;
+use App\Services\RecomendacionService;
 use App\Services\RiegoService;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Artisan;
 use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ParcelaController extends Controller
 {
     use AuthorizesRequests;
 
-    protected GeocodingService $geocodingService;
-    protected AlertaService $alertaService;
-    protected RiegoService $riegoService;
-
     public function __construct(
-        GeocodingService $geocodingService,
-        AlertaService $alertaService,
-        RiegoService $riegoService
+        private GeocodingService $geocoding,
+        private AlertaService $alertas,
+        private RiegoService $riego,
+        private MonitoreoService $monitoreo,
+        private ClimaCompletoService $climaCompleto,
+        private RecomendacionService $recomendaciones,
     ) {
-        $this->geocodingService = $geocodingService;
-        $this->alertaService = $alertaService;
-        $this->riegoService = $riegoService;
     }
 
-    /**
-     * Muestra listado de parcelas del usuario CON CLIMA.
-     */
-    public function index()
+    // =========================================================
+    // LISTA
+    // =========================================================
+
+    public function index(Request $request)
     {
-        $parcelas = Parcela::where('user_id', Auth::id())
-            ->with(['cultivo', 'ubicacion', 'climaActual'])
-            ->orderByRaw("
-                CASE 
-                    WHEN proximo_riego_estimado < ? THEN 1
-                    WHEN proximo_riego_estimado = ? THEN 2
-                    ELSE 3
-                END
-            ", [Carbon::today()->toDateString(), Carbon::today()->toDateString()])
-            ->orderBy('proximo_riego_estimado', 'asc')
-            ->paginate(12);
+        $orden = $request->input('orden', 'urgencia');
+        $hoy = Carbon::today()->toDateString();
 
-        // Los contadores salen de la misma tabla de alertas que ve el usuario,
-        // asi nunca se contradicen con la pantalla de alertas.
+        $consulta = Parcela::where('user_id', Auth::id())
+            ->with(['cultivo', 'ubicacion', 'climaActual', 'alertas' => fn ($q) => $q->where('archivada', false)])
+            ->when($request->filled('q'), fn ($q) => $q->where('nombre', 'like', '%' . $request->q . '%'))
+            ->when($request->filled('estado'), fn ($q) => $q->where('estado', $request->estado))
+            ->when($request->filled('cultivo'), fn ($q) => $q->where('idCultivo', $request->cultivo));
+
+        match ($orden) {
+            'nombre' => $consulta->orderBy('nombre'),
+            'area' => $consulta->orderByDesc('area'),
+            'reciente' => $consulta->latest(),
+            default => $consulta->orderByRaw('CASE WHEN proximo_riego_estimado IS NULL THEN 4 WHEN proximo_riego_estimado < ? THEN 1 WHEN proximo_riego_estimado = ? THEN 2 ELSE 3 END', [$hoy, $hoy])
+                ->orderBy('proximo_riego_estimado'),
+        };
+
+        $parcelas = $consulta->paginate(12)->withQueryString();
+
         $activas = Alerta::porUsuario(Auth::id())->activas();
-
-        $alertas = [
-            'criticas' => (clone $activas)->where('grupo', Alerta::GRUPO_RIEGO)
-                ->where('nivel', Alerta::NIVEL_CRITICO)->count(),
-            'hoy' => (clone $activas)->where('grupo', Alerta::GRUPO_RIEGO)
-                ->where('nivel', Alerta::NIVEL_ALTO)->count(),
-            'climaticas' => (clone $activas)->whereIn('grupo', [
-                Alerta::GRUPO_HELADA, Alerta::GRUPO_CALOR, Alerta::GRUPO_LLUVIA,
-            ])->count(),
+        $resumen = [
+            'total' => Parcela::where('user_id', Auth::id())->count(),
+            'area' => (float) Parcela::where('user_id', Auth::id())->activas()->sum('area'),
+            'riego_urgente' => (clone $activas)->where('grupo', Alerta::GRUPO_RIEGO)->whereIn('nivel', [Alerta::NIVEL_CRITICO, Alerta::NIVEL_ALTO])->count(),
+            'clima' => (clone $activas)->whereIn('grupo', [Alerta::GRUPO_HELADA, Alerta::GRUPO_CALOR, Alerta::GRUPO_LLUVIA])->count(),
+            'papelera' => Parcela::onlyTrashed()->where('user_id', Auth::id())->count(),
         ];
 
-        return view('parcelas.index', compact('parcelas', 'alertas'));
+        return view('parcelas.index', [
+            'parcelas' => $parcelas,
+            'resumen' => $resumen,
+            'cultivos' => Cultivo::whereIn('idCultivo', Parcela::where('user_id', Auth::id())->pluck('idCultivo'))->orderBy('nombreCultivo')->get(),
+            'filtros' => $request->only(['q', 'estado', 'cultivo', 'orden']),
+        ]);
     }
 
-    /**
-     * Muestra formulario de creación.
-     */
+    // =========================================================
+    // CREAR / EDITAR
+    // =========================================================
+
     public function create()
     {
-        $cultivos = Cultivo::orderBy('nombreCultivo')->get();
-        
-        return view('parcelas.create', compact('cultivos'));
+        return view('parcelas.create', ['cultivos' => Cultivo::orderBy('nombreCultivo')->get(), 'parcela' => new Parcela()]);
     }
 
-    /**
-     *  Almacena una nueva parcela Y GENERA ALERTAS
-     */
-    public function store(Request $request)
+    public function store(ParcelaRequest $request)
     {
-        $validated = $request->validate([
-            'nombreParcela' => 'required|string|max:255',
-            'area' => 'required|numeric|min:0.01',
-            'idCultivo' => 'required|exists:cultivos,idCultivo',
-            'region' => 'required|string|max:100',
-            'provincia' => 'required|string|max:100',
-            'distrito' => 'required|string|max:100',
-            'coordenadaLatitud' => 'nullable|numeric|between:-90,90',
-            'coordenadaLongitud' => 'nullable|numeric|between:-180,180',
-            'fecha_siembra' => 'nullable|date|before_or_equal:today',
-            'ultimo_riego' => 'nullable|date|before_or_equal:today',
-            'tieneHidrogelAplicado' => 'nullable|boolean',
-            'hidrogel_fecha_aplicacion' => 'nullable|date|before_or_equal:today|required_if:tieneHidrogelAplicado,true',
-            'hidrogel_cantidad_kg' => 'nullable|numeric|min:0|required_if:tieneHidrogelAplicado,true',
-            'notas_usuario' => 'nullable|string|max:1000',
-        ]);
+        $datos = $request->validated();
+        [$lat, $lon, $avisoGeo] = $this->resolverCoordenadas($datos);
+        $ubicacion = $this->ubicacionPara($datos, $lat, $lon);
+        $cultivo = Cultivo::findOrFail($datos['idCultivo']);
 
-        // Geocodificación automática
-        $coordenadas = [
-            'lat' => $validated['coordenadaLatitud'] ?? null,
-            'lon' => $validated['coordenadaLongitud'] ?? null,
-        ];
+        $frecuencia = max(1, $cultivo->calcularFrecuenciaRiego((bool) $datos['tieneHidrogelAplicado']));
+        $ultimoRiego = !empty($datos['ultimo_riego']) ? Carbon::parse($datos['ultimo_riego']) : Carbon::today()->subDays($frecuencia);
 
-        if (!$coordenadas['lat'] || !$coordenadas['lon']) {
-            try {
-                $geoResult = $this->geocodingService->geocodificarUbicacionPeru(
-                    $validated['distrito'],
-                    $validated['provincia'],
-                    $validated['region']
-                );
-
-                if ($geoResult && $geoResult['confianza'] >= 0.5) {
-                    $coordenadas['lat'] = $geoResult['lat'];
-                    $coordenadas['lon'] = $geoResult['lon'];
-                    
-                    session()->flash('geocodificacion', [
-                        'success' => true,
-                        'mensaje' => "Coordenadas encontradas automáticamente (confianza: " . round($geoResult['confianza'] * 100) . "%)",
-                    ]);
-                }
-            } catch (\Exception $e) {
-                logger()->warning("Error en geocodificación: {$e->getMessage()}");
-            }
-        }
-
-        // Crear o buscar ubicación
-        $ubicacion = Ubicacion::firstOrCreate([
-            'region' => $validated['region'],
-            'provincia' => $validated['provincia'],
-            'distrito' => $validated['distrito'],
-        ], [
-            'coordenadaLatitud' => $coordenadas['lat'],
-            'coordenadaLongitud' => $coordenadas['lon'],
-        ]);
-
-        if (!$ubicacion->tieneCoordenadasGPS() && $coordenadas['lat'] && $coordenadas['lon']) {
-            $ubicacion->update([
-                'coordenadaLatitud' => $coordenadas['lat'],
-                'coordenadaLongitud' => $coordenadas['lon'],
-            ]);
-        }
-
-        // Obtener datos del cultivo
-        $cultivo = Cultivo::find($validated['idCultivo']);
-
-        // Calcular valores automáticos
-        $frecuenciaRiego = $this->calcularFrecuenciaRiego($cultivo, $request->has('tieneHidrogelAplicado'));
-
-        $ultimoRiego = ($validated['ultimo_riego'] ?? null) 
-            ? Carbon::parse(($validated['ultimo_riego'] ?? null)) 
-            : Carbon::today()->subDays($frecuenciaRiego);
-        
-        $proximoRiego = $ultimoRiego->copy()->addDays($frecuenciaRiego);
-
-        $diasDesdeSiembra = ($validated['fecha_siembra'] ?? null) 
-            ? Carbon::parse(($validated['fecha_siembra'] ?? null))->diffInDays(Carbon::today())
-            : 0;
-
-        // Crear la parcela
         $parcela = Parcela::create([
             'user_id' => Auth::id(),
-            'nombre' => $validated['nombreParcela'],
+            'nombre' => $datos['nombreParcela'],
             'idUbicacion' => $ubicacion->idUbicacion,
-            'idCultivo' => $validated['idCultivo'],
+            'idCultivo' => $cultivo->idCultivo,
+            'latitud' => $lat, 'longitud' => $lon,
             'estado' => 'activa',
-            'area' => $validated['area'],
-            'ubicacion' => "{$validated['distrito']}, {$validated['provincia']}, {$validated['region']}",
+            'area' => $datos['area'],
             'tipo_cultivo' => $cultivo->nombreCultivo,
             'humedad_minima' => $cultivo->humedadOptimaMin,
             'humedad_maxima' => $cultivo->humedadOptimaMax,
             'ultimo_riego' => $ultimoRiego,
-            'frecuencia_riego_dias' => $frecuenciaRiego,
-            'litros_por_riego' => null,
-            'proximo_riego_estimado' => $proximoRiego,
-            'fecha_siembra' => $validated['fecha_siembra'] ?? null,
-            'dias_desde_siembra' => $diasDesdeSiembra,
-            'tieneHidrogelAplicado' => $request->has('tieneHidrogelAplicado'),
-            'hidrogel_fecha_aplicacion' => $validated['hidrogel_fecha_aplicacion'] ?? null,
-            'hidrogel_cantidad_kg' => $validated['hidrogel_cantidad_kg'] ?? null,
-            'notas_usuario' => $validated['notas_usuario'] ?? null,
+            'frecuencia_riego_dias' => $frecuencia,
+            'proximo_riego_estimado' => $ultimoRiego->copy()->addDays($frecuencia),
+            'fecha_siembra' => $datos['fecha_siembra'] ?? null,
+            'dias_desde_siembra' => !empty($datos['fecha_siembra']) ? Carbon::parse($datos['fecha_siembra'])->diffInDays(Carbon::today()) : 0,
+            'tieneHidrogelAplicado' => $datos['tieneHidrogelAplicado'],
+            'hidrogel_fecha_aplicacion' => $datos['hidrogel_fecha_aplicacion'] ?? null,
+            'hidrogel_cantidad_kg' => $datos['hidrogel_cantidad_kg'] ?? null,
+            'notas_usuario' => $datos['notas_usuario'] ?? null,
         ]);
 
-        // Litros por riego con la formula unica del sistema
         $parcela->load('cultivo');
-        $parcela->update(['litros_por_riego' => $this->riegoService->litrosPorRiego($parcela)]);
+        $parcela->update(['litros_por_riego' => $this->riego->litrosPorRiego($parcela)]);
 
-        // Si ya regó, crear el evento de riego
-        if (($validated['ultimo_riego'] ?? null)) {
-            $litrosIniciales = $parcela->litros_por_riego ?: ($parcela->area * 5);
-            
+        if (!empty($datos['ultimo_riego'])) {
             $parcela->eventosRiego()->create([
-                'fecha_riego' => $ultimoRiego,
-                'cantidad_agua' => $litrosIniciales,
-                'tipo_riego' => 'manual',
-                'notas' => 'Riego inicial registrado al crear la parcela',
+                'fecha_riego' => $ultimoRiego, 'cantidad_agua' => $parcela->litros_por_riego ?: $parcela->area * 5,
+                'tipo_riego' => 'manual', 'notas' => 'Riego inicial registrado al crear la parcela',
             ]);
         }
 
-        // Obtener clima inicial SI HAY COORDENADAS
-        if ($ubicacion->tieneCoordenadasGPS()) {
+        $mensaje = "Parcela \"{$parcela->nombre}\" creada. Próximo riego: {$parcela->proximo_riego_estimado->format('d/m/Y')}.";
+
+        if ($parcela->tiene_gps) {
             try {
-                Artisan::call('parcelas:actualizar-clima', [
-                    '--parcela' => $parcela->id,
-                    '--force' => true
-                ]);
-            } catch (\Exception $e) {
-                logger()->warning("No se pudo obtener clima inicial para parcela {$parcela->id}: {$e->getMessage()}");
+                $this->monitoreo->monitorearParcela($parcela, true);
+                $mensaje .= ' Ya tiene clima y alertas.';
+            } catch (\Throwable $e) {
+                logger()->warning("Sin clima inicial para la parcela {$parcela->id}: {$e->getMessage()}");
             }
+        } else {
+            $mensaje .= ' Agrega las coordenadas GPS para ver su clima.';
         }
 
-        // GENERAR ALERTAS PARA LA NUEVA PARCELA
-        try {
-            $alertasCreadas = $this->alertaService->generarAlertasParcela($parcela);
-            
-            if (count($alertasCreadas) > 0) {
-                session()->flash('alertas_nuevas', count($alertasCreadas));
-                session()->flash('alertas_criticas', collect($alertasCreadas)->where('nivel', 'critico')->count());
-            }
-        } catch (\Exception $e) {
-            logger()->error("Error generando alertas para parcela {$parcela->id}: {$e->getMessage()}");
-        }
-
-        $mensaje = 'Parcela creada exitosamente. Próximo riego: ' . $proximoRiego->format('d/m/Y');
-        
-        if ($ubicacion->tieneCoordenadasGPS()) {
-            $mensaje .= 'Datos climáticos obtenidos.';
-        }
-
-        return redirect()->route('parcelas.index')->with('success', $mensaje);
+        return redirect()->route('parcelas.show', $parcela)->with('success', $mensaje)->with('warning', $avisoGeo);
     }
 
-    /**
-     * Muestra detalles de una parcela.
-     */
+    public function edit(Parcela $parcela)
+    {
+        $this->authorize('update', $parcela);
+
+        return view('parcelas.edit', ['parcela' => $parcela->load(['cultivo', 'ubicacion']), 'cultivos' => Cultivo::orderBy('nombreCultivo')->get()]);
+    }
+
+    public function update(ParcelaRequest $request, Parcela $parcela)
+    {
+        $this->authorize('update', $parcela);
+
+        $datos = $request->validated();
+        $parcela->loadMissing('ubicacion');
+
+        $cambioLugar = $parcela->ubicacion?->distrito !== $datos['distrito'] || $parcela->ubicacion?->provincia !== $datos['provincia']
+            || $parcela->ubicacion?->region !== $datos['region']
+            || (isset($datos['latitud']) && (float) $datos['latitud'] !== (float) $parcela->latitud)
+            || (isset($datos['longitud']) && (float) $datos['longitud'] !== (float) $parcela->longitud);
+
+        [$lat, $lon] = $cambioLugar ? $this->resolverCoordenadas($datos) : [$parcela->latitud, $parcela->longitud];
+        $ubicacion = $this->ubicacionPara($datos, $lat, $lon);
+        $cultivo = Cultivo::findOrFail($datos['idCultivo']);
+
+        $parcela->update([
+            'nombre' => $datos['nombreParcela'], 'idUbicacion' => $ubicacion->idUbicacion, 'idCultivo' => $cultivo->idCultivo,
+            'latitud' => $lat, 'longitud' => $lon,
+            'area' => $datos['area'], 'estado' => $datos['estado'], 'tipo_cultivo' => $cultivo->nombreCultivo,
+            'fecha_siembra' => $datos['fecha_siembra'] ?? null,
+            'dias_desde_siembra' => !empty($datos['fecha_siembra']) ? Carbon::parse($datos['fecha_siembra'])->diffInDays(Carbon::today()) : 0,
+            'tieneHidrogelAplicado' => $datos['tieneHidrogelAplicado'],
+            'hidrogel_fecha_aplicacion' => $datos['hidrogel_fecha_aplicacion'] ?? null,
+            'hidrogel_cantidad_kg' => $datos['hidrogel_cantidad_kg'] ?? null,
+            'notas_usuario' => $datos['notas_usuario'] ?? null,
+        ]);
+
+        $parcela->load('cultivo');
+        $frecuencia = $this->riego->frecuenciaDias($parcela, $parcela->climaActual);
+        $parcela->update(['frecuencia_riego_dias' => $frecuencia, 'litros_por_riego' => $this->riego->litrosPorRiego($parcela, $parcela->climaActual)]);
+        $parcela->recalcularProximoRiego();
+
+        try {
+            $this->monitoreo->monitorearParcela($parcela, $cambioLugar);
+        } catch (\Throwable $e) {
+            logger()->warning("No se pudo actualizar el clima de la parcela {$parcela->id}: {$e->getMessage()}");
+        }
+
+        return redirect()->route('parcelas.show', $parcela)->with('success', 'Cambios guardados.');
+    }
+
+    // =========================================================
+    // FICHA
+    // =========================================================
+
     public function show(Parcela $parcela)
     {
         $this->authorize('view', $parcela);
@@ -244,316 +202,192 @@ class ParcelaController extends Controller
             $parcela->actualizarDiasSiembra();
         }
 
-        $parcela->load([
-            'cultivo',
-            'ubicacion',
-            'climaActual',
-            'eventosRiego' => function($q) {
-                $q->latest()->limit(20);
-            }
-        ]);
+        $parcela->load(['cultivo', 'ubicacion', 'climaActual', 'alertas' => fn ($q) => $q->activas()->ordenarPorUrgencia()]);
 
-        $estadisticasClima = null;
-        if (method_exists($parcela, 'obtenerEstadisticasClima')) {
-            $estadisticasClima = $parcela->obtenerEstadisticasClima(7);
+        $clima = $parcela->climaActual;
+        $frecuencia = $this->riego->frecuenciaDias($parcela, $clima);
+        $calculo = $this->riego->calcular($parcela, $clima);
+        $diasSinRegar = $this->riego->diasSinRegar($parcela);
+        $proximo = $parcela->ultimo_riego ? Carbon::parse($parcela->ultimo_riego)->addDays($frecuencia) : null;
+
+        // Riegos de los ultimos 45 dias (para el grafico) y los 12 mas recientes (para la tabla)
+        $riegos = $parcela->eventosRiego()->where('fecha_riego', '>=', now()->subDays(45))->orderBy('fecha_riego')->get();
+        $porDia = $riegos->groupBy(fn ($e) => $e->fecha_riego->format('Y-m-d'))->map(fn ($g) => round($g->sum('cantidad_agua')));
+        $serieRiego = ['labels' => [], 'datos' => []];
+        for ($i = 44; $i >= 0; $i--) {
+            $f = Carbon::today()->subDays($i);
+            $serieRiego['labels'][] = $f->format('d/m');
+            $serieRiego['datos'][] = $porDia[$f->format('Y-m-d')] ?? 0;
         }
 
-        return view('parcelas.show', compact('parcela', 'estadisticasClima'));
-    }
-
-    /**
-     * Muestra formulario de edición.
-     */
-    public function edit(Parcela $parcela)
-    {
-        $this->authorize('update', $parcela);
-
-        $cultivos = Cultivo::orderBy('nombreCultivo')->get();
-
-        return view('parcelas.edit', compact('parcela', 'cultivos'));
-    }
-
-    /**
-     *  Actualiza una parcela Y REGENERA ALERTAS
-     */
-    public function update(Request $request, Parcela $parcela)
-    {
-        $this->authorize('update', $parcela);
-
-        $validated = $request->validate([
-            'nombreParcela' => 'required|string|max:255',
-            'area' => 'required|numeric|min:0.01',
-            'idCultivo' => 'required|exists:cultivos,idCultivo',
-            'estado' => 'required|in:activa,inactiva,mantenimiento',
-            'region' => 'required|string|max:100',
-            'provincia' => 'required|string|max:100',
-            'distrito' => 'required|string|max:100',
-            'coordenadaLatitud' => 'nullable|numeric|between:-90,90',
-            'coordenadaLongitud' => 'nullable|numeric|between:-180,180',
-            'fecha_siembra' => 'nullable|date|before_or_equal:today',
-            'tieneHidrogelAplicado' => 'nullable|boolean',
-            'hidrogel_fecha_aplicacion' => 'nullable|date|before_or_equal:today',
-            'hidrogel_cantidad_kg' => 'nullable|numeric|min:0',
-            'notas_usuario' => 'nullable|string|max:1000',
-        ]);
-
-        $ubicacionCambio = (
-            $parcela->ubicacion->distrito !== $validated['distrito'] ||
-            $parcela->ubicacion->provincia !== $validated['provincia'] ||
-            $parcela->ubicacion->region !== $validated['region']
-        );
-
-        $coordenadas = [
-            'lat' => $validated['coordenadaLatitud'] ?? null,
-            'lon' => $validated['coordenadaLongitud'] ?? null,
-        ];
-
-        if ($ubicacionCambio && (!$coordenadas['lat'] || !$coordenadas['lon'])) {
+        // Pronostico (solo bloques principales: la ficha no necesita aire ni historial)
+        $pronostico = null;
+        if ($parcela->tiene_gps && $parcela->estado === 'activa') {
             try {
-                $geoResult = $this->geocodingService->geocodificarUbicacionPeru(
-                    $validated['distrito'],
-                    $validated['provincia'],
-                    $validated['region']
-                );
-
-                if ($geoResult && $geoResult['confianza'] >= 0.5) {
-                    $coordenadas['lat'] = $geoResult['lat'];
-                    $coordenadas['lon'] = $geoResult['lon'];
-                }
-            } catch (\Exception $e) {
-                logger()->warning("Error en geocodificación: {$e->getMessage()}");
+                $pronostico = $this->climaCompleto->paraCoordenadas($parcela->latitud_efectiva, $parcela->longitud_efectiva, $parcela->nombre, $parcela->ubicacion?->region, false);
+            } catch (\Throwable $e) {
+                report($e);
             }
         }
 
-        $ubicacion = Ubicacion::firstOrCreate([
-            'region' => $validated['region'],
-            'provincia' => $validated['provincia'],
-            'distrito' => $validated['distrito'],
-        ], [
-            'coordenadaLatitud' => $coordenadas['lat'],
-            'coordenadaLongitud' => $coordenadas['lon'],
+        $this->recomendaciones->generarRecomendacionesParcela($parcela);
+
+        return view('parcelas.show', [
+            'parcela' => $parcela,
+            'plan' => ['frecuencia' => $frecuencia, 'calculo' => $calculo, 'dias_sin_regar' => $diasSinRegar, 'proximo' => $proximo, 'texto' => $this->riego->textoCantidad($calculo)],
+            'serieRiego' => $serieRiego,
+            'riegos' => $parcela->eventosRiego()->latest('fecha_riego')->limit(12)->get(),
+            'totalAgua30' => (float) $parcela->eventosRiego()->where('fecha_riego', '>=', now()->subDays(30))->sum('cantidad_agua'),
+            'historialClima' => $parcela->climaHistorial()->where('fecha_registro', '>=', now()->subDays(7))->orderBy('fecha_registro')->get(['fecha_registro', 'temperatura', 'humedad', 'lluvia_72h_mm']),
+            'pronostico' => $pronostico,
+            'recomendaciones' => $parcela->recomendaciones()->activas()->ordenarPorRelevancia()->limit(4)->get(),
         ]);
-
-        if (!$ubicacion->tieneCoordenadasGPS() && $coordenadas['lat'] && $coordenadas['lon']) {
-            $ubicacion->update([
-                'coordenadaLatitud' => $coordenadas['lat'],
-                'coordenadaLongitud' => $coordenadas['lon'],
-            ]);
-        }
-
-        $cultivo = Cultivo::find($validated['idCultivo']);
-
-        $recalcular = (
-            $parcela->idCultivo != $validated['idCultivo'] || 
-            $parcela->area != $validated['area'] ||
-            $parcela->tieneHidrogelAplicado != $request->has('tieneHidrogelAplicado')
-        );
-
-        if ($recalcular) {
-            $frecuenciaRiego = $this->calcularFrecuenciaRiego($cultivo, $request->has('tieneHidrogelAplicado'));
-            $litrosPorRiego = null; // se recalcula justo despues de guardar
-        } else {
-            $litrosPorRiego = $parcela->litros_por_riego;
-            $frecuenciaRiego = $parcela->frecuencia_riego_dias;
-        }
-
-        $diasDesdeSiembra = ($validated['fecha_siembra'] ?? null) 
-            ? Carbon::parse(($validated['fecha_siembra'] ?? null))->diffInDays(Carbon::today())
-            : 0;
-
-        $parcela->update([
-            'nombre' => $validated['nombreParcela'],
-            'idUbicacion' => $ubicacion->idUbicacion,
-            'idCultivo' => $validated['idCultivo'],
-            'area' => $validated['area'],
-            'estado' => $validated['estado'],
-            'ubicacion' => "{$validated['distrito']}, {$validated['provincia']}, {$validated['region']}",
-            'tipo_cultivo' => $cultivo->nombreCultivo,
-            'litros_por_riego' => $litrosPorRiego,
-            'frecuencia_riego_dias' => $frecuenciaRiego,
-            'fecha_siembra' => $validated['fecha_siembra'] ?? null,
-            'dias_desde_siembra' => $diasDesdeSiembra,
-            'tieneHidrogelAplicado' => $request->has('tieneHidrogelAplicado'),
-            'hidrogel_fecha_aplicacion' => $validated['hidrogel_fecha_aplicacion'] ?? null,
-            'hidrogel_cantidad_kg' => $validated['hidrogel_cantidad_kg'] ?? null,
-            'notas_usuario' => $validated['notas_usuario'] ?? null,
-        ]);
-
-        if ($litrosPorRiego === null) {
-            $parcela->load('cultivo');
-            $parcela->update(['litros_por_riego' => $this->riegoService->litrosPorRiego($parcela)]);
-        }
-
-        // Si cambió ubicación, actualizar clima
-        if ($ubicacionCambio && $ubicacion->tieneCoordenadasGPS()) {
-            try {
-                Artisan::call('parcelas:actualizar-clima', [
-                    '--parcela' => $parcela->id,
-                    '--force' => true
-                ]);
-            } catch (\Exception $e) {
-                logger()->warning("Error actualizando clima: {$e->getMessage()}");
-            }
-        }
-
-        // REGENERAR ALERTAS DESPUÉS DE ACTUALIZAR
-        try {
-            $alertasCreadas = $this->alertaService->generarAlertasParcela($parcela);
-            
-            if (count($alertasCreadas) > 0) {
-                session()->flash('alertas_nuevas', count($alertasCreadas));
-            }
-        } catch (\Exception $e) {
-            logger()->error("Error regenerando alertas para parcela {$parcela->id}: {$e->getMessage()}");
-        }
-
-        return redirect()->route('parcelas.show', $parcela)
-            ->with('success', ' Parcela actualizada exitosamente');
     }
 
-    /**
-     * Elimina una parcela.
-     */
-    public function destroy(Parcela $parcela)
-    {
-        $this->authorize('delete', $parcela);
+    // =========================================================
+    // ACCIONES
+    // =========================================================
 
-        $parcela->delete();
-
-        return redirect()->route('parcelas.index')
-            ->with('success', ' Parcela eliminada exitosamente');
-    }
-
-    /**
-     * Registra un riego Y ARCHIVA ALERTAS
-     */
     public function registrarRiego(Request $request, Parcela $parcela)
     {
         $this->authorize('update', $parcela);
 
-        $validated = $request->validate([
-            'cantidad_agua' => 'nullable|numeric|min:0',
-            'notas' => 'nullable|string|max:500',
+        $datos = $request->validate([
+            'cantidad_agua' => ['nullable', 'numeric', 'min:0', 'max:100000000'],
+            'fecha' => ['nullable', 'date', 'before_or_equal:today'],
+            'tipo_riego' => ['nullable', 'in:manual,goteo,aspersion'],
+            'notas' => ['nullable', 'string', 'max:500'],
+        ], [
+            'cantidad_agua.numeric' => 'La cantidad de agua debe ser un número.',
+            'fecha.before_or_equal' => 'La fecha del riego no puede ser futura.',
         ]);
 
-        // Si no indica cantidad se registra la recomendada hoy (misma cifra que la alerta).
         $parcela->loadMissing('cultivo');
-        $litrosUsados = $validated['cantidad_agua']
-            ?? ($this->riegoService->calcular($parcela, $parcela->climaActual)['litros_total'] ?: $parcela->litros_por_riego);
+        $litros = isset($datos['cantidad_agua']) && $datos['cantidad_agua'] !== null && $datos['cantidad_agua'] !== ''
+            ? (float) $datos['cantidad_agua']
+            : ($this->riego->calcular($parcela, $parcela->climaActual)['litros_total'] ?: (float) $parcela->litros_por_riego);
 
-        // 1. Registrar el riego
-        $parcela->registrarRiego($litrosUsados);
+        $fecha = !empty($datos['fecha']) ? Carbon::parse($datos['fecha'])->setTimeFrom(now()) : null;
+        $parcela->registrarRiego($litros, $datos['tipo_riego'] ?? 'manual', $datos['notas'] ?? null, $fecha);
 
-        // 2. Actualizar notas si existen
-        if (!empty($validated['notas'])) {
-            $parcela->eventosRiego()->latest()->first()->update([
-                'notas' => $validated['notas']
-            ]);
-        }
+        $this->alertas->archivarAlertasRiegoPorRiego($parcela);
+        $this->alertas->generarAlertasParcela($parcela->fresh());
 
-        // ARCHIVAR ALERTAS DE RIEGO DE ESTA PARCELA
-        try {
-            $this->alertaService->archivarAlertasRiegoPorRiego($parcela);
-        } catch (\Exception $e) {
-            logger()->error("Error archivando alertas de riego: {$e->getMessage()}");
-        }
+        $parcela->refresh();
 
         return redirect()->route('parcelas.show', $parcela)
-            ->with('success', " Riego registrado. Próximo riego: {$parcela->proximo_riego_estimado->format('d/m/Y')}. Las alertas de riego han sido archivadas.");
+            ->with('success', 'Riego registrado: ' . number_format($litros, 0, ',', '.') . ' L. Próximo riego: ' . $parcela->proximo_riego_estimado->format('d/m/Y') . '.');
     }
 
-    /**
-     * Actualiza el clima de una parcela manualmente
-     */
     public function actualizarClima(Parcela $parcela)
     {
         $this->authorize('update', $parcela);
 
-        $parcela->load('ubicacion');
-
-        if (!$parcela->ubicacion) {
-            return redirect()->back()->with('error', ' Esta parcela no tiene ubicación configurada.');
-        }
-
-        if (!$parcela->ubicacion->tieneCoordenadasGPS()) {
-            return redirect()->back()->with('error', ' Esta parcela no tiene coordenadas GPS. Edítala para agregarlas.');
+        if (!$parcela->tiene_gps) {
+            return back()->with('error', 'Esta parcela no tiene coordenadas GPS. Edítala para agregarlas.');
         }
 
         try {
-            Artisan::call('parcelas:actualizar-clima', [
-                '--parcela' => $parcela->id,
-                '--force' => true
-            ]);
+            $this->monitoreo->monitorearParcela($parcela, true, 'manual');
+            $c = $parcela->fresh('climaActual')->climaActual;
 
-            $parcela->load('climaActual');
+            return back()->with('success', $c ? "Clima actualizado: {$c->temperatura} °C, " . mb_strtolower($c->descripcion) . '.' : 'No se pudo obtener el clima. Revisa tu conexión.');
+        } catch (\Throwable $e) {
+            report($e);
 
-            if ($parcela->climaActual) {
-                $mensaje = "Clima actualizado: {$parcela->climaActual->temperatura}°C, {$parcela->climaActual->descripcion}";
-                
-                if ($parcela->climaActual->tiene_alertas) {
-                    $mensaje .= "  Con {$parcela->climaActual->cantidad_alertas} alerta(s) activa(s)";
-                }
-
-                return redirect()->back()->with('success', $mensaje);
-            }
-
-            return redirect()->back()->with('error', 'No se pudo obtener datos del clima');
-
-        } catch (\Exception $e) {
-            logger()->error("Error actualizando clima parcela {$parcela->id}: " . $e->getMessage());
-            return redirect()->back()->with('error', ' Error al actualizar clima: ' . $e->getMessage());
+            return back()->with('error', 'No se pudo actualizar el clima. Intenta de nuevo en unos minutos.');
         }
     }
 
-    /**
-     * ENDPOINT AJAX: Geocodificar ubicación en tiempo real
-     */
+    public function destroy(Parcela $parcela)
+    {
+        $this->authorize('delete', $parcela);
+        $nombre = $parcela->nombre;
+        $parcela->delete();
+
+        return redirect()->route('parcelas.index')->with('success', "\"{$nombre}\" se movió a la papelera. Puedes restaurarla cuando quieras.");
+    }
+
+    public function trashed()
+    {
+        $parcelas = Parcela::onlyTrashed()->where('user_id', Auth::id())->with('cultivo')->latest('deleted_at')->get();
+
+        return view('parcelas.papelera', compact('parcelas'));
+    }
+
+    public function restore(int $id)
+    {
+        $parcela = Parcela::onlyTrashed()->where('user_id', Auth::id())->findOrFail($id);
+        $this->authorize('restore', $parcela);
+        $parcela->restore();
+
+        return redirect()->route('parcelas.show', $parcela)->with('success', "\"{$parcela->nombre}\" restaurada.");
+    }
+
+    public function forceDestroy(int $id)
+    {
+        $parcela = Parcela::onlyTrashed()->where('user_id', Auth::id())->findOrFail($id);
+        $this->authorize('forceDelete', $parcela);
+        $nombre = $parcela->nombre;
+        $parcela->forceDelete();
+
+        return redirect()->route('parcelas.trashed')->with('success', "\"{$nombre}\" se eliminó para siempre.");
+    }
+
     public function geocodificarAjax(Request $request)
     {
-        $validated = $request->validate([
-            'distrito' => 'required|string|max:100',
-            'provincia' => 'required|string|max:100',
-            'region' => 'required|string|max:100',
-        ]);
+        $v = $request->validate(['distrito' => 'required|string|max:100', 'provincia' => 'required|string|max:100', 'region' => 'required|string|max:100']);
 
         try {
-            $resultado = $this->geocodingService->geocodificarUbicacionPeru(
-                $validated['distrito'],
-                $validated['provincia'],
-                $validated['region']
-            );
+            $r = $this->geocoding->geocodificarUbicacionPeru($v['distrito'], $v['provincia'], $v['region']);
 
-            if ($resultado && $resultado['confianza'] >= 0.5) {
-                return response()->json([
-                    'success' => true,
-                    'data' => [
-                        'latitud' => $resultado['lat'],
-                        'longitud' => $resultado['lon'],
-                        'confianza' => round($resultado['confianza'] * 100),
-                        'display_name' => $resultado['display_name'],
-                    ],
-                    'mensaje' => " Coordenadas encontradas (confianza: " . round($resultado['confianza'] * 100) . "%)"
-                ]);
+            if ($r && $r['confianza'] >= 0.5) {
+                return response()->json(['success' => true, 'data' => [
+                    'latitud' => $r['lat'], 'longitud' => $r['lon'], 'confianza' => round($r['confianza'] * 100), 'display_name' => $r['display_name'],
+                ], 'mensaje' => 'Coordenadas encontradas (confianza ' . round($r['confianza'] * 100) . '%).']);
             }
 
-            return response()->json([
-                'success' => false,
-                'mensaje' => ' No se encontraron coordenadas precisas para esta ubicación'
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'mensaje' => ' Error al buscar coordenadas: ' . $e->getMessage()
-            ], 500);
+            return response()->json(['success' => false, 'mensaje' => 'No encontramos coordenadas precisas. Escríbelas a mano o usa el GPS del teléfono.']);
+        } catch (\Throwable $e) {
+            return response()->json(['success' => false, 'mensaje' => 'No se pudo buscar las coordenadas: ' . $e->getMessage()], 500);
         }
     }
 
-    /**
-     * Calcula la frecuencia de riego según el cultivo.
-     */
-    private function calcularFrecuenciaRiego(Cultivo $cultivo, bool $tieneHidrogel): int
+    // =========================================================
+    // AUXILIARES
+    // =========================================================
+
+    /** @return array{0: ?float, 1: ?float, 2: ?string} latitud, longitud y un aviso si se adivinaron */
+    private function resolverCoordenadas(array $d): array
     {
-        return max(1, $cultivo->calcularFrecuenciaRiego($tieneHidrogel));
+        if (!empty($d['latitud']) && !empty($d['longitud'])) {
+            return [round((float) $d['latitud'], 7), round((float) $d['longitud'], 7), null];
+        }
+
+        try {
+            $g = $this->geocoding->geocodificarUbicacionPeru($d['distrito'], $d['provincia'], $d['region']);
+
+            if ($g && $g['confianza'] >= 0.5) {
+                return [round($g['lat'], 7), round($g['lon'], 7), 'Usamos las coordenadas del centro del distrito. Para un clima más preciso, agrega el GPS exacto de la parcela.'];
+            }
+        } catch (\Throwable $e) {
+            logger()->warning('Geocodificacion fallida: ' . $e->getMessage());
+        }
+
+        return [null, null, 'No pudimos ubicar la parcela. Agrega las coordenadas GPS para ver su clima.'];
+    }
+
+    private function ubicacionPara(array $d, ?float $lat, ?float $lon): Ubicacion
+    {
+        $u = Ubicacion::firstOrCreate(
+            ['region' => $d['region'], 'provincia' => $d['provincia'], 'distrito' => $d['distrito']],
+            ['coordenadaLatitud' => $lat, 'coordenadaLongitud' => $lon],
+        );
+
+        if (!$u->tieneCoordenadasGPS() && $lat !== null && $lon !== null) {
+            $u->update(['coordenadaLatitud' => $lat, 'coordenadaLongitud' => $lon]);
+        }
+
+        return $u;
     }
 }

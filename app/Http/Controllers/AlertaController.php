@@ -23,43 +23,29 @@ class AlertaController extends Controller
     /**
      * Muestra el listado de alertas activas
      */
-    public function index()
+    public function index(Request $request)
     {
         // Al entrar se actualiza clima y alertas si pasaron mas de 15 minutos
-        // (la marca se guarda en cache, ya no en la sesion, que se perdia al cerrar sesion).
+        // (la marca se guarda en cache, no en la sesion, que se perdia al cerrar sesion).
         $this->monitoreo->refrescarSiHaceFalta(Auth::id());
 
-        // Obtener alertas activas agrupadas por nivel
-        $alertasPorNivel = [
-            'criticas' => Alerta::porUsuario(Auth::id())
-                ->activas()
-                ->where('nivel', Alerta::NIVEL_CRITICO)
-                ->ordenarPorUrgencia()
-                ->get(),
-            
-            'altas' => Alerta::porUsuario(Auth::id())
-                ->activas()
-                ->where('nivel', Alerta::NIVEL_ALTO)
-                ->ordenarPorUrgencia()
-                ->get(),
-            
-            'medias' => Alerta::porUsuario(Auth::id())
-                ->activas()
-                ->where('nivel', Alerta::NIVEL_MEDIO)
-                ->ordenarPorUrgencia()
-                ->get(),
-            
-            'info' => Alerta::porUsuario(Auth::id())
-                ->activas()
-                ->where('nivel', Alerta::NIVEL_INFO)
-                ->ordenarPorUrgencia()
-                ->get(),
-        ];
+        $filtros = $request->only(['parcela', 'grupo', 'nivel']);
 
-        // Resumen de alertas
-        $resumen = Alerta::resumenPorUsuario(Auth::id());
+        $alertas = Alerta::porUsuario(Auth::id())->activas()->with(['parcela.cultivo'])
+            ->when(!empty($filtros['parcela']), fn ($q) => $q->where('parcela_id', $filtros['parcela']))
+            ->when(!empty($filtros['grupo']), fn ($q) => $q->where('grupo', $filtros['grupo']))
+            ->when(!empty($filtros['nivel']), fn ($q) => $q->where('nivel', $filtros['nivel']))
+            ->ordenarPorUrgencia()
+            ->get();
 
-        return view('alertas.index', compact('alertasPorNivel', 'resumen'));
+        return view('alertas.index', [
+            'alertas' => $alertas,
+            'porNivel' => $alertas->groupBy('nivel'),
+            'resumen' => Alerta::resumenPorUsuario(Auth::id()),
+            'parcelas' => \App\Models\Parcela::where('user_id', Auth::id())->orderBy('nombre')->get(['id', 'nombre']),
+            'filtros' => $filtros,
+            'archivadas' => Alerta::porUsuario(Auth::id())->archivadas()->count(),
+        ]);
     }
 
     /**

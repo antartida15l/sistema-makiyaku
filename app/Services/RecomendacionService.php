@@ -107,26 +107,26 @@ class RecomendacionService
 
         // Sin alerta: plan de riego informativo
         $frecuencia = $this->riego->frecuenciaDias($parcela, $parcela->climaActual);
-        $proximo = $parcela->ultimo_riego
+        $próximo = $parcela->ultimo_riego
             ? Carbon::parse($parcela->ultimo_riego)->addDays($frecuencia)
             : null;
         $calculo = $this->riego->calcular($parcela, $parcela->climaActual);
         $litros = $calculo['litros_total'] ?: $this->riego->litrosPorRiego($parcela, $parcela->climaActual);
 
-        $faltan = $proximo ? (int) round(Carbon::today()->diffInDays($proximo->copy()->startOfDay(), false)) : null;
+        $faltan = $próximo ? (int) round(Carbon::today()->diffInDays($próximo->copy()->startOfDay(), false)) : null;
         $cuando = match (true) {
-            $proximo === null => 'registra tu ultimo riego para calcularlo',
+            $próximo === null => 'registra tu ultimo riego para calcularlo',
             $faltan <= 0 => 'esta por tocar',
-            default => 'el ' . $proximo->format('d/m') . ' (en ' . $faltan . ($faltan === 1 ? ' dia)' : ' dias)'),
+            default => 'el ' . $próximo->format('d/m') . ' (en ' . $faltan . ($faltan === 1 ? ' día)' : ' días)'),
         };
 
         return $this->base($parcela, 'riego_estado', Recomendacion::CATEGORIA_RIEGO, [
             'prioridad' => Recomendacion::PRIORIDAD_INFO,
             'titulo' => 'Plan de riego',
-            'descripcion' => "Por ahora no hace falta regar {$parcela->nombre}. Proximo riego: {$cuando}. " .
+            'descripcion' => "Por ahora no hace falta regar {$parcela->nombre}. Próximo riego: {$cuando}. " .
                 'Cantidad habitual: ' . number_format($litros, 0, ',', '.') . ' L ' .
                 '(unos ' . $this->riego->aBaldes($litros) . ' baldes de ' . RiegoService::LITROS_BALDE . ' L), ' .
-                "cada {$frecuencia} dias.",
+                "cada {$frecuencia} días.",
             'icono' => 'agua',
             'puntaje_relevancia' => 40,
             'datos_analisis' => ['frecuencia_dias' => $frecuencia, 'litros' => $litros],
@@ -144,11 +144,11 @@ class RecomendacionService
 
         return $this->base($parcela, 'helada', Recomendacion::CATEGORIA_CLIMA, [
             'prioridad' => $alerta->prioridad,
-            'titulo' => 'Proteger el cultivo del frio',
-            'descripcion' => $alerta->mensaje . ' Que hacer: ' .
-                '1) Antes de que oscurezca, cubre las plantas con paja, plastico, mantas o malla. ' .
+            'titulo' => 'Proteger el cultivo del frío',
+            'descripcion' => $alerta->mensaje . ' Qué hacer: ' .
+                '1) Antes de que oscurezca, cubre las plantas con paja, plástico, mantas o malla. ' .
                 '2) Un riego ligero a media tarde ayuda a que el suelo guarde calor. ' .
-                '3) Si puedes, haz humo o fogatas pequenas en el borde, a favor del viento. ' .
+                '3) Si puedes, haz humo o fogatas pequeñas en el borde, a favor del viento. ' .
                 '4) Al amanecer, no destapes hasta que el sol caliente el cultivo.',
             'icono' => 'helada',
             'puntaje_relevancia' => max(80, $alerta->puntaje_urgencia),
@@ -169,8 +169,8 @@ class RecomendacionService
         return $this->base($parcela, 'calor', Recomendacion::CATEGORIA_CLIMA, [
             'prioridad' => $alerta->prioridad,
             'titulo' => 'Proteger el cultivo del calor',
-            'descripcion' => $alerta->mensaje . ' Que hacer: ' .
-                '1) Riega al amanecer y al atardecer, nunca al mediodia. ' .
+            'descripcion' => $alerta->mensaje . ' Qué hacer: ' .
+                '1) Riega al amanecer y al atardecer, nunca al mediodía. ' .
                 '2) Cubre el suelo con paja o rastrojo para que no pierda humedad. ' .
                 '3) Si tienes malla sombra (30 a 50%), colocala en las horas de mas sol.',
             'icono' => 'calor',
@@ -195,8 +195,8 @@ class RecomendacionService
             'prioridad' => $alerta->prioridad,
             'titulo' => $fuerte ? 'Prepararse para lluvia fuerte' : 'Aprovechar la lluvia',
             'descripcion' => $alerta->mensaje . ($fuerte
-                ? ' Que hacer: limpia acequias y canales, evita pisar el suelo mojado y revisa que el agua no se acumule.'
-                : ' Que hacer: deja el riego para despues de la lluvia y mide cuanto cayo antes de volver a regar.'),
+                ? ' Qué hacer: limpia acequias y canales, evita pisar el suelo mojado y revisa que el agua no se acumule.'
+                : ' Qué hacer: deja el riego para después de la lluvia y mide cuanto cayo antes de volver a regar.'),
             'icono' => 'lluvia',
             'puntaje_relevancia' => $fuerte ? 75 : 55,
             'datos_analisis' => $alerta->datos_adicionales,
@@ -230,8 +230,8 @@ class RecomendacionService
         return $this->base($parcela, 'horario_riego', Recomendacion::CATEGORIA_RIEGO, [
             'prioridad' => Recomendacion::PRIORIDAD_BAJA,
             'titulo' => 'Mejor hora para regar',
-            'descripcion' => "{$motivo}: gran parte del agua se pierde por evaporacion. " .
-                'Riega entre las 5:00 y las 9:00 o despues de las 17:00, y evita regar por aspersion cuando el viento sea fuerte.',
+            'descripcion' => "{$motivo}: gran parte del agua se pierde por evaporación. " .
+                'Riega entre las 5:00 y las 9:00 o después de las 17:00, y evita regar por aspersión cuando el viento sea fuerte.',
             'icono' => 'agua',
             'puntaje_relevancia' => 45,
             'datos_analisis' => ['temp_max' => $tmax, 'viento' => $clima->viento_velocidad],
@@ -247,26 +247,26 @@ class RecomendacionService
             return null;
         }
 
-        $dias = (int) Carbon::parse($parcela->fecha_siembra)->startOfDay()->diffInDays(Carbon::today());
-        $progreso = $dias / $ciclo * 100;
+        $días = (int) Carbon::parse($parcela->fecha_siembra)->startOfDay()->diffInDays(Carbon::today());
+        $progreso = $días / $ciclo * 100;
 
         if ($progreso < 85) {
             return null;
         }
 
         $listo = $progreso >= 100;
-        $faltan = max(0, $ciclo - $dias);
+        $faltan = max(0, $ciclo - $días);
 
         return $this->base($parcela, 'cosecha', Recomendacion::CATEGORIA_COSECHA, [
             'prioridad' => $listo ? Recomendacion::PRIORIDAD_ALTA : Recomendacion::PRIORIDAD_MEDIA,
             'titulo' => $listo ? 'Programar la cosecha' : 'Preparar la cosecha',
             'descripcion' => $listo
-                ? "{$parcela->cultivo->nombreCultivo} ya cumplio su ciclo ({$dias} dias). Revisa la madurez y programa la cosecha."
-                : "{$parcela->cultivo->nombreCultivo} esta al " . round($progreso) . "% de su ciclo; faltan unos {$faltan} dias. " .
+                ? "{$parcela->cultivo->nombreCultivo} ya cumplió su ciclo ({$días} días). Revisa la madurez y programa la cosecha."
+                : "{$parcela->cultivo->nombreCultivo} está al " . round($progreso) . "% de su ciclo; faltan unos {$faltan} días. " .
                     'Reduce poco a poco el riego, no abones en esta etapa y revisa los signos de madurez.',
             'icono' => 'ciclo',
             'puntaje_relevancia' => $listo ? 80 : 65,
-            'datos_analisis' => ['dias_cultivo' => $dias, 'ciclo_dias' => $ciclo],
+            'datos_analisis' => ['dias_cultivo' => $días, 'ciclo_dias' => $ciclo],
             'accion_texto' => 'Ver parcela',
             'accion_url' => route('parcelas.show', $parcela),
         ]);
@@ -290,8 +290,8 @@ class RecomendacionService
             'prioridad' => Recomendacion::PRIORIDAD_BAJA,
             'titulo' => 'Considera usar hidrogel',
             'descripcion' => "En {$parcela->cultivo->nombreCultivo} el hidrogel puede reducir el agua que necesitas en cerca de " .
-                round($reduccion) . '% y espaciar los riegos. Es util sobre todo donde el agua escasea. ' .
-                'Dosis de referencia: 2 a 5 kg por cada 100 m2, mezclado con la tierra de la zona de raices.',
+                round($reduccion) . '% y espaciar los riegos. Es útil sobre todo donde el agua escasea. ' .
+                'Dosis de referencia: 2 a 5 kg por cada 100 m², mezclado con la tierra de la zona de raices.',
             'icono' => 'hidrogel',
             'puntaje_relevancia' => 35,
             'datos_analisis' => ['reduccion_pct' => $reduccion, 'area' => $parcela->area],
@@ -304,21 +304,21 @@ class RecomendacionService
             return null;
         }
 
-        $dias = (int) Carbon::parse($parcela->fecha_siembra)->startOfDay()->diffInDays(Carbon::today());
+        $días = (int) Carbon::parse($parcela->fecha_siembra)->startOfDay()->diffInDays(Carbon::today());
 
-        if ($dias < 15 || $dias > 45) {
+        if ($días < 15 || $días > 45) {
             return null;
         }
 
         return $this->base($parcela, 'fertilizacion', Recomendacion::CATEGORIA_FERTILIZACION, [
             'prioridad' => Recomendacion::PRIORIDAD_MEDIA,
             'titulo' => 'Abonar en etapa de crecimiento',
-            'descripcion' => "{$parcela->cultivo->nombreCultivo} esta en crecimiento (dia {$dias}). " .
-                'Es buen momento para un abono rico en nitrogeno (por ejemplo NPK 20-10-10 o guano de isla / compost bien maduro), repetido cada 15 a 20 dias. ' .
-                'Aplicalo con el suelo humedo, no seco.',
+            'descripcion' => "{$parcela->cultivo->nombreCultivo} está en crecimiento (día {$días}). " .
+                'Es buen momento para un abono rico en nitrógeno (por ejemplo NPK 20-10-10 o guano de isla / compost bien maduro), repetido cada 15 a 20 días. ' .
+                'Aplícalo con el suelo humedo, no seco.',
             'icono' => 'parcela',
             'puntaje_relevancia' => 55,
-            'datos_analisis' => ['dias_desde_siembra' => $dias],
+            'datos_analisis' => ['dias_desde_siembra' => $días],
             'vigente_hasta' => Carbon::parse($parcela->fecha_siembra)->addDays(45),
         ]);
     }

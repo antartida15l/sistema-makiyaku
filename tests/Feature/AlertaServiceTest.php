@@ -91,7 +91,7 @@ class AlertaServiceTest extends TestCase
         $lluvia = $this->activas($parcela, 'lluvia');
         $this->assertCount(1, $lluvia);
         $this->assertSame('info', $lluvia->first()->nivel);
-        $this->assertStringContainsString('pospon', mb_strtolower($lluvia->first()->titulo));
+        $this->assertStringContainsString('pospón', mb_strtolower($lluvia->first()->titulo));
     }
 
     public function test_riego_critico_manda_sobre_la_lluvia_suave_y_no_se_contradicen(): void
@@ -119,7 +119,7 @@ class AlertaServiceTest extends TestCase
 
         $this->assertEquals($esperado, $alerta->datos_adicionales['litros_recomendados']);
         $this->assertStringContainsString(number_format($esperado, 0, ',', '.') . ' L', $alerta->mensaje);
-        $this->assertStringContainsString('m3', $alerta->mensaje, 'Una parcela grande se expresa en metros cubicos');
+        $this->assertStringContainsString('m³', $alerta->mensaje, 'Una parcela grande se expresa en metros cubicos');
     }
 
     public function test_en_una_parcela_pequena_la_cantidad_se_da_en_baldes(): void

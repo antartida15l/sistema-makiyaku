@@ -32,7 +32,7 @@ class ClimaService
         $parcela->loadMissing('ubicacion');
         $ubicacion = $parcela->ubicacion;
 
-        if (!$ubicacion || !$ubicacion->tieneCoordenadasGPS()) {
+        if (!$parcela->tiene_gps) {
             return null;
         }
 
@@ -47,8 +47,8 @@ class ClimaService
             }
         }
 
-        $lat = (float) $ubicacion->coordenadaLatitud;
-        $lon = (float) $ubicacion->coordenadaLongitud;
+        $lat = $parcela->latitud_efectiva;
+        $lon = $parcela->longitud_efectiva;
 
         if ($forzar) {
             $this->meteo->olvidarCoordenadas($lat, $lon);
@@ -71,10 +71,14 @@ class ClimaService
         $zona = config('app.timezone');
         $local = fn (?int $ts) => $ts ? Carbon::createFromTimestamp($ts, $zona) : null;
 
+        if ($parcela->altitud === null && !empty($a['elevation'])) {
+            $parcela->forceFill(['altitud' => $a['elevation']])->saveQuietly();
+        }
+
         return ClimaHistorial::create([
             'parcela_id' => $parcela->id,
-            'ciudad' => $ubicacion->provincia,
-            'distrito' => $ubicacion->distrito,
+            'ciudad' => $ubicacion?->provincia,
+            'distrito' => $ubicacion?->distrito,
             'lat' => $a['lat'],
             'lon' => $a['lon'],
 

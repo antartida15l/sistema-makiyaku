@@ -2,432 +2,106 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Parcela;
 use App\Models\Alerta;
-use App\Models\Cultivo;
-use App\Models\ClimaHistorial;
-use App\Services\AlertaService;
+use App\Models\EventoRiego;
+use App\Models\Parcela;
+use App\Models\Recomendacion;
+use App\Services\ClimaCompletoService;
 use App\Services\MonitoreoService;
-use App\Services\OpenMeteoService;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
-    protected AlertaService $alertaService;
-    protected OpenMeteoService $weatherService;
-    protected MonitoreoService $monitoreo;
-
-    public function __construct(
-        AlertaService $alertaService,
-        OpenMeteoService $weatherService,
-        MonitoreoService $monitoreo
-    ) {
-        $this->alertaService = $alertaService;
-        $this->weatherService = $weatherService;
-        $this->monitoreo = $monitoreo;
+    public function __construct(private MonitoreoService $monitoreo, private ClimaCompletoService $clima)
+    {
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $userId = auth()->id();
+        $u = $request->user();
 
-        // Sin cron (XAMPP local) esto mantiene clima y alertas al dia, maximo cada 15 minutos.
-        // Con `php artisan schedule:work` activo, el scheduler ya lo hace cada 30 minutos.
-        $this->monitoreo->refrescarSiHaceFalta($userId);
+        // Sin cron (XAMPP) esto mantiene clima y alertas al dia, como mucho cada 15 minutos.
+        $this->monitoreo->refrescarSiHaceFalta($u->id);
 
-        // Estadísticas de parcelas
-        $totalParcelas = Parcela::where('user_id', $userId)
-            ->activas()
-            ->count();
-        
-        $parcelasNuevas = Parcela::where('user_id', $userId)
-            ->whereMonth('created_at', Carbon::now()->month)
-            ->whereYear('created_at', Carbon::now()->year)
-            ->count();
+        $parcelas = Parcela::where('user_id', $u->id)->activas()
+            ->with(['cultivo', 'ubicacion', 'climaActual', 'alertas' => fn ($q) => $q->where('archivada', false)])->get();
 
-        // Clima promedio en tiempo real
-        $climaPromedio = $this->obtenerClimaPromedioRealTime($userId);
+        $ids = $parcelas->pluck('id');
+        $hoy = Carbon::today();
 
-        // Alertas
-        $alertasResumen = Alerta::resumenPorUsuario($userId);
-        $alertasActivas = $alertasResumen['total'];
-        $nuevasAlertas = $alertasResumen['nuevas_hoy'];
+        // Agua: ultimos 14 dias y comparacion con los 14 anteriores
+        $eventos = EventoRiego::whereIn('parcela_id', $ids)->where('fecha_riego', '>=', $hoy->copy()->subDays(27))->get();
+        $serieAgua = ['labels' => [], 'datos' => []];
+        for ($i = 13; $i >= 0; $i--) {
+            $f = $hoy->copy()->subDays($i);
+            $serieAgua['labels'][] = $f->format('d/m');
+            $serieAgua['datos'][] = round($eventos->filter(fn ($e) => $e->fecha_riego->isSameDay($f))->sum('cantidad_agua'));
+        }
+        $agua14 = array_sum($serieAgua['datos']);
+        $aguaAnt = round($eventos->filter(fn ($e) => $e->fecha_riego->lt($hoy->copy()->subDays(13)))->sum('cantidad_agua'));
 
-        // Parcelas para filtros
-        $parcelas = Parcela::where('user_id', $userId)
-            ->activas()
-            ->with('ubicacion')
-            ->select('id', 'nombre')
-            ->orderBy('nombre')
-            ->get();
+        $activas = Alerta::porUsuario($u->id)->activas();
+        $alertas = (clone $activas)->with('parcela:id,nombre')->ordenarPorUrgencia()->limit(5)->get();
 
-        // Actividades recientes
-        $actividadesRecientes = $this->obtenerActividadesReales($userId);
+        // Registro del campo: primero lo mas urgente
+        $orden = ['critico' => 0, 'alto' => 1, 'medio' => 2];
+        $registro = $parcelas->sortBy(function (Parcela $p) use ($orden) {
+            $a = $p->alertas->where('grupo', Alerta::GRUPO_RIEGO)->first();
 
-        // Distribución por cultivo
-        $distribucionCultivos = $this->obtenerDistribucionCultivos($userId);
+            return $a ? ($orden[$a->nivel] ?? 3) : 4 + $p->nivel_agua / 100;
+        })->values()->take(8);
 
-        return view('dashboard', compact(
-            'totalParcelas',
-            'parcelasNuevas',
-            'climaPromedio',
-            'alertasActivas',
-            'nuevasAlertas',
-            'alertasResumen',
-            'parcelas',
-            'actividadesRecientes',
-            'distribucionCultivos'
-        ));
-    }
+        $distribucion = $parcelas->groupBy(fn ($p) => $p->cultivo?->nombreCultivo ?? 'Sin cultivo')
+            ->map(fn ($g, $nombre) => ['nombre' => $nombre, 'valor' => round((float) $g->sum('area'))])->sortByDesc('valor')->values();
 
-    /**
-     * Clima promedio de las parcelas del usuario (JSON). Antes la ruta existia sin metodo.
-     */
-    public function getHumedadData()
-    {
-        return response()->json([
-            'success' => true,
-            'data' => $this->obtenerClimaPromedioRealTime(auth()->id()),
+        // Actividad reciente: riegos y alertas mezclados por fecha
+        $actividad = collect()
+            ->merge(EventoRiego::whereIn('parcela_id', $ids)->with('parcela:id,nombre')->latest('fecha_riego')->limit(5)->get()->map(fn ($e) => [
+                'cuando' => $e->fecha_riego, 'icono' => 'agua', 'nivel' => 'ok', 'texto' => 'Riego en ' . ($e->parcela->nombre ?? 'parcela') . ': ' . number_format($e->cantidad_agua, 0, ',', '.') . ' L']))
+            ->merge(Alerta::porUsuario($u->id)->with('parcela:id,nombre')->latest()->limit(5)->get()->map(fn ($a) => [
+                'cuando' => $a->created_at, 'icono' => $a->icono, 'nivel' => $a->nivel, 'texto' => $a->titulo . ' en ' . ($a->parcela->nombre ?? 'parcela')]))
+            ->sortByDesc('cuando')->take(6)->values();
+
+        $conClima = $parcelas->first(fn ($p) => $p->climaActual);
+
+        return view('dashboard', [
+            'parcelas' => $parcelas, 'registro' => $registro,
+            'kpis' => [
+                'parcelas' => $parcelas->count(), 'area' => (float) $parcelas->sum('area'),
+                'riego_hoy' => $parcelas->filter(fn ($p) => $p->alertas->where('grupo', Alerta::GRUPO_RIEGO)->whereIn('nivel', ['critico', 'alto'])->isNotEmpty())->count(),
+                'alertas' => Alerta::contarActivasPorUsuario($u->id), 'criticas' => Alerta::contarCriticasPorUsuario($u->id),
+                'agua14' => $agua14, 'agua_cambio' => $aguaAnt > 0 ? round(($agua14 - $aguaAnt) / $aguaAnt * 100) : null,
+            ],
+            'serieAgua' => $serieAgua, 'distribucion' => $distribucion, 'alertas' => $alertas, 'actividad' => $actividad,
+            'recomendaciones' => Recomendacion::where('user_id', $u->id)->activas()->with('parcela:id,nombre')->ordenarPorRelevancia()->limit(3)->get(),
+            'parcelaClima' => $conClima,
+            'saludo' => match (true) { now()->hour < 12 => 'Buenos días', now()->hour < 19 => 'Buenas tardes', default => 'Buenas noches' },
         ]);
     }
 
-    private function obtenerClimaPromedioRealTime(int $userId): array
+    /** Pronostico de 48 horas de una parcela para el grafico del panel. */
+    public function pronostico(Request $request)
     {
-        $parcelas = Parcela::where('user_id', $userId)
-            ->activas()
-            ->with('ubicacion')
-            ->get();
+        $p = Parcela::where('user_id', $request->user()->id)->with('ubicacion')->find($request->parcela_id);
 
-        if ($parcelas->isEmpty()) {
-            return [
-                'temperatura' => 0,
-                'humedad' => 0,
-                'hay_datos' => false,
-            ];
+        if (!$p || !$p->tiene_gps) {
+            return response()->json(['success' => false, 'message' => 'La parcela no tiene ubicación.']);
         }
 
-        $temperaturas = [];
-        $humedades = [];
+        $d = $this->clima->paraCoordenadas($p->latitud_efectiva, $p->longitud_efectiva, $p->nombre, null, false);
 
-        foreach ($parcelas as $parcela) {
-            if ($parcela->ubicacion && $parcela->ubicacion->coordenadaLatitud) {
-                $clima = $this->weatherService->getCurrentWeatherByCoordinates(
-                    $parcela->ubicacion->coordenadaLatitud,
-                    $parcela->ubicacion->coordenadaLongitud
-                );
-
-                if ($clima) {
-                    $temperaturas[] = $clima['temp'];
-                    $humedades[] = $clima['humidity'];
-                }
-            }
+        if (!$d) {
+            return response()->json(['success' => false, 'message' => 'No se pudo obtener el pronóstico.']);
         }
 
-        if (empty($temperaturas)) {
-            return [
-                'temperatura' => 0,
-                'humedad' => 0,
-                'hay_datos' => false,
-            ];
-        }
+        $h = array_slice($d['horas'], 0, 48);
+        $z = $d['lugar']['zona'];
 
-        return [
-            'temperatura' => round(array_sum($temperaturas) / count($temperaturas), 1),
-            'humedad' => round(array_sum($humedades) / count($humedades), 0),
-            'hay_datos' => true,
-        ];
-    }
-
-    public function getComparativaClima(Request $request)
-    {
-        $userId = auth()->id();
-        $parcelasIds = $request->input('parcelas', []);
-
-        if (empty($parcelasIds) || $parcelasIds[0] === 'all') {
-            $parcelas = Parcela::where('user_id', $userId)
-                ->activas()
-                ->with('ubicacion')
-                ->limit(5)
-                ->get();
-        } else {
-            $parcelas = Parcela::whereIn('id', $parcelasIds)
-                ->where('user_id', $userId)
-                ->with('ubicacion')
-                ->get();
-        }
-
-        $datos = [];
-
-        foreach ($parcelas as $parcela) {
-            if ($parcela->ubicacion && $parcela->ubicacion->coordenadaLatitud) {
-                $clima = $this->weatherService->getCurrentWeatherByCoordinates(
-                    $parcela->ubicacion->coordenadaLatitud,
-                    $parcela->ubicacion->coordenadaLongitud
-                );
-
-                if ($clima) {
-                    $datos[] = [
-                        'parcela' => $parcela->nombre,
-                        'temperatura' => round($clima['temp'], 1),
-                        'humedad' => round($clima['humidity'], 0),
-                        'viento' => round($clima['wind_speed'], 1),
-                        'descripcion' => $clima['weather_description'],
-                        'emoji' => $this->getEmojiClima($clima['weather_main']),
-                    ];
-                }
-            }
-        }
-
-        if (empty($datos)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No se pudo obtener datos climáticos. Verifica que las parcelas tengan ubicación.',
-                'data' => []
-            ]);
-        }
-
-        return response()->json([
-            'success' => true,
-            'data' => $datos
-        ]);
-    }
-
-      public function getPronostico(Request $request)
-    {
-        $userId = auth()->id();
-        $parcelaId = $request->input('parcela_id');
-
-        // Obtener parcela
-        if (!$parcelaId || $parcelaId === 'all') {
-            $parcela = Parcela::where('user_id', $userId)
-                ->activas()
-                ->with('ubicacion')
-                ->first();
-        } else {
-            $parcela = Parcela::where('id', $parcelaId)
-                ->where('user_id', $userId)
-                ->with('ubicacion')
-                ->first();
-        }
-
-        if (!$parcela || !$parcela->ubicacion || !$parcela->ubicacion->coordenadaLatitud) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No se encontró ubicación para obtener pronóstico',
-                'data' => []
-            ]);
-        }
-
-        // Obtener pronóstico usando el servicio
-        $forecast = $this->weatherService->getForecastByCoordinates(
-            $parcela->ubicacion->coordenadaLatitud,
-            $parcela->ubicacion->coordenadaLongitud
-        );
-
-        if (!$forecast || !isset($forecast['list']) || empty($forecast['list'])) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No se pudo obtener el pronóstico',
-                'data' => []
-            ]);
-        }
-
-        // Agrupar por día
-        $datosPorDia = [];
-        
-        foreach ($forecast['list'] as $item) {
-            // Tu servicio devuelve 'datetime' ya formateado
-            $fecha = Carbon::parse($item['datetime']);
-            $dia = $fecha->format('Y-m-d');
-            
-            if (!isset($datosPorDia[$dia])) {
-                $datosPorDia[$dia] = [
-                    'fecha_obj' => $fecha,
-                    'temperaturas' => [],
-                    'humedades' => [],
-                    'lluvias' => [],
-                    'descripciones' => [],
-                    'weather_mains' => []
-                ];
-            }
-            
-            // Usar los campos que tu servicio YA formateó
-            $datosPorDia[$dia]['temperaturas'][] = $item['temp'];
-            $datosPorDia[$dia]['humedades'][] = $item['humidity'];
-            $datosPorDia[$dia]['lluvias'][] = $item['pop']; // Ya viene en porcentaje 0-100
-            $datosPorDia[$dia]['descripciones'][] = $item['weather_description'];
-            $datosPorDia[$dia]['weather_mains'][] = $item['weather_main'];
-        }
-
-        // Procesar 5 días
-        $pronosticoDias = [];
-        $contador = 0;
-        
-        foreach ($datosPorDia as $dia => $datos) {
-            if ($contador >= 5) break;
-            
-            $temps = $datos['temperaturas'];
-            $fecha = $datos['fecha_obj'];
-            
-            // Descripción más frecuente
-            $descripciones = array_count_values($datos['descripciones']);
-            arsort($descripciones);
-            $descripcion = array_key_first($descripciones);
-            
-            // Weather main más frecuente
-            $mains = array_count_values($datos['weather_mains']);
-            arsort($mains);
-            $weatherMain = array_key_first($mains);
-            
-            $pronosticoDias[] = [
-                'fecha' => $fecha->format('d/m'),
-                'dia_semana' => $fecha->locale('es')->isoFormat('ddd'),
-                'temp_max' => round(max($temps), 1),
-                'temp_min' => round(min($temps), 1),
-                'humedad' => round(array_sum($datos['humedades']) / count($datos['humedades']), 0),
-                'lluvia_prob' => round(array_sum($datos['lluvias']) / count($datos['lluvias']), 0), // Ya es porcentaje
-                'descripcion' => $descripcion,
-                'emoji' => $this->getEmojiClima($weatherMain),
-            ];
-            
-            $contador++;
-        }
-
-        if (empty($pronosticoDias)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No se encontraron datos de pronóstico',
-                'data' => []
-            ]);
-        }
-
-        return response()->json([
-            'success' => true,
-            'parcela' => $parcela->nombre,
-            'data' => $pronosticoDias
-        ]);
-    }
-
-
-    private function obtenerActividadesReales(int $userId): array
-    {
-        $actividades = [];
-
-        // Alertas recientes
-        $alertasRecientes = Alerta::where('user_id', $userId)
-            ->activas()
-            ->with('parcela')
-            ->orderBy('created_at', 'desc')
-            ->limit(3)
-            ->get();
-
-        foreach ($alertasRecientes as $alerta) {
-            $actividades[] = [
-                'icon' => $alerta->icono,
-                'titulo' => "{$alerta->titulo} - {$alerta->parcela->nombre}",
-                'tiempo' => $alerta->tiempo_transcurrido,
-                'color' => $this->getColorByNivel($alerta->nivel),
-                'iconColor' => $alerta->color_hex,
-            ];
-        }
-
-        // Riegos recientes
-        $riegosRecientes = DB::table('eventos_riego')
-            ->join('parcelas', 'eventos_riego.parcela_id', '=', 'parcelas.id')
-            ->where('parcelas.user_id', $userId)
-            ->select(
-                'parcelas.nombre',
-                'eventos_riego.fecha_riego',
-                'eventos_riego.cantidad_agua',
-                'eventos_riego.tipo_riego'
-            )
-            ->orderBy('eventos_riego.fecha_riego', 'desc')
-            ->limit(3)
-            ->get();
-
-        foreach ($riegosRecientes as $riego) {
-            $actividades[] = [
-                'icon' => $riego->tipo_riego === 'automatico' ? 'auto' : 'agua',
-                'titulo' => "Riego {$riego->tipo_riego} en {$riego->nombre} - " . 
-                           number_format($riego->cantidad_agua, 0) . " litros",
-                'tiempo' => Carbon::parse($riego->fecha_riego)->diffForHumans(),
-                'color' => 'rgba(32, 201, 151, 0.1)',
-                'iconColor' => '#20c997',
-            ];
-        }
-
-        // Parcelas nuevas
-        $parcelasNuevas = Parcela::where('user_id', $userId)
-            ->where('created_at', '>=', Carbon::now()->subDays(7))
-            ->orderBy('created_at', 'desc')
-            ->limit(2)
-            ->get();
-
-        foreach ($parcelasNuevas as $parcela) {
-            $actividades[] = [
-                'icon' => 'parcela',
-                'titulo' => "Nueva parcela creada: {$parcela->nombre}",
-                'tiempo' => $parcela->created_at->diffForHumans(),
-                'color' => 'rgba(40, 167, 69, 0.1)',
-                'iconColor' => '#28a745',
-            ];
-        }
-
-        usort($actividades, function($a, $b) {
-            return strcmp($b['tiempo'], $a['tiempo']);
-        });
-
-        return array_slice($actividades, 0, 6);
-    }
-
-    private function obtenerDistribucionCultivos(int $userId): array
-    {
-        $distribucion = Parcela::where('user_id', $userId)
-            ->activas()
-            ->join('cultivos', 'parcelas.idCultivo', '=', 'cultivos.idCultivo')
-            ->select(
-                'cultivos.nombreCultivo',
-                'cultivos.idCultivo',
-                DB::raw('COUNT(*) as cantidad'),
-                DB::raw('SUM(parcelas.area) as area_total')
-            )
-            ->groupBy('cultivos.nombreCultivo', 'cultivos.idCultivo')
-            ->orderBy('area_total', 'desc')
-            ->get();
-
-        $totalArea = $distribucion->sum('area_total');
-
-        $emojis = [];
-
-        return $distribucion->map(function($item) use ($totalArea, $emojis) {
-            return [
-                'nombre' => $item->nombreCultivo,
-                'emoji' => '',
-                'cantidad' => $item->cantidad,
-                'area' => round($item->area_total, 2),
-                'porcentaje' => $totalArea > 0 ? round(($item->area_total / $totalArea) * 100, 1) : 0,
-            ];
-        })->toArray();
-    }
-
-    /**
-     * Ya no se usan emojis: se devuelve la clave del icono local (public/img/clima).
-     */
-    private function getEmojiClima(string $condition): string
-    {
-        return '';
-    }
-
-    private function getColorByNivel(string $nivel): string
-    {
-        return match($nivel) {
-            'critico' => 'rgba(220, 53, 69, 0.1)',
-            'alto' => 'rgba(255, 193, 7, 0.1)',
-            'medio' => 'rgba(23, 162, 184, 0.1)',
-            'info' => 'rgba(0, 123, 255, 0.1)',
-            default => 'rgba(108, 117, 125, 0.1)',
-        };
+        return response()->json(['success' => true, 'parcela' => $p->nombre, 'data' => [
+            'labels' => array_map(fn ($x) => Carbon::createFromTimestamp($x['ts'], $z)->format('H:i'), $h),
+            'titulos' => array_map(fn ($x) => Carbon::createFromTimestamp($x['ts'], $z)->translatedFormat('D j, H:i'), $h),
+            'temp' => array_column($h, 'temperature_2m'), 'lluvia' => array_column($h, 'precipitation'), 'prob' => array_column($h, 'precipitation_probability'),
+        ]]);
     }
 }

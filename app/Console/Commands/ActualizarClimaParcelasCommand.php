@@ -38,7 +38,7 @@ class ActualizarClimaParcelasCommand extends Command
         $alertasNuevas = 0;
 
         foreach ($parcelas as $parcela) {
-            if (!$parcela->ubicacion || !$parcela->ubicacion->tieneCoordenadasGPS()) {
+            if (!$parcela->tiene_gps) {
                 $this->line("  Parcela #{$parcela->id} ({$parcela->nombre}): sin coordenadas, se omite.");
                 $fallidas++;
 

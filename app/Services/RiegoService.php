@@ -15,7 +15,7 @@ use Carbon\Carbon;
  * este servicio y siempre muestran los mismos numeros.
  *
  * Idea del calculo (1 mm de agua sobre 1 m2 = 1 litro):
- *   litros/m2 = consumo del cultivo por dia x dias a cubrir - lluvia aprovechable
+ *   litros/m2 = consumo del cultivo por día x días a cubrir - lluvia aprovechable
  *   ajustado por la evapotranspiracion real (ET0) de la zona y limitado a un
  *   maximo razonable para no recomendar volumenes absurdos.
  */
@@ -24,7 +24,7 @@ class RiegoService
     /** Capacidad de un balde comun en el campo. */
     public const LITROS_BALDE = 20;
 
-    /** ET0 tipica (mm/dia) por region; sirve de referencia para comparar. */
+    /** ET0 tipica (mm/día) por region; sirve de referencia para comparar. */
     private const ET0_REFERENCIA = [
         'Costa Norte' => 4.5,
         'Costa Central y Sur' => 3.5,
@@ -37,7 +37,7 @@ class RiegoService
     /** Fraccion de la lluvia que realmente queda en el suelo. */
     private const EFICIENCIA_LLUVIA = 0.75;
 
-    /** Consumo por m2/dia si el cultivo no lo tiene cargado. */
+    /** Consumo por m2/día si el cultivo no lo tiene cargado. */
     private const CONSUMO_DEFECTO = 3.0;
 
     // =========================================================
@@ -56,14 +56,20 @@ class RiegoService
             return 1.0;
         }
 
-        $region = $parcela->ubicacion->region ?? null;
+        // La region natural sale de la altitud de la parcela; si no se sabe, de la region del cultivo.
+        $region = match (true) {
+            $parcela->altitud !== null && $parcela->altitud >= 2300 => 'Sierra',
+            $parcela->altitud !== null && $parcela->altitud <= 800 => 'Costa Central y Sur',
+            $parcela->altitud !== null => 'Selva',
+            default => $parcela->cultivo?->region,
+        };
         $ref = self::ET0_REFERENCIA[$region] ?? self::ET0_REFERENCIA_DEFECTO;
 
         return round(max(0.7, min(1.4, $et0 / $ref)), 2);
     }
 
     /**
-     * Litros por m2 que consume el cultivo cada dia, ya ajustado al clima.
+     * Litros por m2 que consume el cultivo cada día, ya ajustado al clima.
      */
     public function consumoDiarioPorM2(Parcela $parcela, ?ClimaHistorial $clima = null): float
     {
@@ -77,7 +83,7 @@ class RiegoService
     // =========================================================
 
     /**
-     * Cada cuantos dias conviene regar.
+     * Cada cuantos días conviene regar.
      */
     public function frecuenciaDias(Parcela $parcela, ?ClimaHistorial $clima = null): int
     {
@@ -88,17 +94,17 @@ class RiegoService
         }
 
         $humedad = $clima?->humedad ?? 50;
-        $dias = $cultivo->calcularFrecuenciaRiego((bool) $parcela->tieneHidrogelAplicado, (float) $humedad);
+        $días = $cultivo->calcularFrecuenciaRiego((bool) $parcela->tieneHidrogelAplicado, (float) $humedad);
 
-        // Si la zona esta muy seca por ET0, se adelanta un dia (sin bajar del minimo del cultivo).
+        // Si la zona está muy seca por ET0, se adelanta un día (sin bajar del minimo del cultivo).
         $factor = $this->factorClima($parcela, $clima);
         if ($factor >= 1.25) {
-            $dias = max((int) $cultivo->frecuenciaRiegoMin, $dias - 1);
+            $días = max((int) $cultivo->frecuenciaRiegoMin, $días - 1);
         } elseif ($factor <= 0.8) {
-            $dias = min((int) $cultivo->frecuenciaRiegoMax + ($parcela->tieneHidrogelAplicado ? 3 : 0), $dias + 1);
+            $días = min((int) $cultivo->frecuenciaRiegoMax + ($parcela->tieneHidrogelAplicado ? 3 : 0), $días + 1);
         }
 
-        return max(1, $dias);
+        return max(1, $días);
     }
 
     // =========================================================
@@ -130,11 +136,11 @@ class RiegoService
         // riego, pero nunca mas de la frecuencia + 2 (el suelo no guarda mas).
         $diasSinRegar = $this->diasSinRegar($parcela);
         $maxDias = $frecuencia + 2;
-        $dias = $diasSinRegar === null ? $frecuencia : max(1, min($diasSinRegar, $maxDias));
+        $días = $diasSinRegar === null ? $frecuencia : max(1, min($diasSinRegar, $maxDias));
 
-        $bruto = $consumo * $dias;
+        $bruto = $consumo * $días;
 
-        // Lluvia que ya mojo el suelo (ultimos 3 dias) y la prevista para 24 h.
+        // Lluvia que ya mojo el suelo (ultimos 3 días) y la prevista para 24 h.
         $lluvia = 0.0;
         if ($clima) {
             $lluvia += (float) $clima->lluvia_72h_mm * self::EFICIENCIA_LLUVIA;
@@ -153,7 +159,7 @@ class RiegoService
         $sinLluvia = $bruto * $factorHidrogel;
         $neto = max(0.0, $bruto - $lluvia) * $factorHidrogel;
 
-        // Tope: no mas que lo que consume el cultivo en (frecuencia + 2) dias.
+        // Tope: no mas que lo que consume el cultivo en (frecuencia + 2) días.
         $tope = $consumo * $maxDias * $factorHidrogel;
         $neto = min($neto, $tope);
         $sinLluvia = min($sinLluvia, $tope);
@@ -162,7 +168,7 @@ class RiegoService
             'litros_total' => round($neto * $area, 0),
             'litros_m2' => round($neto, 1),
             'baldes' => $this->aBaldes($neto * $area),
-            'dias_cubiertos' => (float) $dias,
+            'dias_cubiertos' => (float) $días,
             'consumo_dia_m2' => $consumo,
             'factor_clima' => $this->factorClima($parcela, $clima),
             'lluvia_aprovechada_mm' => round($lluvia, 1),
@@ -218,8 +224,8 @@ class RiegoService
 
     /**
      * Texto corto de cantidad para mensajes.
-     * Menos de 1.000 L: "180 L en total (9 L por m2, unos 9 baldes de 20 L)".
-     * Desde 1.000 L: "14,6 m3 en total (36,5 L por m2)", porque contar cientos
+     * Menos de 1.000 L: "180 L en total (9 L por m², unos 9 baldes de 20 L)".
+     * Desde 1.000 L: "14,6 m3 en total (36,5 L por m²)", porque contar cientos
      * de baldes no sirve en una parcela grande.
      */
     public function textoCantidad(array $calculo): string
@@ -228,7 +234,7 @@ class RiegoService
         $total = (float) $calculo['litros_total'];
 
         if ($total >= 1000) {
-            return $this->num($total / 1000) . " m3 ({$this->num($total, 0)} L) en total ({$m2} L por m2)";
+            return $this->num($total / 1000) . " m³ ({$this->num($total, 0)} L) en total ({$m2} L por m²)";
         }
 
         $l = number_format($total, 0, ',', '.');
@@ -236,7 +242,7 @@ class RiegoService
         $baldes = floor($b) == $b ? (string) (int) $b : $this->num($b);
         $unidad = $b == 1 ? 'balde' : 'baldes';
 
-        return "{$l} L en total ({$m2} L por m2, unos {$baldes} {$unidad} de " . self::LITROS_BALDE . ' L)';
+        return "{$l} L en total ({$m2} L por m², unos {$baldes} {$unidad} de " . self::LITROS_BALDE . ' L)';
     }
 
     /**

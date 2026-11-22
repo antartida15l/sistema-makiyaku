@@ -1,1092 +1,200 @@
 @extends('layouts.app')
-
-@section('title', 'Detalles de Parcela')
-
-@push('styles')
-<style>
-    .form-container {
-        max-width: 1200px;
-        margin: 0 auto;
-    }
-
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 35px;
-        padding-bottom: 20px;
-        border-bottom: 3px solid #f0f0f0;
-    }
-
-    .page-header-content {
-        display: flex;
-        align-items: center;
-        gap: 20px;
-    }
-
-    .page-icon {
-        width: 70px;
-        height: 70px;
-        background: linear-gradient(135deg, var(--primary), var(--secondary));
-        border-radius: 18px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 36px;
-        box-shadow: 0 8px 20px rgba(40, 167, 69, 0.3);
-        animation: float 3s ease-in-out infinite;
-    }
-
-    @keyframes float {
-        0%, 100% { transform: translateY(0px); }
-        50% { transform: translateY(-10px); }
-    }
-
-    .page-title-group h1 {
-        font-size: 32px;
-        font-weight: 800;
-        color: var(--dark);
-        margin-bottom: 5px;
-    }
-
-    .page-subtitle {
-        color: var(--muted);
-        font-size: 15px;
-        font-weight: 500;
-    }
-
-    .header-actions {
-        display: flex;
-        gap: 12px;
-    }
-
-    .btn {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 12px 24px;
-        border: none;
-        border-radius: 12px;
-        font-weight: 700;
-        font-size: 15px;
-        cursor: pointer;
-        transition: var(--transition);
-        text-decoration: none;
-    }
-
-    .btn-back {
-        background: var(--light);
-        color: var(--dark);
-        border: 2px solid #e9ecef;
-    }
-
-    .btn-back:hover {
-        background: #e9ecef;
-        border-color: var(--primary);
-        transform: translateX(-5px);
-        box-shadow: var(--shadow-sm);
-    }
-
-    .btn-edit {
-        background: linear-gradient(135deg, #17a2b8, #138496);
-        color: var(--white);
-        box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
-    }
-
-    .btn-edit:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 20px rgba(23, 162, 184, 0.4);
-    }
-
-    .btn-delete {
-        background: linear-gradient(135deg, #dc3545, #c82333);
-        color: var(--white);
-        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
-    }
-
-    .btn-delete:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
-    }
-
-    /* Estado Badge */
-    .estado-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 16px;
-        border-radius: 20px;
-        font-weight: 700;
-        font-size: 13px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .estado-activa {
-        background: linear-gradient(135deg, #d4edda, #c3e6cb);
-        color: #155724;
-        border: 2px solid #28a745;
-    }
-
-    .estado-inactiva {
-        background: linear-gradient(135deg, #f8d7da, #f5c2c7);
-        color: #721c24;
-        border: 2px solid #dc3545;
-    }
-
-    .estado-mantenimiento {
-        background: linear-gradient(135deg, #fff3cd, #ffeaa7);
-        color: #856404;
-        border: 2px solid #ffc107;
-    }
-
-    /* Alertas de Riego */
-    .alerta-riego {
-        padding: 20px 25px;
-        border-radius: 14px;
-        margin-bottom: 30px;
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        font-weight: 700;
-        animation: pulse 2s infinite;
-    }
-
-    .alerta-critica {
-        background: linear-gradient(135deg, #f8d7da, #f5c2c7);
-        border: 3px solid #dc3545;
-        color: #721c24;
-    }
-
-    .alerta-hoy {
-        background: linear-gradient(135deg, #fff3cd, #ffeaa7);
-        border: 3px solid #ffc107;
-        color: #856404;
-    }
-
-    .alerta-proximo {
-        background: linear-gradient(135deg, #d1ecf1, #bee5eb);
-        border: 3px solid #17a2b8;
-        color: #0c5460;
-    }
-
-    .alerta-ok {
-        background: linear-gradient(135deg, #d4edda, #c3e6cb);
-        border: 3px solid #28a745;
-        color: #155724;
-    }
-
-    @keyframes pulse {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.02); }
-    }
-
-    .alerta-icon {
-        font-size: 40px;
-        flex-shrink: 0;
-    }
-
-    .alerta-content {
-        flex: 1;
-    }
-
-    .alerta-title {
-        font-size: 18px;
-        margin-bottom: 5px;
-    }
-
-    .alerta-description {
-        font-size: 14px;
-        font-weight: 600;
-        opacity: 0.9;
-    }
-
-    /* Cards Grid */
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 20px;
-        margin-bottom: 30px;
-    }
-
-    .stat-card {
-        background: var(--white);
-        border-radius: 16px;
-        padding: 25px;
-        box-shadow: var(--shadow-sm);
-        border: 2px solid #f0f0f0;
-        transition: var(--transition);
-    }
-
-    .stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: var(--shadow-md);
-        border-color: var(--primary);
-    }
-
-    .stat-header {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        margin-bottom: 15px;
-    }
-
-    .stat-icon {
-        width: 50px;
-        height: 50px;
-        background: linear-gradient(135deg, var(--primary), var(--secondary));
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 24px;
-        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.25);
-    }
-
-    .stat-label {
-        font-size: 13px;
-        color: var(--muted);
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .stat-value {
-        font-size: 28px;
-        font-weight: 800;
-        color: var(--dark);
-    }
-
-    .stat-unit {
-        font-size: 16px;
-        color: var(--muted);
-        font-weight: 600;
-    }
-
-    /* Form Card */
-    .form-card {
-        background: var(--white);
-        border-radius: 16px;
-        box-shadow: var(--shadow-sm);
-        overflow: hidden;
-        margin-bottom: 30px;
-    }
-
-    .form-section {
-        padding: 35px;
-        border-bottom: 2px solid #f8f9fa;
-        position: relative;
-    }
-
-    .form-section:last-child {
-        border-bottom: none;
-    }
-
-    .form-section::before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        width: 4px;
-        background: linear-gradient(180deg, var(--primary), var(--secondary));
-        opacity: 0;
-        transition: var(--transition);
-    }
-
-    .form-section:hover::before {
-        opacity: 1;
-    }
-
-    .section-header {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        margin-bottom: 25px;
-        padding-bottom: 15px;
-        border-bottom: 2px solid #f0f0f0;
-    }
-
-    .section-icon {
-        width: 45px;
-        height: 45px;
-        background: linear-gradient(135deg, var(--primary), var(--secondary));
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 22px;
-        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.25);
-    }
-
-    .section-title h3 {
-        font-size: 20px;
-        font-weight: 800;
-        color: var(--dark);
-        margin-bottom: 3px;
-    }
-
-    .section-description {
-        font-size: 13px;
-        color: var(--muted);
-        font-weight: 500;
-    }
-
-    .info-row {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 20px;
-        margin-bottom: 20px;
-    }
-
-    .info-item {
-        background: #f8f9fa;
-        padding: 18px;
-        border-radius: 10px;
-        border: 2px solid #e9ecef;
-    }
-
-    .info-label {
-        font-size: 12px;
-        color: var(--muted);
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 8px;
-    }
-
-    .info-value {
-        font-size: 16px;
-        font-weight: 700;
-        color: var(--dark);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 12px;
-        border-radius: 8px;
-        font-size: 12px;
-        font-weight: 700;
-        text-transform: uppercase;
-    }
-
-    .badge-success {
-        background: #d4edda;
-        color: #155724;
-        border: 1px solid #28a745;
-    }
-
-    .badge-info {
-        background: #d1ecf1;
-        color: #0c5460;
-        border: 1px solid #17a2b8;
-    }
-
-    .progress-bar-container {
-        background: #e9ecef;
-        border-radius: 10px;
-        height: 12px;
-        overflow: hidden;
-        margin-top: 10px;
-    }
-
-    .progress-bar {
-        height: 100%;
-        background: linear-gradient(90deg, var(--primary), var(--secondary));
-        border-radius: 10px;
-        transition: width 0.6s ease;
-    }
-
-    /* Tabla de Eventos */
-    .eventos-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-    }
-
-    .eventos-table thead {
-        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-    }
-
-    .eventos-table th {
-        padding: 15px;
-        text-align: left;
-        font-weight: 700;
-        color: var(--dark);
-        font-size: 13px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        border-bottom: 3px solid var(--primary);
-    }
-
-    .eventos-table td {
-        padding: 15px;
-        border-bottom: 1px solid #e9ecef;
-        font-weight: 600;
-        color: #495057;
-    }
-
-    .eventos-table tbody tr:hover {
-        background: #f8fff9;
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 40px;
-        color: var(--muted);
-    }
-
-    .empty-state-icon {
-        font-size: 60px;
-        margin-bottom: 15px;
-    }
-
-    /* Formulario de Riego */
-    .riego-form {
-        background: linear-gradient(135deg, #d1ecf1, #bee5eb);
-        padding: 25px;
-        border-radius: 14px;
-        border: 2px solid #17a2b8;
-        margin-top: 20px;
-    }
-
-    .form-group {
-        margin-bottom: 20px;
-    }
-
-    .form-label {
-        display: block;
-        font-weight: 700;
-        color: var(--dark);
-        margin-bottom: 8px;
-        font-size: 14px;
-    }
-
-    .form-control {
-        width: 100%;
-        padding: 12px 16px;
-        border: 2px solid #e9ecef;
-        border-radius: 10px;
-        font-size: 15px;
-        transition: var(--transition);
-        background: var(--white);
-        color: var(--dark);
-        font-weight: 500;
-    }
-
-    .form-control:focus {
-        outline: none;
-        border-color: var(--primary);
-        box-shadow: 0 0 0 4px rgba(40, 167, 69, 0.1);
-        background: #f8fff9;
-    }
-
-    .btn-riego {
-        background: linear-gradient(135deg, #17a2b8, #138496);
-        color: var(--white);
-        box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
-        width: 100%;
-        margin-top: 10px;
-        padding: 14px;
-        justify-content: center;
-    }
-
-    .btn-riego:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 20px rgba(23, 162, 184, 0.4);
-    }
-
-    .alert {
-        padding: 20px;
-        border-radius: 12px;
-        margin-bottom: 30px;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        animation: slideInDown 0.4s;
-    }
-
-    @keyframes slideInDown {
-        from {
-            opacity: 0;
-            transform: translateY(-20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .alert-success {
-        background: linear-gradient(135deg, #d4edda, #c3e6cb);
-        border: 2px solid #28a745;
-        color: #155724;
-    }
-
-    @media (max-width: 768px) {
-        .page-header {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 20px;
-        }
-
-        .header-actions {
-            width: 100%;
-            flex-direction: column;
-        }
-
-        .btn {
-            width: 100%;
-            justify-content: center;
-        }
-
-        .stats-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .info-row {
-            grid-template-columns: 1fr;
-        }
-    }
-</style>
-@endpush
+@section('title', $parcela->nombre)
 
 @section('content')
-<div class="form-container">
-    {{-- HEADER --}}
-    <div class="page-header">
-        <div class="page-header-content">
-            <div class="page-icon"><x-icono name="parcela" :size="20" /></div>
-            <div class="page-title-group">
-                <h1>{{ $parcela->nombre }}</h1>
-                @if($parcela->alertas()->activas()->exists())
-                    <div style="display: inline-flex; align-items: center; gap: 10px; margin-left: 20px;">
-                        <a href="{{ route('alertas.index') }}" style="
-                            background: linear-gradient(135deg, #dc3545, #c82333);
-                            color: white;
-                            padding: 8px 16px;
-                            border-radius: 20px;
-                            text-decoration: none;
-                            font-weight: 600;
-                            font-size: 14px;
-                            display: flex;
-                            align-items: center;
-                            gap: 8px;
-                            box-shadow: 0 4px 10px rgba(220, 53, 69, 0.3);
-                            transition: all 0.3s;
-                        " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
-                            {{ $parcela->alertas()->activas()->count() }} alerta(s) activa(s)
-                        </a>
-                    </div>
-                @endif
-                <p class="page-subtitle">{{ $parcela->ubicacion_completa }}</p>
+@php
+    $c = $parcela->climaActual; $cu = $parcela->cultivo; $calc = $plan['calculo'];
+    $a = $parcela->alertas->where('grupo', 'riego')->first();
+    $otras = $parcela->alertas->where('grupo', '!=', 'riego');
+    $nivelTxt = ['critico' => 'Riego urgente', 'alto' => 'Riego hoy', 'medio' => 'Riego pronto', 'info' => 'Aviso'];
+    $estadoTag = ['activa' => ['ok', 'Activa'], 'inactiva' => ['info', 'Inactiva'], 'mantenimiento' => ['alto', 'En mantenimiento']][$parcela->estado] ?? ['info', $parcela->estado];
+    $fmt = fn ($n, $d = 0) => number_format($n, $d, ',', '.');
+    $dias = $plan['dias_sin_regar'];
+    $progresoCiclo = ($cu && $cu->cicloProductivo && $parcela->fecha_siembra) ? min(100, (int) round(\Carbon\Carbon::parse($parcela->fecha_siembra)->diffInDays(today()) / $cu->cicloProductivo * 100)) : null;
+    $h48 = $pronostico ? array_slice($pronostico['horas'], 0, 48) : [];
+    $z = $pronostico['lugar']['zona'] ?? 'America/Lima';
+    $lbl = array_map(fn ($x) => \Carbon\Carbon::createFromTimestamp($x['ts'], $z)->format('H:i'), $h48);
+    $ttl = array_map(fn ($x) => \Carbon\Carbon::createFromTimestamp($x['ts'], $z)->translatedFormat('D j, H:i'), $h48);
+@endphp
+
+<header class="page-head">
+    <div>
+        <div class="row" style="gap:8px"><h1>{{ $parcela->nombre }}</h1><span class="tag lvl lvl-{{ $estadoTag[0] }}">{{ $estadoTag[1] }}</span></div>
+        <p>{{ $cu?->nombreCultivo ?? 'Sin cultivo' }}, {{ $fmt($parcela->area) }} m²@if($parcela->ubicacion), {{ $parcela->ubicacion->distrito }}, {{ $parcela->ubicacion->provincia }}@endif</p>
+    </div>
+    <div class="head-actions">
+        <a href="{{ route('parcelas.edit', $parcela) }}" class="btn"><x-icono name="editar" :size="18" />Editar</a>
+        <form method="POST" action="{{ route('parcelas.actualizar-clima', $parcela) }}">@csrf<button class="btn" type="submit" data-ocupado="Actualizando..."><x-icono name="actualizar" :size="18" />Actualizar clima</button></form>
+        <button type="button" class="btn btn-primary" data-dlg-open="dlg-riego"><x-icono name="agua" :size="18" />Registrar riego</button>
+    </div>
+</header>
+
+<div class="grid g-main">
+<div class="stack-lg" style="min-width:0">
+
+    {{-- Plan de riego --}}
+    <section class="panel" aria-labelledby="h-plan">
+        <div class="panel-body" style="display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:center">
+            <x-gota :nivel="$parcela->nivel_agua" :tono="$parcela->tono_riego" style="width:88px;height:112px" />
+            <div>
+                <h2 id="h-plan">@if($a){{ $nivelTxt[$a->nivel] ?? 'Riego' }}@else Plan de riego @endif</h2>
+                <p class="muted" style="margin-top:4px;max-width:60ch">
+                    @if($a){{ $a->mensaje }}
+                    @elseif($plan['proximo'])No hace falta regar todavía. Próximo riego el <strong>{{ $plan['proximo']->translatedFormat('l j \d\e F') }}</strong>: {{ $plan['texto'] }}.
+                    @else Registra tu último riego para calcular el siguiente. @endif
+                </p>
+                <div class="progress" style="margin-top:16px;max-width:420px" role="progressbar" aria-valuenow="{{ 100 - $parcela->nivel_agua }}" aria-valuemin="0" aria-valuemax="100" aria-label="Avance del ciclo de riego"><i style="width:{{ 100 - $parcela->nivel_agua }}%"></i></div>
+                <div class="t-meta" style="margin-top:4px">{{ $dias === null ? 'Sin riegos registrados' : ($dias === 0 ? 'Regada hoy' : "Hace {$dias} " . ($dias === 1 ? 'día' : 'días') . ' del último riego') }}, se riega cada {{ $plan['frecuencia'] }} días</div>
             </div>
         </div>
-        <div class="header-actions">
-            <a href="{{ route('parcelas.index') }}" class="btn btn-back">
-                <span>←</span>
-                <span>Volver</span>
-            </a>
-            <a href="{{ route('parcelas.edit', $parcela) }}" class="btn btn-edit">
-                
-                <span>Editar</span>
-            </a>
-            <form action="{{ route('parcelas.destroy', $parcela) }}" method="POST" style="display: inline;"
-                  onsubmit="return confirm('¿Estás seguro de eliminar esta parcela? Esta acción no se puede deshacer.')">
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="btn btn-delete">
-                    
-                    <span>Eliminar</span>
-                </button>
-            </form>
-            {{-- En el card de cada parcela o en la vista show --}}
-            <a href="{{ route('recomendaciones.index', $parcela) }}" class="btn btn-primary">
-                <span><x-icono name="consejo" :size="20" /></span>
-                <span>Ver Recomendaciones</span>
-            </a>
+        <dl class="dl" style="padding:0 24px 24px;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 32px">
+            <div><dt>Cantidad recomendada hoy</dt><dd style="text-align:left;font-size:var(--t-lg)" class="num">{{ $calc['litros_total'] >= 1000 ? $fmt($calc['litros_total'] / 1000, 1) . ' m³' : $fmt($calc['litros_total']) . ' L' }}</dd><span class="t-meta">{{ $fmt($calc['litros_m2'], 1) }} L por m²@if($calc['litros_total'] < 1000), unos {{ $calc['baldes'] }} baldes de 20 L @endif</span></div>
+            <div><dt>Agua usada en 30 días</dt><dd style="text-align:left;font-size:var(--t-lg)" class="num">{{ $totalAgua30 >= 1000 ? $fmt($totalAgua30 / 1000, 1) . ' m³' : $fmt($totalAgua30) . ' L' }}</dd><span class="t-meta">{{ $parcela->area > 0 ? $fmt($totalAgua30 / $parcela->area, 1) : 0 }} L por m²</span></div>
+            <div><dt>Último riego</dt><dd style="text-align:left">{{ $parcela->ultimo_riego?->translatedFormat('j M Y') ?? 'Sin registro' }}</dd></div>
+            <div><dt>Ajuste por clima</dt><dd style="text-align:left">{{ $calc['factor_clima'] > 1.05 ? 'Más seco de lo normal (+' . round(($calc['factor_clima'] - 1) * 100) . '%)' : ($calc['factor_clima'] < .95 ? 'Más fresco de lo normal (' . round(($calc['factor_clima'] - 1) * 100) . '%)' : 'Normal') }}</dd></div>
+        </dl>
+    </section>
 
-        </div>
-    </div>
-
-    {{-- ALERTAS --}}
-    @if(session('success'))
-        <div class="alert alert-success">
-            <span style="font-size: 24px;"><x-icono name="ok" :size="20" /></span>
-            <strong>{{ session('success') }}</strong>
-        </div>
+    @if($otras->count())
+    <section class="panel" aria-labelledby="h-al">
+        <div class="panel-head"><h2 id="h-al">Alertas de esta parcela</h2><a href="{{ route('alertas.index', ['parcela' => $parcela->id]) }}" class="t-sec">Ver en alertas</a></div>
+        @foreach($otras as $o)
+            <div class="item lvl lvl-{{ $o->nivel }}" style="border-top:1px solid var(--border)">
+                <span class="ic"><x-icono :name="$o->icono" :size="20" /></span>
+                <div class="body"><span class="title">{{ $o->titulo }}</span> <span class="tag lvl lvl-{{ $o->nivel }}" style="margin-left:8px">{{ $o->etiqueta_nivel }}</span><p class="t-sec muted" style="margin-top:4px">{{ $o->mensaje }}</p></div>
+            </div>
+        @endforeach
+    </section>
     @endif
 
-    {{-- ALERTA DE RIEGO --}}
-    @php
-        $estadoRiego = $parcela->estado_riego;
-        $diasParaRiego = $parcela->dias_para_riego;
-    @endphp
+    <section class="panel" aria-labelledby="h-ag">
+        <div class="panel-head"><h2 id="h-ag">Agua aplicada, 45 días</h2><span class="t-sec muted">{{ $riegos->count() }} {{ $riegos->count() === 1 ? 'riego' : 'riegos' }}</span></div>
+        <div class="panel-body">
+            @if(array_sum($serieRiego['datos']) > 0)<div id="ch-riego" aria-label="Litros aplicados por día"></div>
+            @else<div class="empty" style="padding:24px 0"><h3>Aún no hay riegos</h3><p>Registra el primero y verás aquí cuánta agua usas.</p><button class="btn btn-primary" data-dlg-open="dlg-riego">Registrar riego</button></div>@endif
+        </div>
+    </section>
 
-    @if($estadoRiego === 'critico')
-        <div class="alerta-riego alerta-critica">
-            <div class="alerta-icon"><x-icono name="alerta" :size="20" /></div>
-            <div class="alerta-content">
-                <div class="alerta-title">¡RIEGO URGENTE!</div>
-                <div class="alerta-description">
-                    Esta parcela necesitaba riego hace {{ abs($diasParaRiego) }} día(s). ¡Regar inmediatamente!
-                </div>
-            </div>
+    @if($pronostico)
+    <section class="panel" aria-labelledby="h-pr">
+        <div class="panel-head"><h2 id="h-pr">Próximas 48 horas</h2><a href="{{ route('clima.index', ['parcela' => $parcela->id]) }}" class="t-sec">Clima completo</a></div>
+        <div class="panel-body">
+            <div class="legend" style="margin-bottom:8px"><span><i style="background:var(--chart-1)"></i>Temperatura</span><span><i style="background:var(--chart-3)"></i>Temperatura del suelo</span></div>
+            <div id="ch-pt" aria-label="Temperatura del aire y del suelo"></div>
+            <div id="ch-pl" style="margin-top:8px" aria-label="Lluvia prevista"></div>
         </div>
-    @elseif($estadoRiego === 'hoy')
-        <div class="alerta-riego alerta-hoy">
-            <div class="alerta-icon"><x-icono name="agua" :size="20" /></div>
-            <div class="alerta-content">
-                <div class="alerta-title">Riego Programado para HOY</div>
-                <div class="alerta-description">
-                    Es momento de regar esta parcela. Cantidad recomendada: {{ number_format($parcela->calcularLitrosPorRiego(), 2) }} litros
-                </div>
-            </div>
-        </div>
-    @elseif($estadoRiego === 'proximo')
-        <div class="alerta-riego alerta-proximo">
-            <div class="alerta-icon"><x-icono name="reloj" :size="20" /></div>
-            <div class="alerta-content">
-                <div class="alerta-title">Próximo Riego Cercano</div>
-                <div class="alerta-description">
-                    Riego programado en {{ $diasParaRiego }} día(s) - {{ $parcela->proximo_riego_estimado->format('d/m/Y') }}
-                </div>
-            </div>
-        </div>
-    @else
-        <div class="alerta-riego alerta-ok">
-            <div class="alerta-icon"><x-icono name="ok" :size="20" /></div>
-            <div class="alerta-content">
-                <div class="alerta-title">Riego al Día</div>
-                <div class="alerta-description">
-                    Próximo riego: {{ $parcela->proximo_riego_estimado->format('d/m/Y') }} (en {{ $diasParaRiego }} días)
-                </div>
-            </div>
-        </div>
+    </section>
     @endif
 
-    {{-- ESTADÍSTICAS RÁPIDAS --}}
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-header">
-                <div class="stat-icon"></div>
-                <div class="stat-label">Área Total</div>
-            </div>
-            <div class="stat-value">
-                {{ number_format($parcela->area, 2) }}
-                <span class="stat-unit">m²</span>
-            </div>
-        </div>
-
-       <div class="stat-card">
-            <div class="stat-header">
-                <div class="stat-icon"><x-icono name="agua" :size="20" /></div>
-                <div class="stat-label">Agua por Riego</div>
-            </div>
-            <div class="stat-value">
-                @php
-                    $litrosCalculados = $parcela->calcularLitrosPorRiego();
-                @endphp
-                {{ number_format($litrosCalculados, 2) }}
-                <span class="stat-unit">L</span>
-            </div>
-        </div>
-
-        <div class="stat-card">
-            <div class="stat-header">
-                <div class="stat-icon"><x-icono name="ciclo" :size="20" /></div>
-                <div class="stat-label">Frecuencia de Riego</div>
-            </div>
-            <div class="stat-value">
-                {{ $parcela->frecuencia_riego_dias }}
-                <span class="stat-unit">días</span>
-            </div>
-        </div>
-
-        <div class="stat-card">
-            <div class="stat-header">
-                <div class="stat-icon"><x-icono name="parcela" :size="20" /></div>
-                <div class="stat-label">Días desde Siembra</div>
-            </div>
-            <div class="stat-value">
-                {{ $parcela->dias_desde_siembra ?? 'N/A' }}
-                @if($parcela->dias_desde_siembra)
-                    <span class="stat-unit">días</span>
-                @endif
-            </div>
-        </div>
-    </div>
-
-    {{-- INFORMACIÓN DETALLADA --}}
-    <div class="form-card">
-        {{-- INFORMACIÓN BÁSICA --}}
-        <div class="form-section">
-            <div class="section-header">
-                <div class="section-icon"></div>
-                <div class="section-title">
-                    <h3>Información Básica</h3>
-                    <p class="section-description">Datos principales de la parcela</p>
-                </div>
-            </div>
-
-            <div class="info-row">
-                <div class="info-item">
-                    <div class="info-label">Nombre de la Parcela</div>
-                    <div class="info-value">{{ $parcela->nombre }}</div>
-                </div>
-
-                <div class="info-item">
-                    <div class="info-label">Estado</div>
-                    <div class="info-value">
-                        @if($parcela->estado === 'activa')
-                            <span class="estado-badge estado-activa">Activa</span>
-                        @elseif($parcela->estado === 'inactiva')
-                            <span class="estado-badge estado-inactiva">Inactiva</span>
-                        @else
-                            <span class="estado-badge estado-mantenimiento">Mantenimiento</span>
-                        @endif
-                    </div>
-                </div>
-
-                <div class="info-item">
-                    <div class="info-label">Tipo de Cultivo</div>
-                    <div class="info-value">
-                        {{ $parcela->cultivo->nombreCultivo }}
-                        <span class="badge badge-info">{{ $parcela->cultivo->tipo }}</span>
-                    </div>
-                </div>
-
-                <div class="info-item">
-                    <div class="info-label">Área</div>
-                    <div class="info-value">{{ number_format($parcela->area, 2) }} m²</div>
-                </div>
-            </div>
-
-            @if($parcela->progreso_siembra !== null)
-                <div class="info-item">
-                    <div class="info-label">Progreso del Cultivo</div>
-                    <div class="info-value">
-                        {{ $parcela->progreso_siembra }}% - Etapa: 
-                        <span class="badge badge-success">{{ ucfirst($parcela->etapa_crecimiento) }}</span>
-                    </div>
-                    <div class="progress-bar-container">
-                        <div class="progress-bar" style="width: {{ $parcela->progreso_siembra }}%"></div>
-                    </div>
-                </div>
-            @endif
-        </div>
-
-        {{-- UBICACIÓN --}}
-        <div class="form-section">
-            <div class="section-header">
-                <div class="section-icon"><x-icono name="parcela" :size="20" /></div>
-                <div class="section-title">
-                    <h3>Ubicación</h3>
-                    <p class="section-description">Localización geográfica</p>
-                </div>
-            </div>
-
-            <div class="info-row">
-                <div class="info-item">
-                    <div class="info-label">Región</div>
-                    <div class="info-value">{{ $parcela->ubicacion->region }}</div>
-                </div>
-
-                <div class="info-item">
-                    <div class="info-label">Provincia</div>
-                    <div class="info-value">{{ $parcela->ubicacion->provincia }}</div>
-                </div>
-
-                <div class="info-item">
-                    <div class="info-label">Distrito</div>
-                    <div class="info-value">{{ $parcela->ubicacion->distrito }}</div>
-                </div>
-            </div>
-
-            @if($parcela->ubicacion->coordenadaLatitud && $parcela->ubicacion->coordenadaLongitud)
-                <div class="info-row">
-                    <div class="info-item">
-                        <div class="info-label">Coordenadas GPS</div>
-                        <div class="info-value">
-                            {{ $parcela->ubicacion->coordenadaLatitud }}, {{ $parcela->ubicacion->coordenadaLongitud }}
-                        </div>
-                    </div>
-                </div>
-            @endif
-        </div>
-
-        {{-- INFORMACIÓN DE RIEGO --}}
-        <div class="form-section">
-            <div class="section-header">
-                <div class="section-icon"><x-icono name="agua" :size="20" /></div>
-                <div class="section-title">
-                    <h3>Gestión de Riego</h3>
-                    <p class="section-description">Control y seguimiento del riego</p>
-                </div>
-            </div>
-
-            <div class="info-row">
-                <div class="info-item">
-                    <div class="info-label">Último Riego</div>
-                    <div class="info-value">
-                        {{ $parcela->ultimo_riego ? $parcela->ultimo_riego->format('d/m/Y H:i') : 'Sin registros' }}
-                    </div>
-                </div>
-
-                <div class="info-item">
-                    <div class="info-label">Próximo Riego Estimado</div>
-                    <div class="info-value">
-                        {{ $parcela->proximo_riego_estimado->format('d/m/Y') }}
-                    </div>
-                </div>
-
-                <div class="info-item">
-                    <div class="info-label">Frecuencia de Riego</div>
-                    <div class="info-value">
-                        Cada {{ $parcela->frecuencia_riego_dias }} días
-                    </div>
-                </div>
-
-                <div class="info-item">
-                    <div class="info-label">Cantidad por Riego</div>
-                    <div class="info-value">
-                        {{ number_format($parcela->litros_por_riego, 2) }} litros
-                    </div>
-                </div>
-            </div>
-
-            @if($parcela->total_agua_utilizada > 0)
-                <div class="info-row">
-                    <div class="info-item">
-                        <div class="info-label">Total Agua Utilizada</div>
-                        <div class="info-value">
-                            {{ number_format($parcela->total_agua_utilizada, 2) }} litros
-                        </div>
-                    </div>
-
-                    <div class="info-item">
-                        <div class="info-label">Promedio por Riego</div>
-                        <div class="info-value">
-                            {{ number_format($parcela->promedio_agua_por_riego, 2) }} litros
-                        </div>
-                    </div>
-                </div>
-            @endif
-
-            {{-- FORMULARIO DE REGISTRAR RIEGO --}}
-            <div class="riego-form">
-                <h4 style="margin-bottom: 15px; font-weight: 800;">Registrar Nuevo Riego</h4>
-                <form action="{{ route('parcelas.registrar-riego', $parcela) }}" method="POST">
-                    @csrf
-                    <div class="form-group">
-                        <label for="notas" class="form-label">
-                            Notas (Opcional)
-                        </label>
-                        <textarea 
-                            name="notas" 
-                            id="notas" 
-                            class="form-control"
-                            rows="2"
-                            placeholder="Observaciones sobre este riego..."
-                        ></textarea>
-                    </div>
-
-                    <button type="submit" class="btn btn-riego">
-                        <span><x-icono name="agua" :size="20" /></span>
-                        <span>Registrar Riego Ahora</span>
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        {{-- HIDROGEL --}}
-        @if($parcela->tieneHidrogelAplicado)
-            <div class="form-section">
-                <div class="section-header">
-                    <div class="section-icon"><x-icono name="agua" :size="20" /></div>
-                    <div class="section-title">
-                        <h3>Hidrogel Aplicado</h3>
-                        <p class="section-description">Reduce consumo de agua hasta 25%</p>
-                    </div>
-                </div>
-
-                <div class="info-row">
-                    <div class="info-item">
-                        <div class="info-label">Estado</div>
-                        <div class="info-value">
-                            <span class="badge badge-success">Activo</span>
-                        </div>
-                    </div>
-
-                    <div class="info-item">
-                        <div class="info-label">Fecha de Aplicación</div>
-                        <div class="info-value">
-                            {{ $parcela->hidrogel_fecha_aplicacion->format('d/m/Y') }}
-                        </div>
-                    </div>
-
-                    <div class="info-item">
-                        <div class="info-label">Cantidad Aplicada</div>
-                        <div class="info-value">
-                            {{ number_format($parcela->hidrogel_cantidad_kg, 2) }} kg
-                        </div>
-                    </div>
-                </div>
-
-                <div style="background: linear-gradient(135deg, #d1ecf1, #bee5eb); padding: 15px; border-radius: 10px; margin-top: 15px; border: 2px solid #17a2b8;">
-                    <span style="font-size: 20px;"><x-icono name="consejo" :size="20" /></span>
-                    <span style="color: #0c5460; font-weight: 700; margin-left: 10px;">
-                        El hidrogel extiende la frecuencia de riego en +2 días
-                    </span>
-                </div>
-            </div>
-        @endif
-
-        {{-- FECHAS IMPORTANTES --}}
-        @if($parcela->fecha_siembra)
-            <div class="form-section">
-                <div class="section-header">
-                    <div class="section-icon"><x-icono name="ciclo" :size="20" /></div>
-                    <div class="section-title">
-                        <h3>Fechas del Cultivo</h3>
-                        <p class="section-description">Seguimiento del ciclo de vida</p>
-                    </div>
-                </div>
-
-                <div class="info-row">
-                    <div class="info-item">
-                        <div class="info-label">Fecha de Siembra</div>
-                        <div class="info-value">
-                            {{ $parcela->fecha_siembra->format('d/m/Y') }}
-                        </div>
-                    </div>
-
-                    <div class="info-item">
-                        <div class="info-label">Días Transcurridos</div>
-                        <div class="info-value">
-                            {{ $parcela->dias_desde_siembra }} días
-                        </div>
-                    </div>
-
-                    <div class="info-item">
-                        <div class="info-label">Etapa Actual</div>
-                        <div class="info-value">
-                            <span class="badge badge-success">
-                                {{ ucfirst($parcela->etapa_crecimiento) }}
-                            </span>
-                        </div>
-                    </div>
-
-                    @if($parcela->cultivo->cicloProductivo)
-                        <div class="info-item">
-                            <div class="info-label">Ciclo Total Estimado</div>
-                            <div class="info-value">
-                                {{ $parcela->cultivo->cicloProductivo }} días
-                            </div>
-                        </div>
-                    @endif
-                </div>
-            </div>
-        @endif
-
-        {{-- NOTAS --}}
-        @if($parcela->notas_usuario)
-            <div class="form-section">
-                <div class="section-header">
-                    <div class="section-icon"></div>
-                    <div class="section-title">
-                        <h3>Notas y Observaciones</h3>
-                        <p class="section-description">Información adicional</p>
-                    </div>
-                </div>
-
-                <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; border: 2px solid #e9ecef;">
-                    <p style="margin: 0; color: var(--dark); font-weight: 600; line-height: 1.6;">
-                        {{ $parcela->notas_usuario }}
-                    </p>
-                </div>
-            </div>
-        @endif
-
-        {{-- HISTORIAL DE RIEGOS --}}
-        <div class="form-section">
-            <div class="section-header">
-                <div class="section-icon"><x-icono name="ciclo" :size="20" /></div>
-                <div class="section-title">
-                    <h3>Historial de Riegos</h3>
-                    <p class="section-description">Últimos 20 riegos registrados</p>
-                </div>
-            </div>
-
-            @if($parcela->eventosRiego->count() > 0)
-                <div style="overflow-x: auto;">
-                    <table class="eventos-table">
-                        <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Hora</th>
-                                <th>Cantidad (L)</th>
-                                <th>Tipo</th>
-                                <th>Notas</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($parcela->eventosRiego as $evento)
-                                <tr>
-                                    <td>{{ $evento->fecha_riego->format('d/m/Y') }}</td>
-                                    <td>{{ $evento->fecha_riego->format('H:i') }}</td>
-                                    <td>
-                                        <strong>{{ number_format($evento->cantidad_agua, 2) }}</strong> L
-                                    </td>
-                                    <td>
-                                        @if($evento->tipo_riego === 'manual')
-                                            <span class="badge badge-info">Manual</span>
-                                        @else
-                                            <span class="badge badge-success">Automático</span>
-                                        @endif
-                                    </td>
-                                    <td>{{ $evento->notas ?? '-' }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @else
-                <div class="empty-state">
-                    <div class="empty-state-icon"><x-icono name="agua" :size="20" /></div>
-                    <p style="font-weight: 700; color: var(--muted);">
-                        Aún no hay riegos registrados para esta parcela
-                    </p>
-                </div>
-            @endif
-        </div>
-    </div>
+    <section class="table-frame" aria-labelledby="h-hist">
+        <div class="panel-head"><h2 id="h-hist">Historial de riegos</h2></div>
+        @if($riegos->count())
+        <div class="table-scroll"><table class="tbl"><thead><tr><th>Fecha</th><th class="r">Agua</th><th>Tipo</th><th>Notas</th></tr></thead><tbody>
+            @foreach($parcela->eventosRiego()->latest('fecha_riego')->limit(12)->get() as $e)
+                <tr><td>{{ $e->fecha_riego->translatedFormat('j M Y, H:i') }}</td><td class="r">{{ $fmt($e->cantidad_agua) }} L</td><td>{{ ucfirst($e->tipo_riego) }}</td><td class="muted">{{ $e->notas ?? '' }}</td></tr>
+            @endforeach
+        </tbody></table></div>
+        @else<div class="empty" style="padding:32px"><p>Todavía no hay riegos registrados.</p></div>@endif
+    </section>
 </div>
-@endsection-group">
-                        <label for="cantidad_agua" class="form-label">
-                            Cantidad de Agua (litros)
-                        </label>
-                        @php
-                            $litrosRecomendados = $parcela->calcularLitrosPorRiego();
-                        @endphp
-                        <input 
-                            type="number" 
-                            name="cantidad_agua" 
-                            id="cantidad_agua" 
-                            class="form-control"
-                            value="{{ $litrosRecomendados }}"
-                            step="0.01"
-                            min="0"
-                            placeholder="Litros utilizados"
-                        >
-                        <small style="color: #0c5460; font-weight: 600; margin-top: 5px; display: block;">
-                            Recomendado: {{ number_format($litrosRecomendados, 2) }} litros
-                        </small>
-                    </div>
 
-                    <div class="form
+<aside class="stack-lg" style="min-width:0">
+    <section class="panel" aria-labelledby="h-cl">
+        <div class="panel-head"><h2 id="h-cl">Clima ahora</h2>@if($c)<span class="t-meta">{{ $c->fecha_registro->diffForHumans() }}</span>@endif</div>
+        @if($c)
+        <div class="panel-body">
+            <div class="row" style="gap:16px;flex-wrap:nowrap"><img src="{{ $c->icono_url }}" alt="" width="64" height="64"><div><div class="num" style="font-size:var(--t-3xl);line-height:1">{{ number_format($c->temperatura, 0) }}&nbsp;°C</div><div class="muted">{{ $c->descripcion }}</div></div></div>
+            <dl class="dl" style="margin-top:16px">
+                <dt>Mínima prevista</dt><dd>{{ $c->temp_min_prevista !== null ? number_format($c->temp_min_prevista, 1, ',', '') . ' °C' : '-' }}</dd>
+                <dt>Máxima prevista</dt><dd>{{ $c->temp_max_prevista !== null ? number_format($c->temp_max_prevista, 1, ',', '') . ' °C' : '-' }}</dd>
+                <dt>Humedad del aire</dt><dd>{{ $c->humedad }}%</dd>
+                <dt>Viento</dt><dd>{{ number_format($c->viento_velocidad * 3.6, 0) }} km/h {{ $c->viento_direccion_texto }}</dd>
+                <dt>Lluvia, últimos 3 días</dt><dd>{{ number_format($c->lluvia_72h_mm, 1, ',', '') }} mm</dd>
+                <dt>Lluvia prevista, 24 h</dt><dd>{{ number_format($c->lluvia_24h, 1, ',', '') }} mm ({{ $c->probabilidad_lluvia_24h }}%)</dd>
+                <dt>Evapotranspiración</dt><dd>{{ $c->et0_mm !== null ? number_format($c->et0_mm, 1, ',', '') . ' mm' : '-' }}</dd>
+            </dl>
+        </div>
+        @else
+        <div class="empty" style="padding:32px 24px"><x-icono name="clima" :size="32" /><h3>{{ $parcela->tiene_gps ? 'Sin datos todavía' : 'Falta la ubicación' }}</h3><p>{{ $parcela->tiene_gps ? 'Pulsa «Actualizar clima» para traer los datos.' : 'Agrega las coordenadas GPS para ver el clima de esta parcela.' }}</p>@unless($parcela->tiene_gps)<a href="{{ route('parcelas.edit', $parcela) }}" class="btn">Agregar coordenadas</a>@endunless</div>
+        @endif
+    </section>
+
+    @if($recomendaciones->count())
+    <section class="panel" aria-labelledby="h-rc">
+        <div class="panel-head"><h2 id="h-rc">Recomendaciones</h2><a href="{{ route('parcelas.recomendaciones', $parcela) }}" class="t-sec">Ver todas</a></div>
+        @foreach($recomendaciones as $r)<div class="item" style="border-top:1px solid var(--border)"><span class="ic"><x-icono :name="$r->icono" :size="20" /></span><div class="body"><span class="title">{{ $r->titulo }}</span></div></div>@endforeach
+    </section>
+    @endif
+
+    <section class="panel" aria-labelledby="h-cv">
+        <div class="panel-head"><h2 id="h-cv">Cultivo</h2>@if($cu)<a href="{{ route('cultivos.show', $cu) }}" class="t-sec">Ver ficha</a>@endif</div>
+        <div class="panel-body">
+            @if($cu)
+            <dl class="dl">
+                <dt>Cultivo</dt><dd>{{ $cu->nombreCultivo }}</dd>
+                <dt>Riego cada</dt><dd>{{ $cu->frecuenciaRiegoMin }} a {{ $cu->frecuenciaRiegoMax }} días</dd>
+                <dt>Consumo</dt><dd>{{ rtrim(rtrim(number_format($cu->litrosPorM2Dia, 2, ',', ''), '0'), ',') }} L/m² al día</dd>
+                <dt>Soporta</dt><dd>{{ rtrim(rtrim(number_format($cu->tempCriticaMinima, 1, ',', ''), '0'), ',') }} a {{ rtrim(rtrim(number_format($cu->tempCriticaMaxima, 1, ',', ''), '0'), ',') }} °C</dd>
+                @if($parcela->fecha_siembra)<dt>Sembrado</dt><dd>{{ $parcela->fecha_siembra->translatedFormat('j M Y') }}</dd>@endif
+                @if($parcela->tieneHidrogelAplicado)<dt>Hidrogel</dt><dd>{{ $parcela->hidrogel_cantidad_kg }} kg</dd>@endif
+            </dl>
+            @if($progresoCiclo !== null)<div style="margin-top:16px"><div class="row between t-sec"><span>Avance del ciclo</span><span class="num">{{ $progresoCiclo }}%</span></div><div class="progress" style="margin-top:6px" role="progressbar" aria-valuenow="{{ $progresoCiclo }}" aria-valuemin="0" aria-valuemax="100"><i style="width:{{ $progresoCiclo }}%"></i></div><div class="t-meta" style="margin-top:4px">{{ $parcela->dias_desde_siembra }} de {{ $cu->cicloProductivo }} días</div></div>@endif
+            @else<p class="muted">Esta parcela no tiene cultivo asignado.</p>@endif
+        </div>
+    </section>
+
+    <section class="panel" aria-labelledby="h-ub">
+        <div class="panel-head"><h2 id="h-ub">Ubicación</h2></div>
+        <div class="panel-body">
+            <dl class="dl">
+                <dt>Departamento</dt><dd>{{ $parcela->ubicacion?->region ?? '-' }}</dd>
+                <dt>Provincia</dt><dd>{{ $parcela->ubicacion?->provincia ?? '-' }}</dd>
+                <dt>Distrito</dt><dd>{{ $parcela->ubicacion?->distrito ?? '-' }}</dd>
+                @if($parcela->tiene_gps)<dt>Coordenadas</dt><dd class="num">{{ number_format($parcela->latitud_efectiva, 4) }}, {{ number_format($parcela->longitud_efectiva, 4) }}</dd>@endif
+                @if($parcela->altitud)<dt>Altitud</dt><dd>{{ $fmt($parcela->altitud) }} m s. n. m.</dd>@endif
+            </dl>
+            @if($parcela->tiene_gps)
+                <p class="t-meta" style="margin-top:8px">{{ $parcela->gps_propio ? 'GPS de la propia parcela.' : 'Usando el centro del distrito.' }} <a href="https://www.openstreetmap.org/?mlat={{ $parcela->latitud_efectiva }}&mlon={{ $parcela->longitud_efectiva }}#map=15/{{ $parcela->latitud_efectiva }}/{{ $parcela->longitud_efectiva }}" target="_blank" rel="noopener">Ver en el mapa</a></p>
+            @endif
+        </div>
+    </section>
+
+    @if($parcela->notas_usuario)<section class="panel"><div class="panel-head"><h2>Notas</h2></div><div class="panel-body"><p class="prose">{{ $parcela->notas_usuario }}</p></div></section>@endif
+</aside>
+</div>
+
+{{-- Registrar riego --}}
+<dialog class="dlg" id="dlg-riego" aria-labelledby="t-riego">
+    <form method="POST" action="{{ route('parcelas.registrar-riego', $parcela) }}">@csrf
+        <div class="dlg-head"><h3 id="t-riego">Registrar riego</h3><p class="t-sec muted" style="margin-top:4px">{{ $parcela->nombre }}</p></div>
+        <div class="dlg-body stack">
+            <div class="field"><label for="r-cant">Agua aplicada (litros)</label><input id="r-cant" name="cantidad_agua" type="number" min="0" step="1" class="input" value="{{ old('cantidad_agua', (int) $calc['litros_total'] ?: '') }}" inputmode="numeric"><span class="hint">Sugerido hoy: {{ $plan['texto'] }}. Si lo dejas vacío se usa esa cantidad.</span>@error('cantidad_agua')<span class="err">{{ $message }}</span>@enderror</div>
+            <div class="form-grid"><div class="field"><label for="r-fecha">Fecha</label><input id="r-fecha" name="fecha" type="date" class="input" value="{{ old('fecha', now()->toDateString()) }}" max="{{ now()->toDateString() }}">@error('fecha')<span class="err">{{ $message }}</span>@enderror</div>
+            <div class="field"><label for="r-tipo">Tipo de riego</label><select id="r-tipo" name="tipo_riego" class="select"><option value="manual">Manual</option><option value="goteo">Goteo</option><option value="aspersion">Aspersión</option></select></div></div>
+            <div class="field"><label for="r-notas">Notas <span class="muted" style="font-weight:var(--w-regular)">(opcional)</span></label><textarea id="r-notas" name="notas" class="textarea" style="min-height:64px" maxlength="500"></textarea></div>
+        </div>
+        <div class="dlg-foot"><button type="button" class="btn" data-dlg-close>Cancelar</button><button type="submit" class="btn btn-primary" data-ocupado="Guardando...">Registrar riego</button></div>
+    </form>
+</dialog>
+@if($errors->has('cantidad_agua') || $errors->has('fecha'))
+@push('scripts')<script>document.addEventListener('DOMContentLoaded', function () { document.getElementById('dlg-riego').showModal(); });</script>@endpush
+@endif
+@endsection
+
+@push('scripts')
+<script src="{{ asset('js/makiyaku/charts.js') }}?v={{ @filemtime(public_path('js/makiyaku/charts.js')) }}" defer></script>
+<script defer>
+document.addEventListener('DOMContentLoaded', function () {
+  var r = document.getElementById('ch-riego');
+  if (r) MKCharts.barras(r, { labels: @json($serieRiego['labels']), series: [{ nombre: 'Agua', datos: @json($serieRiego['datos']), color: 'chart-1' }], alto: 200, unidadY: 'L', fmtY: function (v) { return v >= 1000 ? MKCharts.fnum(v / 1000) + 'k' : MKCharts.fnum(v); }, fmtTip: function (v) { return MKCharts.fnum(v, 0) + ' L'; }, maxX: 9 });
+  @if($pronostico)
+  var lab = @json($lbl), tit = @json($ttl), H = @json($h48);
+  MKCharts.linea(document.getElementById('ch-pt'), { labels: lab, titulos: tit, series: [
+    { nombre: 'Aire', datos: H.map(function (h) { return h.temperature_2m; }), color: 'chart-1', area: true },
+    { nombre: 'Suelo (6 cm)', datos: H.map(function (h) { return h.soil_temperature_6cm; }), color: 'chart-3', dash: '5 4', ancho: 2 }
+  ], alto: 190, unidadY: '°C', fmtY: function (v) { return MKCharts.fnum(v, 0); }, fmtTip: function (v) { return MKCharts.fnum(v, 1) + ' °C'; }, lineas: [{ valor: {{ (float) ($cu->tempCriticaMinima ?? 0) }}, texto: 'Límite del cultivo', color: 'critico' }], ahora: 0, maxX: 8 });
+  MKCharts.barras(document.getElementById('ch-pl'), { labels: lab, titulos: tit, series: [{ nombre: 'Lluvia', datos: H.map(function (h) { return h.precipitation; }), color: 'chart-2' }], linea: { nombre: 'Probabilidad', datos: H.map(function (h) { return h.precipitation_probability; }), color: 'chart-3', max: 100, fmt: function (v) { return MKCharts.fnum(v, 0) + '%'; } }, alto: 140, unidadY: 'mm', fmtY: function (v) { return MKCharts.fnum(v, 1); }, fmtTip: function (v) { return MKCharts.fnum(v, 1) + ' mm'; }, maxX: 8 });
+  @endif
+});
+</script>
+@endpush

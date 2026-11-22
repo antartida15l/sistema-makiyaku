@@ -74,13 +74,13 @@ class RiegoServiceTest extends TestCase
             'litros_total' => 180, 'litros_m2' => 9.0, 'baldes' => 9.0,
         ]);
 
-        $this->assertSame('180 L en total (9 L por m2, unos 9 baldes de 20 L)', $texto);
+        $this->assertSame('180 L en total (9 L por m², unos 9 baldes de 20 L)', $texto);
 
         // parcela grande: se expresa en metros cubicos, no en cientos de baldes
         $grande = app(RiegoService::class)->textoCantidad([
             'litros_total' => 14610, 'litros_m2' => 36.5, 'baldes' => 730.5,
         ]);
 
-        $this->assertSame('14,6 m3 (14.610 L) en total (36,5 L por m2)', $grande);
+        $this->assertSame('14,6 m³ (14.610 L) en total (36,5 L por m²)', $grande);
     }
 }

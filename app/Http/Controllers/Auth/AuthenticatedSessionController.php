@@ -28,6 +28,11 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // La presentacion se muestra cada vez que se entra al sistema (salvo que el usuario la apague).
+        if ($request->user()->pref('intro', true)) {
+            $request->session()->flash('intro', true);
+        }
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 

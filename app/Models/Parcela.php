@@ -15,7 +15,7 @@ class Parcela extends Model
 
     protected $fillable = [
         'user_id', 'nombre', 'area', 'estado',
-        'idUbicacion', 'idCultivo',
+        'idUbicacion', 'idCultivo', 'latitud', 'longitud', 'altitud',
         'ultimo_riego', 'frecuencia_riego_dias', 'litros_por_riego', 'proximo_riego_estimado',
         'fecha_siembra', 'dias_desde_siembra',
         'tieneHidrogelAplicado', 'hidrogel_fecha_aplicacion', 'hidrogel_cantidad_kg',
@@ -35,6 +35,8 @@ class Parcela extends Model
         'hidrogel_cantidad_kg' => 'decimal:2',
         'tieneHidrogelAplicado' => 'boolean',
         'condiciones_especiales' => 'array',
+        'latitud' => 'float',
+        'longitud' => 'float',
         'humedad_minima' => 'decimal:2',
         'humedad_maxima' => 'decimal:2',
     ];
@@ -163,6 +165,65 @@ class Parcela extends Model
     // ============================================
     // ACCESSORS
     // ============================================
+
+    // ============================================
+    // GPS y balance de agua
+    // ============================================
+
+    /** Latitud de la parcela; si no tiene, la del distrito. */
+    public function getLatitudEfectivaAttribute(): ?float
+    {
+        $v = $this->latitud ?? $this->ubicacion?->coordenadaLatitud;
+
+        return $v === null ? null : (float) $v;
+    }
+
+    public function getLongitudEfectivaAttribute(): ?float
+    {
+        $v = $this->longitud ?? $this->ubicacion?->coordenadaLongitud;
+
+        return $v === null ? null : (float) $v;
+    }
+
+    public function getTieneGpsAttribute(): bool
+    {
+        return $this->latitud_efectiva !== null && $this->longitud_efectiva !== null;
+    }
+
+    /** true si las coordenadas son de la propia parcela y no del distrito. */
+    public function getGpsPropioAttribute(): bool
+    {
+        return $this->latitud !== null && $this->longitud !== null;
+    }
+
+    /**
+     * Cuanta agua le queda al suelo segun el ciclo de riego (0 a 100). Es lo que dibuja la gota:
+     * recien regado = 100, toca regar = 0.
+     */
+    public function getNivelAguaAttribute(): int
+    {
+        if (!$this->ultimo_riego || !$this->cultivo) {
+            return 50;
+        }
+
+        $dias = (int) Carbon::parse($this->ultimo_riego)->startOfDay()->diffInDays(Carbon::today());
+        $frecuencia = max(1, app(RiegoService::class)->frecuenciaDias($this, $this->climaActual));
+
+        return (int) max(0, min(100, round(100 * (1 - $dias / $frecuencia))));
+    }
+
+    /** Color de la gota: sigue a la alerta de riego activa; si no hay, al nivel de agua. */
+    public function getTonoRiegoAttribute(): string
+    {
+        if ($this->relationLoaded('alertas')) {
+            $a = $this->alertas->where('grupo', Alerta::GRUPO_RIEGO)->where('archivada', false)->first();
+            if ($a) {
+                return $a->nivel;
+            }
+        }
+
+        return $this->nivel_agua <= 25 ? 'medio' : 'ok';
+    }
 
     public function getNecesitaRiegoAttribute(): bool
     {
@@ -361,35 +422,36 @@ class Parcela extends Model
     }
 
     /**
-     * Registra un nuevo riego
+     * Registra un riego, actualiza las fechas y deja la frecuencia calculada con el clima actual.
      */
-    public function registrarRiego(float $litrosUtilizados = null, string $tipoRiego = 'manual', ?string $notas = null): EventoRiego
+    public function registrarRiego(?float $litrosUtilizados = null, string $tipoRiego = 'manual', ?string $notas = null, ?Carbon $fecha = null): EventoRiego
     {
-        // Si no se especifican litros, calcularlos ahora
+        $fecha ??= Carbon::now();
+
         if ($litrosUtilizados === null) {
-            $litrosUtilizados = $this->calcularLitrosPorRiego();
-            
-            // Si sigue siendo 0, usar un valor por defecto
-            if ($litrosUtilizados == 0) {
-                $litrosUtilizados = $this->area * 5; // 5 litros por m² como fallback
-            }
+            $litrosUtilizados = $this->calcularLitrosPorRiego() ?: $this->area * 5;
         }
-        
-        // Crear evento de riego
-        $eventoRiego = $this->eventosRiego()->create([
-            'fecha_riego' => Carbon::now(),
+
+        $evento = $this->eventosRiego()->create([
+            'fecha_riego' => $fecha,
             'cantidad_agua' => $litrosUtilizados,
             'tipo_riego' => $tipoRiego,
             'notas' => $notas,
         ]);
 
-        // Actualizar fechas de riego
-        $this->update([
-            'ultimo_riego' => Carbon::now(),
-            'proximo_riego_estimado' => Carbon::now()->addDays($this->frecuencia_riego_dias),
-        ]);
+        // Solo adelanta el "ultimo riego": si se registra uno viejo no pisa a uno mas reciente
+        if (!$this->ultimo_riego || $fecha->greaterThanOrEqualTo($this->ultimo_riego)) {
+            $this->loadMissing('cultivo');
+            $frecuencia = app(RiegoService::class)->frecuenciaDias($this, $this->climaActual) ?: $this->frecuencia_riego_dias;
 
-        return $eventoRiego;
+            $this->update([
+                'ultimo_riego' => $fecha,
+                'frecuencia_riego_dias' => $frecuencia,
+                'proximo_riego_estimado' => $fecha->copy()->addDays($frecuencia),
+            ]);
+        }
+
+        return $evento;
     }
 
     public function actualizarDiasSiembra(): void

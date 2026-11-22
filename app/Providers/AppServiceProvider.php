@@ -9,6 +9,8 @@ use App\Services\MonitoreoService;
 use App\Services\OpenMeteoService;
 use App\Services\RiegoService;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\View;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -23,6 +25,14 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        Paginator::defaultView('vendor.pagination.mk');
+        Paginator::defaultSimpleView('vendor.pagination.mk');
+
+        // Contador de alertas del menu lateral (una consulta por pagina)
+        View::composer('layouts.app', function ($vista) {
+            $vista->with('alertasActivas', auth()->check() ? \App\Models\Alerta::contarActivasPorUsuario(auth()->id()) : 0);
+        });
+
         {
             if (config('app.env') !== 'local') {
                 URL::forceScheme('https');
