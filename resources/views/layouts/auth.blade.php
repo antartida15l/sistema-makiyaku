@@ -9,7 +9,7 @@
 <div class="auth">
     <aside class="auth-brand" aria-hidden="false">
         <canvas id="hojas-auth" aria-hidden="true"></canvas>
-        <a href="{{ url('/') }}" class="brand-top" style="color:#fff"><x-logo :size="48" :dark="true" />Makiyaku</a>
+        <a href="{{ url('/') }}" class="brand-top" style="color:#fff"><x-logo :size="44" :mono="true" />makiyaku</a>
         <div class="lead">
             <h1>Cada gota, en el momento justo.</h1>
             <p>Makiyaku cruza el clima real de tu parcela con lo que pide cada cultivo y te dice cuándo regar, cuánta agua usar y cuándo proteger de la helada.</p>
@@ -18,7 +18,7 @@
     </aside>
     <main class="auth-panel">
         <div class="auth-card">
-            <a href="{{ url('/') }}" class="brand-mobile" style="color:var(--ink)"><x-logo :size="44" />Makiyaku</a>
+            <a href="{{ url('/') }}" class="brand-mobile" style="color:var(--ink)"><x-logo :size="40" />makiyaku</a>
             @yield('content')
         </div>
     </main>

@@ -197,6 +197,7 @@ class ClimaController extends Controller
                 'et0' => $col('et0_fao_evapotranspiration', 2), 'vpd' => $col('vapour_pressure_deficit', 2),
                 's0' => $col('soil_temperature_0cm'), 's6' => $col('soil_temperature_6cm'), 's18' => $col('soil_temperature_18cm'), 's54' => $col('soil_temperature_54cm'),
                 'iso0' => $col('freezing_level_height', 0), 'cape' => $col('cape', 0),
+                'hs' => $pct('soil_moisture_3_to_9cm'), 'hs0' => $pct('soil_moisture_0_to_1cm'), 'hs27' => $pct('soil_moisture_9_to_27cm'),
             ],
             'd' => [
                 'lab' => array_map(fn ($x) => Carbon::parse($x['fecha'])->translatedFormat('D j'), $dias),

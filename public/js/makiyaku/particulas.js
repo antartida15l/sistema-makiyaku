@@ -9,8 +9,8 @@
   var VEIN = new Path2D('M0,-.85 L0,.85');
 
   var PALETAS = {
-    claro: ['#2f7d5c', '#5fa57d', '#8cc97a', '#a3cc9b', '#c99a3d'],
-    oscuro: ['#8cc97a', '#6fd1a8', '#c9e6a0', '#a3cc9b', '#e3ab3a']
+    claro: ['#12b99f', '#5fd6c4', '#9edece', '#c5db5d', '#8db321', '#7b9677'],
+    oscuro: ['#3fd6c4', '#9edece', '#def08c', '#c5db5d', '#ffffff']
   };
 
   function Hojas(canvas, opts) {
@@ -119,11 +119,11 @@
       var h = MKLeaves.crear(cv, { densidad: 1 / 90000, max: 18, alpha: oscuro() ? .22 : .3, paleta: oscuro() ? 'oscuro' : 'claro', velocidad: .8, tamano: [10, 22] });
       new MutationObserver(function () {
         h.o.paleta = oscuro() ? 'oscuro' : 'claro'; h.o.alpha = oscuro() ? .22 : .3;
-        h.hojas.forEach(function (x) { x.color = PALETAS[h.o.paleta][(Math.random() * 5) | 0]; });
+        h.hojas.forEach(function (x) { x.color = PALETAS[h.o.paleta][(Math.random() * PALETAS[h.o.paleta].length) | 0]; });
       }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
     }
-    [['hojas-auth', { cantidad: 34, alpha: .5, paleta: 'oscuro', tamano: [14, 34], velocidad: 1 }],
-     ['hojas-hero', { cantidad: window.innerWidth < 700 ? 22 : 46, alpha: .4, paleta: 'oscuro', tamano: [14, 40], velocidad: 1.05 }]].forEach(function (c) {
+    [['hojas-auth', { cantidad: 34, alpha: .55, paleta: 'oscuro', tamano: [14, 34], velocidad: 1 }],
+     ['hojas-hero', { cantidad: window.innerWidth < 700 ? 18 : 38, alpha: .45, paleta: 'claro', tamano: [14, 40], velocidad: 1.05 }]].forEach(function (c) {
       var e = document.getElementById(c[0]); if (e) MKLeaves.crear(e, c[1]);
     });
   });

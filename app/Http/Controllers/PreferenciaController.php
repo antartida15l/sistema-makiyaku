@@ -16,7 +16,6 @@ class PreferenciaController extends Controller
             'tema' => ['sometimes', 'in:light,dark'],
             'sonido' => ['sometimes', 'boolean'],
             'volumen' => ['sometimes', 'numeric', 'between:0,1'],
-            'intro' => ['sometimes', 'boolean'],
             'hojas' => ['sometimes', 'boolean'],
         ]);
 

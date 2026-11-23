@@ -101,7 +101,13 @@
                 </div>
                 <div class="panel-body">
                     @if($parcelaClima)
-                        <div class="legend" style="margin-bottom:8px"><span><i style="background:var(--chart-1)"></i>Temperatura</span><span><i style="background:var(--chart-2)"></i>Lluvia</span></div>
+                        
+                        <div class="agro" id="agro-dash" style="margin-bottom:20px">
+                            <div class="agro-card"><span class="l">ET₀ hoy</span><span class="v" data-a="et0">-</span><span class="d">mm de agua que se evaporan</span></div>
+                            <div class="agro-card" style="--k:var(--lima-hondo)"><span class="l">Humedad del suelo</span><span class="v" data-a="suelo">-</span><span class="d">capa de 0 a 9 cm</span></div>
+                            <div class="agro-card" style="--k:var(--chart-4)"><span class="l">Radiación solar</span><span class="v" data-a="radiacion">-</span><span class="d">kWh/m² en el día</span></div>
+                            <div class="agro-card" style="--k:var(--chart-5)"><span class="l">Prob. de lluvia</span><span class="v" data-a="prob">-</span><span class="d" data-a="lluvia">en 24 horas</span></div>
+                        </div>
                         <div id="ch-temp" aria-label="Temperatura prevista"></div>
                         <div id="ch-lluvia" aria-label="Lluvia prevista" style="margin-top:8px"></div>
                         <p id="msg-clima" class="t-sec muted hide"></p>
@@ -184,9 +190,11 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('lnk-clima').href = rutaC + '?parcela=' + id;
     fetch(rutaP + '?parcela_id=' + id, { headers: { Accept: 'application/json' }, credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (j) {
       if (!j.success) { msg.textContent = j.message; msg.classList.remove('hide'); return; } msg.classList.add('hide');
-      var dd = j.data;
-      MKCharts.linea(document.getElementById('ch-temp'), { labels: dd.labels, titulos: dd.titulos, series: [{ nombre: 'Temperatura', datos: dd.temp, color: 'chart-1', area: true }], alto: 190, unidadY: '°C', fmtY: function (v) { return MKCharts.fnum(v, 0); }, fmtTip: function (v) { return MKCharts.fnum(v, 1) + ' °C'; }, lineas: [{ valor: 0, texto: 'Helada', color: 'medio' }], ahora: 0, maxX: 8 });
-      MKCharts.barras(document.getElementById('ch-lluvia'), { labels: dd.labels, titulos: dd.titulos, series: [{ nombre: 'Lluvia', datos: dd.lluvia, color: 'chart-2' }], linea: { nombre: 'Probabilidad', datos: dd.prob, color: 'chart-3', max: 100, fmt: function (v) { return MKCharts.fnum(v, 0) + '%'; } }, alto: 150, unidadY: 'mm', fmtY: function (v) { return MKCharts.fnum(v, 1); }, fmtTip: function (v) { return MKCharts.fnum(v, 1) + ' mm'; }, maxX: 8 });
+      var dd = j.data, ag = j.agro || {}, f1 = function (v) { return v === null || v === undefined ? '-' : MKCharts.fnum(v, 1); };
+      var put = function (k, t) { var e = document.querySelector('#agro-dash [data-a="' + k + '"]'); if (e) e.textContent = t; };
+      put('et0', f1(ag.et0) + ' mm'); put('suelo', f1(ag.suelo) + '%'); put('radiacion', f1(ag.radiacion)); put('prob', (ag.prob === null || ag.prob === undefined ? '-' : ag.prob) + '%'); put('lluvia', f1(ag.lluvia) + ' mm en 24 horas');
+      MKCharts.linea(document.getElementById('ch-temp'), { rangos: [24, 48], labels: dd.labels, titulos: dd.titulos, series: [{ nombre: 'Temperatura', datos: dd.temp, color: 'chart-1', area: true }], alto: 190, unidadY: '°C', fmtY: function (v) { return MKCharts.fnum(v, 0); }, fmtTip: function (v) { return MKCharts.fnum(v, 1) + ' °C'; }, lineas: [{ valor: 0, texto: 'Helada', color: 'medio' }], ahora: 0, maxX: 8 });
+      MKCharts.barras(document.getElementById('ch-lluvia'), { rangos: [24, 48], labels: dd.labels, titulos: dd.titulos, series: [{ nombre: 'Lluvia', datos: dd.lluvia, color: 'chart-2' }], linea: { nombre: 'Probabilidad', datos: dd.prob, color: 'chart-3', max: 100, fmt: function (v) { return MKCharts.fnum(v, 0) + '%'; } }, alto: 150, unidadY: 'mm', fmtY: function (v) { return MKCharts.fnum(v, 1); }, fmtTip: function (v) { return MKCharts.fnum(v, 1) + ' mm'; }, maxX: 8 });
       document.dispatchEvent(new Event('mk:redibujar'));
     }).catch(function () { msg.textContent = 'No se pudo cargar el pronóstico.'; msg.classList.remove('hide'); });
   }

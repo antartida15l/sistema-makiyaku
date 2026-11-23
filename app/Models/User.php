@@ -16,7 +16,6 @@ class User extends Authenticatable
         'tema' => 'light',      // light | dark
         'sonido' => true,       // sonido de alertas
         'volumen' => 0.6,       // 0 a 1
-        'intro' => true,        // mostrar la presentacion al entrar
         'hojas' => true,        // hojas flotantes de fondo
     ];
 

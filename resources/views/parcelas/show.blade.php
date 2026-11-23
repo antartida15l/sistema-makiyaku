@@ -15,6 +15,8 @@
     $z = $pronostico['lugar']['zona'] ?? 'America/Lima';
     $lbl = array_map(fn ($x) => \Carbon\Carbon::createFromTimestamp($x['ts'], $z)->format('H:i'), $h48);
     $ttl = array_map(fn ($x) => \Carbon\Carbon::createFromTimestamp($x['ts'], $z)->translatedFormat('D j, H:i'), $h48);
+    $hoyP = $pronostico ? (collect($pronostico['dias'])->firstWhere('es_hoy', true) ?? []) : [];
+    $sueloP = $pronostico ? collect($pronostico['agro']['humedad_suelo'])->take(3)->pluck('humedad')->filter(fn ($v) => $v !== null) : collect();
 @endphp
 
 <header class="page-head">
@@ -79,7 +81,12 @@
     <section class="panel" aria-labelledby="h-pr">
         <div class="panel-head"><h2 id="h-pr">Próximas 48 horas</h2><a href="{{ route('clima.index', ['parcela' => $parcela->id]) }}" class="t-sec">Clima completo</a></div>
         <div class="panel-body">
-            <div class="legend" style="margin-bottom:8px"><span><i style="background:var(--chart-1)"></i>Temperatura</span><span><i style="background:var(--chart-3)"></i>Temperatura del suelo</span></div>
+            <div class="agro" style="margin-bottom:20px">
+                <div class="agro-card"><span class="l">ET₀ hoy</span><span class="v">{{ isset($hoyP['et0_fao_evapotranspiration']) ? number_format($hoyP['et0_fao_evapotranspiration'], 1, ',', '') : '-' }} mm</span><span class="d">agua que se evapora</span></div>
+                <div class="agro-card" style="--k:var(--lima-hondo)"><span class="l">Humedad del suelo</span><span class="v">{{ $sueloP->count() ? number_format($sueloP->avg(), 1, ',', '') . '%' : '-' }}</span><span class="d">capa de 0 a 9 cm</span></div>
+                <div class="agro-card" style="--k:var(--chart-4)"><span class="l">Radiación solar</span><span class="v">{{ isset($hoyP['shortwave_radiation_sum']) ? number_format($hoyP['shortwave_radiation_sum'] / 3.6, 1, ',', '') : '-' }}</span><span class="d">kWh/m² en el día</span></div>
+                <div class="agro-card" style="--k:var(--chart-5)"><span class="l">Prob. de lluvia</span><span class="v">{{ $pronostico['agro']['prob_lluvia_24h'] }}%</span><span class="d">{{ number_format($pronostico['agro']['lluvia_24h'], 1, ',', '') }} mm en 24 h</span></div>
+            </div>
             <div id="ch-pt" aria-label="Temperatura del aire y del suelo"></div>
             <div id="ch-pl" style="margin-top:8px" aria-label="Lluvia prevista"></div>
         </div>
@@ -189,11 +196,11 @@ document.addEventListener('DOMContentLoaded', function () {
   if (r) MKCharts.barras(r, { labels: @json($serieRiego['labels']), series: [{ nombre: 'Agua', datos: @json($serieRiego['datos']), color: 'chart-1' }], alto: 200, unidadY: 'L', fmtY: function (v) { return v >= 1000 ? MKCharts.fnum(v / 1000) + 'k' : MKCharts.fnum(v); }, fmtTip: function (v) { return MKCharts.fnum(v, 0) + ' L'; }, maxX: 9 });
   @if($pronostico)
   var lab = @json($lbl), tit = @json($ttl), H = @json($h48);
-  MKCharts.linea(document.getElementById('ch-pt'), { labels: lab, titulos: tit, series: [
+  MKCharts.linea(document.getElementById('ch-pt'), { rangos: [24, 48], labels: lab, titulos: tit, series: [
     { nombre: 'Aire', datos: H.map(function (h) { return h.temperature_2m; }), color: 'chart-1', area: true },
     { nombre: 'Suelo (6 cm)', datos: H.map(function (h) { return h.soil_temperature_6cm; }), color: 'chart-3', dash: '5 4', ancho: 2 }
   ], alto: 190, unidadY: '°C', fmtY: function (v) { return MKCharts.fnum(v, 0); }, fmtTip: function (v) { return MKCharts.fnum(v, 1) + ' °C'; }, lineas: [{ valor: {{ (float) ($cu->tempCriticaMinima ?? 0) }}, texto: 'Límite del cultivo', color: 'critico' }], ahora: 0, maxX: 8 });
-  MKCharts.barras(document.getElementById('ch-pl'), { labels: lab, titulos: tit, series: [{ nombre: 'Lluvia', datos: H.map(function (h) { return h.precipitation; }), color: 'chart-2' }], linea: { nombre: 'Probabilidad', datos: H.map(function (h) { return h.precipitation_probability; }), color: 'chart-3', max: 100, fmt: function (v) { return MKCharts.fnum(v, 0) + '%'; } }, alto: 140, unidadY: 'mm', fmtY: function (v) { return MKCharts.fnum(v, 1); }, fmtTip: function (v) { return MKCharts.fnum(v, 1) + ' mm'; }, maxX: 8 });
+  MKCharts.barras(document.getElementById('ch-pl'), { rangos: [24, 48], labels: lab, titulos: tit, series: [{ nombre: 'Lluvia', datos: H.map(function (h) { return h.precipitation; }), color: 'chart-2' }], linea: { nombre: 'Probabilidad', datos: H.map(function (h) { return h.precipitation_probability; }), color: 'chart-3', max: 100, fmt: function (v) { return MKCharts.fnum(v, 0) + '%'; } }, alto: 140, unidadY: 'mm', fmtY: function (v) { return MKCharts.fnum(v, 1); }, fmtTip: function (v) { return MKCharts.fnum(v, 1) + ' mm'; }, maxX: 8 });
   @endif
 });
 </script>

@@ -75,7 +75,7 @@
     @if($climaR)
     <section aria-labelledby="r-cl">
         <h2 id="r-cl">Clima registrado</h2>
-        @if(count($climaR['serie']['labels']))<div class="legend" style="margin-top:12px"><span><i style="background:var(--chart-2)"></i>Máxima</span><span><i style="background:var(--chart-1)"></i>Mínima</span></div><div id="rc-clima" aria-label="Temperaturas diarias registradas"></div>
+        @if(count($climaR['serie']['labels']))<div id="rc-clima" aria-label="Temperaturas diarias registradas"></div>
         <div class="table-frame" style="margin-top:16px"><div class="table-scroll"><table class="tbl"><thead><tr><th>Parcela</th><th class="r">Registros</th><th class="r">Temp. media</th><th class="r">Mínima</th><th class="r">Máxima</th><th class="r">Humedad</th><th class="r">Lluvia máx. 3 días</th></tr></thead><tbody>
             @foreach($climaR['por_parcela'] as $f)<tr><td>{{ $f['parcela'] }}</td><td class="r">{{ $f['registros'] }}</td><td class="r">{{ $fmt($f['temp_media'], 1) }} °C</td><td class="r">{{ $fmt($f['temp_min'], 1) }} °C</td><td class="r">{{ $fmt($f['temp_max'], 1) }} °C</td><td class="r">{{ $f['humedad_media'] }}%</td><td class="r">{{ $fmt($f['lluvia_max_72h'], 1) }} mm</td></tr>@endforeach
         </tbody></table></div></div>

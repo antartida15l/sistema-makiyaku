@@ -35,8 +35,8 @@ Sin eso, el panel y la pantalla de alertas actualizan solos (máximo una vez cad
 | Alertas | Una escala única de intensidad, una alerta por tema y parcela, sonidos por nivel, volumen ajustable. |
 | Recomendaciones | Generadas desde las mismas alertas y el mismo cálculo de agua. Global y por parcela. |
 | Reportes | Resumen, agua, alertas, clima y estado de cultivos. En pantalla, imprimible (PDF) y CSV para Excel. |
-| Presentación | Video animado con hojas y sonido sintetizado al entrar. También disponible como MP4 en `public/media/`. |
-| Perfil | Tema claro/oscuro, sonido, volumen, presentación y hojas flotantes (se guardan en la cuenta). |
+| Entrada | Animación con sonido que se reproduce sola al entrar al sistema (al iniciar sesión y al abrir el navegador); termina con el logo volando a la barra superior. También como MP4 en `public/media/`. |
+| Perfil | Tema claro/oscuro, sonido, volumen y hojas flotantes (se guardan en la cuenta). |
 
 ## Estructura útil
 
@@ -51,13 +51,15 @@ Sin eso, el panel y la pantalla de alertas actualizan solos (máximo una vez cad
 
 ## Diseño
 
-Paleta derivada del logo: verde bosque, neblina mineral y noche andina, con un único acento interactivo. Tipografías Bricolage Grotesque (títulos y cifras) y Figtree (interfaz), incluidas en `public/fonts`, sin depender de internet. Sin emojis: iconos SVG propios.
+Logo: una gota formada por dos hojas (turquesa y lima) unidas por la nervadura. Paleta: aguamarina `#9edece`, turquesa `#12b99f`, salvia `#7b9677`, lima `#c5db5d` y lima claro `#def08c`, sobre fondo claro; el acento interactivo es un turquesa profundo (`#0a7d72`) para que el texto se lea bien. Navegación superior clara y barra inferior en el celular. Tipografías Bricolage Grotesque (títulos y cifras) y Figtree (interfaz), incluidas en `public/fonts`, sin depender de internet. Sin emojis: iconos SVG propios.
 
 ## Pruebas
 
 ```bash
 php artisan test
 ```
+
+Las pruebas pasan en SQLite y en MySQL/MariaDB (para MariaDB: `DB_CONNECTION=mysql DB_DATABASE=makiyaku_test php artisan test`).
 
 ## Datos meteorológicos
 

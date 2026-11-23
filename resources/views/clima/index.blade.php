@@ -9,8 +9,12 @@
     $n = fn ($v, $d = 1) => $v === null ? '-' : number_format($v, $d, ',', '.');
     $dir = function ($g) { $d = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSO','SO','OSO','O','ONO','NO','NNO']; return $d[(int) round(($g % 360) / 22.5) % 16]; };
     $uvCat = fn ($v) => $v === null ? '-' : ($v < 3 ? 'Bajo' : ($v < 6 ? 'Moderado' : ($v < 8 ? 'Alto' : ($v < 11 ? 'Muy alto' : 'Extremo'))));
-    $temas = ['sol' => ['#0a3a4d', '#1d7f8c'], 'luna' => ['#050f1d', '#122a45'], 'parcial' => ['#0b3447', '#2b6f86'], 'nublado' => ['#16262c', '#3a5560'], 'niebla' => ['#1b2a2e', '#4a6168'],
-              'llovizna' => ['#14242b', '#34505c'], 'lluvia' => ['#111e27', '#2a4656'], 'tormenta' => ['#14111f', '#35304f'], 'nieve' => ['#1a2a38', '#4c6a82']];
+    $temas = ['sol' => ['#0a8f80', '#4fcfbd'], 'luna' => ['#1d4a66', '#2f6f8f'], 'parcial' => ['#13958a', '#62c4bc'], 'nublado' => ['#4b737a', '#86aab0'], 'niebla' => ['#5f8286', '#97b3b6'],
+              'llovizna' => ['#356d80', '#68a2b3'], 'lluvia' => ['#2a5f73', '#4f8ea3'], 'tormenta' => ['#384868', '#5b6f95'], 'nieve' => ['#5f89a8', '#9fc1d6']];
+    $hoyD = collect($datos['dias'] ?? [])->firstWhere('es_hoy', true) ?? [];
+    $hsActual = collect($ag['humedad_suelo'] ?? [])->take(3)->pluck('humedad')->filter(fn ($v) => $v !== null);
+    $hsProm = $hsActual->count() ? round($hsActual->avg(), 1) : null;
+    $radKwh = isset($hoyD['shortwave_radiation_sum']) ? round($hoyD['shortwave_radiation_sum'] / 3.6, 1) : null;
     [$wa, $wb] = $temas[$a['icono'] ?? 'parcial'] ?? $temas['parcial'];
     $nivelTag = ['critico' => 'Crítico', 'alto' => 'Atención', 'medio' => 'Aviso', 'ok' => 'Favorable', 'info' => 'Dato'];
 @endphp
@@ -76,6 +80,17 @@
 </section>
 @endif
 
+
+<section aria-labelledby="h-agro" style="margin-top:24px">
+    <h2 id="h-agro" style="margin-bottom:12px">Datos para tu riego</h2>
+    <div class="agro">
+        <div class="agro-card"><span class="l"><x-icono name="agua" :size="16" />Evapotranspiración hoy (ET₀)</span><span class="v">{{ $n($hoyD['et0_fao_evapotranspiration'] ?? null) }} mm</span><span class="d">Agua que pierde el cultivo de referencia. 14 días:</span><div id="sp-et0" aria-label="Evapotranspiración de los próximos 14 días"></div></div>
+        <div class="agro-card" style="--k:var(--lima-hondo)"><span class="l"><x-icono name="tierra" :size="16" />Humedad del suelo, 0 a 9 cm</span><span class="v">{{ $hsProm !== null ? $n($hsProm) . '%' : '-' }}</span><span class="d">{{ $hsProm === null ? 'Sin dato' : ($hsProm < 15 ? 'Suelo seco: conviene regar' : ($hsProm < 30 ? 'Humedad media' : 'Suelo húmedo')) }}. 72 horas:</span><div id="sp-hs" aria-label="Humedad del suelo en 72 horas"></div></div>
+        <div class="agro-card" style="--k:var(--chart-4)"><span class="l"><x-icono name="sol" :size="16" />Radiación solar hoy</span><span class="v">{{ $radKwh !== null ? $n($radKwh) . ' kWh/m²' : '-' }}</span><span class="d">Energía del sol sobre el cultivo. 24 horas (W/m²):</span><div id="sp-rad" aria-label="Radiación solar en 24 horas"></div></div>
+        <div class="agro-card" style="--k:var(--chart-5)"><span class="l"><x-icono name="lluvia" :size="16" />Probabilidad de lluvia</span><span class="v">{{ $ag['prob_lluvia_24h'] }}%</span><span class="d">Máxima en 24 h, {{ $n($ag['lluvia_24h']) }} mm previstos. Por hora:</span><div id="sp-prob" aria-label="Probabilidad de lluvia por hora"></div></div>
+    </div>
+</section>
+
 <div style="margin-top:32px" data-tabs data-hash>
     <div class="tabs" role="tablist" aria-label="Secciones del clima">
         @foreach(['t-resumen' => 'Resumen', 't-horas' => 'Por hora', 't-dias' => '14 días', 't-agro' => 'Agricultura', 't-atmos' => 'Atmósfera', 't-hist' => 'Historial'] as $id => $txt)
@@ -86,7 +101,7 @@
     {{-- ================= RESUMEN ================= --}}
     <div class="tabpanel stack-lg" id="p-t-resumen" role="tabpanel" aria-labelledby="t-resumen" style="padding-top:24px">
         <div class="grid g-2">
-            <section class="panel"><div class="panel-head"><h3>Temperatura, 24 horas</h3></div><div class="panel-body"><div class="legend" style="margin-bottom:8px"><span><i style="background:var(--chart-1)"></i>Aire</span><span><i style="background:var(--chart-3)"></i>Sensación</span></div><div id="c-r-temp" aria-label="Temperatura de las próximas 24 horas"></div></div></section>
+            <section class="panel"><div class="panel-head"><h3>Temperatura, 24 horas</h3></div><div class="panel-body"><div id="c-r-temp" aria-label="Temperatura de las próximas 24 horas"></div></div></section>
             <section class="panel"><div class="panel-head"><h3>Lluvia, 24 horas</h3></div><div class="panel-body"><div id="c-r-lluvia" aria-label="Lluvia de las próximas 24 horas"></div></div></section>
         </div>
         <div class="metrics">
@@ -118,12 +133,12 @@
             </div>
         </section>
         <div class="grid g-2">
-            <section class="panel"><div class="panel-head"><h3>Temperatura</h3></div><div class="panel-body"><div class="legend" style="margin-bottom:8px"><span><i style="background:var(--chart-1)"></i>Aire</span><span><i style="background:var(--chart-3)"></i>Sensación</span><span><i style="background:var(--chart-5)"></i>Punto de rocío</span></div><div id="c-h-temp" aria-label="Temperatura por hora"></div></div></section>
+            <section class="panel"><div class="panel-head"><h3>Temperatura</h3></div><div class="panel-body"><div id="c-h-temp" aria-label="Temperatura por hora"></div></div></section>
             <section class="panel"><div class="panel-head"><h3>Lluvia y probabilidad</h3></div><div class="panel-body"><div id="c-h-lluvia" aria-label="Lluvia por hora"></div></div></section>
             <section class="panel"><div class="panel-head"><h3>Humedad relativa</h3></div><div class="panel-body"><div id="c-h-hum" aria-label="Humedad relativa por hora"></div></div></section>
-            <section class="panel"><div class="panel-head"><h3>Viento</h3></div><div class="panel-body"><div class="legend" style="margin-bottom:8px"><span><i style="background:var(--chart-1)"></i>10 m</span><span><i style="background:var(--chart-3)"></i>80 m</span><span><i style="background:var(--chart-5)"></i>120 m</span><span><i style="background:var(--chart-4)"></i>Ráfagas</span></div><div id="c-h-viento" aria-label="Viento por hora en km/h"></div></div></section>
+            <section class="panel"><div class="panel-head"><h3>Viento</h3></div><div class="panel-body"><div id="c-h-viento" aria-label="Viento por hora en km/h"></div></div></section>
             <section class="panel"><div class="panel-head"><h3>Presión atmosférica</h3></div><div class="panel-body"><div id="c-h-pres" aria-label="Presión a nivel del mar"></div></div></section>
-            <section class="panel"><div class="panel-head"><h3>Nubosidad por capas</h3></div><div class="panel-body"><div class="legend" style="margin-bottom:8px"><span><i style="background:var(--chart-1)"></i>Bajas</span><span><i style="background:var(--chart-2)"></i>Medias</span><span><i style="background:var(--chart-5)"></i>Altas</span></div><div id="c-h-nubes" aria-label="Nubosidad por capas"></div></div></section>
+            <section class="panel"><div class="panel-head"><h3>Nubosidad por capas</h3></div><div class="panel-body"><div id="c-h-nubes" aria-label="Nubosidad por capas"></div></div></section>
             <section class="panel"><div class="panel-head"><h3>Índice UV</h3></div><div class="panel-body"><div id="c-h-uv" aria-label="Índice UV por hora"></div></div></section>
             <section class="panel"><div class="panel-head"><h3>Visibilidad</h3></div><div class="panel-body"><div id="c-h-vis" aria-label="Visibilidad en kilómetros"></div></div></section>
         </div>
@@ -148,7 +163,7 @@
             </div></div>
         </section>
         <div class="grid g-2">
-            <section class="panel"><div class="panel-head"><h3>Temperatura máxima y mínima</h3></div><div class="panel-body"><div class="legend" style="margin-bottom:8px"><span><i style="background:var(--chart-2)"></i>Máxima</span><span><i style="background:var(--chart-1)"></i>Mínima</span></div><div id="c-d-temp" aria-label="Temperaturas diarias"></div></div></section>
+            <section class="panel"><div class="panel-head"><h3>Temperatura máxima y mínima</h3></div><div class="panel-body"><div id="c-d-temp" aria-label="Temperaturas diarias"></div></div></section>
             <section class="panel"><div class="panel-head"><h3>Lluvia diaria</h3></div><div class="panel-body"><div id="c-d-lluvia" aria-label="Lluvia diaria"></div></div></section>
         </div>
         <section class="table-frame"><div class="panel-head"><h3>Detalle por día</h3></div>
@@ -173,14 +188,14 @@
                 <div class="figure"><span class="v">{{ $ag['horas_helada_72h'] }} h</span><span class="l">bajo 0 °C</span><span class="d">{{ $ag['horas_frio_72h'] }} h por debajo de 7 °C</span></div></div></section>
         </div>
         <div class="grid g-2">
-            <section class="panel"><div class="panel-head"><h3>Balance de agua por día</h3></div><div class="panel-body"><div class="legend" style="margin-bottom:8px"><span><i style="background:var(--chart-1)"></i>Lluvia</span><span><i style="background:var(--chart-2)"></i>Evapotranspiración</span></div><div id="c-a-balance" aria-label="Lluvia frente a evapotranspiración"></div><p class="t-sec muted" style="margin-top:8px">Cuando la evapotranspiración supera a la lluvia, el suelo pierde agua y hay que regar.</p></div></section>
-            <section class="panel"><div class="panel-head"><h3>Radiación solar</h3></div><div class="panel-body"><div class="legend" style="margin-bottom:8px"><span><i style="background:var(--chart-2)"></i>Total</span><span><i style="background:var(--chart-4)"></i>Directa</span><span><i style="background:var(--chart-5)"></i>Difusa</span></div><div id="c-a-rad" aria-label="Radiación solar en W/m²"></div></div></section>
+            <section class="panel"><div class="panel-head"><h3>Balance de agua por día</h3></div><div class="panel-body"><div id="c-a-balance" aria-label="Lluvia frente a evapotranspiración"></div><p class="t-sec muted" style="margin-top:8px">Cuando la evapotranspiración supera a la lluvia, el suelo pierde agua y hay que regar.</p></div></section>
+            <section class="panel"><div class="panel-head"><h3>Radiación solar</h3></div><div class="panel-body"><div id="c-a-rad" aria-label="Radiación solar en W/m²"></div></div></section>
         </div>
         <div class="grid g-2">
             <section class="panel"><div class="panel-head"><h3>Humedad del suelo ahora</h3></div><div class="panel-body"><div id="c-a-hs" aria-label="Humedad del suelo por profundidad"></div><p class="t-sec muted" style="margin-top:8px">Porcentaje del volumen del suelo ocupado por agua. Calculado por modelo, no medido en tu parcela.</p></div></section>
             <section class="panel"><div class="panel-head"><h3>Temperatura del suelo ahora</h3></div><div class="panel-body"><div id="c-a-ts" aria-label="Temperatura del suelo por profundidad"></div></div></section>
         </div>
-        <section class="panel"><div class="panel-head"><h3>Temperatura del suelo, 72 horas</h3></div><div class="panel-body"><div class="legend" style="margin-bottom:8px"><span><i style="background:var(--chart-2)"></i>Superficie</span><span><i style="background:var(--chart-1)"></i>6 cm</span><span><i style="background:var(--chart-3)"></i>18 cm</span><span><i style="background:var(--chart-5)"></i>54 cm</span></div><div id="c-a-suelo" aria-label="Temperatura del suelo por profundidad"></div></div></section>
+        <section class="panel"><div class="panel-head"><h3>Temperatura del suelo, 72 horas</h3></div><div class="panel-body"><div id="c-a-suelo" aria-label="Temperatura del suelo por profundidad"></div></div></section>
         <div class="grid g-2">
             <section class="panel"><div class="panel-head"><h3>Horas de sol por día</h3></div><div class="panel-body"><div id="c-a-sol" aria-label="Horas de sol por día"></div></div></section>
             <section class="panel"><div class="panel-head"><h3>Déficit de presión de vapor</h3></div><div class="panel-body"><div id="c-a-vpd" aria-label="Déficit de presión de vapor en kPa"></div><p class="t-sec muted" style="margin-top:8px">Valores altos (más de 1,5 kPa) hacen que la planta pierda más agua por las hojas.</p></div></section>
@@ -231,7 +246,7 @@
             <div class="metric"><span class="l">Balance de agua, 30 días</span><span class="v">{{ $bal > 0 ? '+' : '' }}{{ $n($bal) }} mm</span><span class="d">{{ $bal >= 0 ? 'Llovió más de lo que se evaporó' : 'Se evaporó más de lo que llovió' }}</span></div>
         </div>
         <div class="grid g-2">
-            <section class="panel"><div class="panel-head"><h3>Temperatura, 60 días</h3></div><div class="panel-body"><div class="legend" style="margin-bottom:8px"><span><i style="background:var(--chart-2)"></i>Máxima</span><span><i style="background:var(--chart-1)"></i>Mínima</span></div><div id="c-i-temp" aria-label="Temperaturas de los últimos 60 días"></div></div></section>
+            <section class="panel"><div class="panel-head"><h3>Temperatura, 60 días</h3></div><div class="panel-body"><div id="c-i-temp" aria-label="Temperaturas de los últimos 60 días"></div></div></section>
             <section class="panel"><div class="panel-head"><h3>Lluvia, 60 días</h3></div><div class="panel-body"><div id="c-i-lluvia" aria-label="Lluvia de los últimos 60 días"></div></div></section>
         </div>
         @else
@@ -269,6 +284,13 @@ document.addEventListener('DOMContentLoaded', function () {
   var H = S.h, N24 = 24;
   var base = { titulos: H.tit };
 
+
+  var mini = function (id, lab, tit, datos, col, fmt, min, max) { var e = g(id); if (e) C.linea(e, { labels: lab, titulos: tit, series: [{ nombre: e.getAttribute('aria-label'), datos: datos, color: col, area: true, ancho: 2 }], alto: 64, mini: true, yMin: min, yMax: max, fmtTip: fmt, leyenda: false }); };
+  mini('sp-et0', S.d.lab, S.d.tit, S.d.et0, 'chart-1', function (v) { return f1(v) + ' mm'; }, 0);
+  mini('sp-hs', H.lab, H.tit, H.hs, 'chart-2', function (v) { return f1(v) + '%'; });
+  mini('sp-rad', H.lab.slice(0, 24), H.tit.slice(0, 24), H.rad.slice(0, 24), 'chart-4', function (v) { return f0(v) + ' W/m²'; }, 0);
+  mini('sp-prob', H.lab.slice(0, 24), H.tit.slice(0, 24), H.prob.slice(0, 24), 'chart-5', function (v) { return f0(v) + '%'; }, 0, 100);
+
   /* resumen */
   C.linea(g('c-r-temp'), { labels: cortar(H.lab, N24), titulos: cortar(H.tit, N24), series: [{ nombre: 'Aire', datos: cortar(H.temp, N24), color: 'chart-1', area: true }, { nombre: 'Sensación', datos: cortar(H.sens, N24), color: 'chart-3', dash: '5 4', ancho: 2 }], alto: 210, unidadY: '°C', fmtY: f0, fmtTip: function (v) { return f1(v) + ' °C'; }, lineas: [{ valor: 0, texto: 'Helada', color: 'medio' }], maxX: 6 });
   C.barras(g('c-r-lluvia'), { labels: cortar(H.lab, N24), titulos: cortar(H.tit, N24), series: [{ nombre: 'Lluvia', datos: cortar(H.lluvia, N24), color: 'chart-1' }], linea: { nombre: 'Probabilidad', datos: cortar(H.prob, N24), color: 'chart-2', max: 100, fmt: function (v) { return f0(v) + '%'; } }, alto: 210, unidadY: 'mm', fmtY: f1, fmtTip: function (v) { return f1(v) + ' mm'; }, maxX: 6 });
@@ -280,14 +302,14 @@ document.addEventListener('DOMContentLoaded', function () {
   @endif
 
   /* por hora */
-  C.linea(g('c-h-temp'), { labels: H.lab, titulos: H.tit, series: [{ nombre: 'Aire', datos: H.temp, color: 'chart-1', area: true }, { nombre: 'Sensación', datos: H.sens, color: 'chart-3', dash: '5 4', ancho: 2 }, { nombre: 'Rocío', datos: H.rocio, color: 'chart-5', ancho: 1.8 }], alto: 230, unidadY: '°C', fmtY: f0, fmtTip: function (v) { return f1(v) + ' °C'; }, lineas: [{ valor: 0, texto: 'Helada', color: 'medio' }], maxX: 8 });
-  C.barras(g('c-h-lluvia'), { labels: H.lab, titulos: H.tit, series: [{ nombre: 'Lluvia', datos: H.lluvia, color: 'chart-1' }], linea: { nombre: 'Probabilidad', datos: H.prob, color: 'chart-2', max: 100, fmt: function (v) { return f0(v) + '%'; } }, alto: 230, unidadY: 'mm', fmtY: f1, fmtTip: function (v) { return f1(v) + ' mm'; }, maxX: 8 });
-  C.linea(g('c-h-hum'), { labels: H.lab, titulos: H.tit, series: [{ nombre: 'Humedad', datos: H.hum, color: 'chart-1', area: true }], alto: 200, yMin: 0, yMax: 100, unidadY: '%', fmtY: f0, fmtTip: function (v) { return f0(v) + '%'; }, maxX: 8 });
-  C.linea(g('c-h-viento'), { labels: H.lab, titulos: H.tit, series: [{ nombre: '10 m', datos: H.v10, color: 'chart-1', area: true }, { nombre: '80 m', datos: H.v80, color: 'chart-3', ancho: 1.8 }, { nombre: '120 m', datos: H.v120, color: 'chart-5', ancho: 1.8 }, { nombre: 'Ráfagas', datos: H.raf, color: 'chart-4', dash: '4 4', ancho: 1.8 }], alto: 220, yMin: 0, unidadY: 'km/h', fmtY: f0, fmtTip: function (v) { return f0(v) + ' km/h'; }, lineas: [{ valor: 36, texto: 'Viento fuerte', color: 'alto' }], maxX: 8 });
-  C.linea(g('c-h-pres'), { labels: H.lab, titulos: H.tit, series: [{ nombre: 'Presión', datos: H.pres, color: 'chart-3', area: true }], alto: 200, unidadY: 'hPa', fmtY: f0, fmtTip: function (v) { return f1(v) + ' hPa'; }, maxX: 8 });
-  C.linea(g('c-h-nubes'), { labels: H.lab, titulos: H.tit, series: [{ nombre: 'Bajas', datos: H.nub_b, color: 'chart-1' }, { nombre: 'Medias', datos: H.nub_m, color: 'chart-2' }, { nombre: 'Altas', datos: H.nub_a, color: 'chart-5' }], alto: 200, yMin: 0, yMax: 100, unidadY: '%', fmtY: f0, fmtTip: function (v) { return f0(v) + '%'; }, maxX: 8 });
-  C.linea(g('c-h-uv'), { labels: H.lab, titulos: H.tit, series: [{ nombre: 'UV', datos: H.uv, color: 'chart-2', area: true }], alto: 200, yMin: 0, fmtY: f0, fmtTip: function (v) { return f1(v); }, lineas: [{ valor: 8, texto: 'Muy alto', color: 'critico' }, { valor: 3, texto: 'Moderado', color: 'alto' }], maxX: 8 });
-  C.linea(g('c-h-vis'), { labels: H.lab, titulos: H.tit, series: [{ nombre: 'Visibilidad', datos: H.vis, color: 'chart-5', area: true }], alto: 200, yMin: 0, unidadY: 'km', fmtY: f0, fmtTip: function (v) { return f1(v) + ' km'; }, maxX: 8 });
+  C.linea(g('c-h-temp'), { rangos: [24, 48, 72], labels: H.lab, titulos: H.tit, series: [{ nombre: 'Aire', datos: H.temp, color: 'chart-1', area: true }, { nombre: 'Sensación', datos: H.sens, color: 'chart-3', dash: '5 4', ancho: 2 }, { nombre: 'Rocío', datos: H.rocio, color: 'chart-5', ancho: 1.8 }], alto: 230, unidadY: '°C', fmtY: f0, fmtTip: function (v) { return f1(v) + ' °C'; }, lineas: [{ valor: 0, texto: 'Helada', color: 'medio' }], maxX: 8 });
+  C.barras(g('c-h-lluvia'), { rangos: [24, 48, 72], labels: H.lab, titulos: H.tit, series: [{ nombre: 'Lluvia', datos: H.lluvia, color: 'chart-1' }], linea: { nombre: 'Probabilidad', datos: H.prob, color: 'chart-2', max: 100, fmt: function (v) { return f0(v) + '%'; } }, alto: 230, unidadY: 'mm', fmtY: f1, fmtTip: function (v) { return f1(v) + ' mm'; }, maxX: 8 });
+  C.linea(g('c-h-hum'), { rangos: [24, 48, 72], labels: H.lab, titulos: H.tit, series: [{ nombre: 'Humedad', datos: H.hum, color: 'chart-1', area: true }], alto: 200, yMin: 0, yMax: 100, unidadY: '%', fmtY: f0, fmtTip: function (v) { return f0(v) + '%'; }, maxX: 8 });
+  C.linea(g('c-h-viento'), { rangos: [24, 48, 72], labels: H.lab, titulos: H.tit, series: [{ nombre: '10 m', datos: H.v10, color: 'chart-1', area: true }, { nombre: '80 m', datos: H.v80, color: 'chart-3', ancho: 1.8 }, { nombre: '120 m', datos: H.v120, color: 'chart-5', ancho: 1.8 }, { nombre: 'Ráfagas', datos: H.raf, color: 'chart-4', dash: '4 4', ancho: 1.8 }], alto: 220, yMin: 0, unidadY: 'km/h', fmtY: f0, fmtTip: function (v) { return f0(v) + ' km/h'; }, lineas: [{ valor: 36, texto: 'Viento fuerte', color: 'alto' }], maxX: 8 });
+  C.linea(g('c-h-pres'), { rangos: [24, 48, 72], labels: H.lab, titulos: H.tit, series: [{ nombre: 'Presión', datos: H.pres, color: 'chart-3', area: true }], alto: 200, unidadY: 'hPa', fmtY: f0, fmtTip: function (v) { return f1(v) + ' hPa'; }, maxX: 8 });
+  C.linea(g('c-h-nubes'), { rangos: [24, 48, 72], labels: H.lab, titulos: H.tit, series: [{ nombre: 'Bajas', datos: H.nub_b, color: 'chart-1' }, { nombre: 'Medias', datos: H.nub_m, color: 'chart-2' }, { nombre: 'Altas', datos: H.nub_a, color: 'chart-5' }], alto: 200, yMin: 0, yMax: 100, unidadY: '%', fmtY: f0, fmtTip: function (v) { return f0(v) + '%'; }, maxX: 8 });
+  C.linea(g('c-h-uv'), { rangos: [24, 48, 72], labels: H.lab, titulos: H.tit, series: [{ nombre: 'UV', datos: H.uv, color: 'chart-2', area: true }], alto: 200, yMin: 0, fmtY: f0, fmtTip: function (v) { return f1(v); }, lineas: [{ valor: 8, texto: 'Muy alto', color: 'critico' }, { valor: 3, texto: 'Moderado', color: 'alto' }], maxX: 8 });
+  C.linea(g('c-h-vis'), { rangos: [24, 48, 72], labels: H.lab, titulos: H.tit, series: [{ nombre: 'Visibilidad', datos: H.vis, color: 'chart-5', area: true }], alto: 200, yMin: 0, unidadY: 'km', fmtY: f0, fmtTip: function (v) { return f1(v) + ' km'; }, maxX: 8 });
 
   /* 14 dias */
   var D = S.d;
@@ -296,25 +318,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
   /* agricultura */
   C.barras(g('c-a-balance'), { labels: D.lab, titulos: D.tit, series: [{ nombre: 'Lluvia', datos: D.lluvia, color: 'chart-1' }, { nombre: 'Evapotranspiración', datos: D.et0, color: 'chart-2' }], alto: 230, unidadY: 'mm', fmtY: f1, fmtTip: function (v) { return f1(v) + ' mm'; }, maxX: 8 });
-  C.linea(g('c-a-rad'), { labels: H.lab, titulos: H.tit, series: [{ nombre: 'Total', datos: H.rad, color: 'chart-2', area: true }, { nombre: 'Directa', datos: H.rad_dir, color: 'chart-4', ancho: 1.8 }, { nombre: 'Difusa', datos: H.rad_dif, color: 'chart-5', ancho: 1.8 }], alto: 230, yMin: 0, unidadY: 'W/m²', fmtY: f0, fmtTip: function (v) { return f0(v) + ' W/m²'; }, maxX: 8 });
+  C.linea(g('c-a-rad'), { rangos: [24, 48, 72], labels: H.lab, titulos: H.tit, series: [{ nombre: 'Total', datos: H.rad, color: 'chart-2', area: true }, { nombre: 'Directa', datos: H.rad_dir, color: 'chart-4', ancho: 1.8 }, { nombre: 'Difusa', datos: H.rad_dif, color: 'chart-5', ancho: 1.8 }], alto: 230, yMin: 0, unidadY: 'W/m²', fmtY: f0, fmtTip: function (v) { return f0(v) + ' W/m²'; }, maxX: 8 });
   var hs = @json($ag['humedad_suelo']);
   C.perfil(g('c-a-hs'), { items: hs.map(function (x) { return { nombre: x.profundidad, valor: x.humedad }; }), min: 0, max: 60, color: 'chart-1', fmt: function (v) { return f1(v) + '%'; } });
   C.perfil(g('c-a-ts'), { items: hs.filter(function (x) { return x.temperatura !== null; }).map(function (x) { return { nombre: x.profundidad, valor: x.temperatura }; }), min: -5, max: 30, color: 'chart-2', fmt: function (v) { return f1(v) + ' °C'; } });
-  C.linea(g('c-a-suelo'), { labels: H.lab, titulos: H.tit, series: [{ nombre: 'Superficie', datos: H.s0, color: 'chart-2' }, { nombre: '6 cm', datos: H.s6, color: 'chart-1' }, { nombre: '18 cm', datos: H.s18, color: 'chart-3' }, { nombre: '54 cm', datos: H.s54, color: 'chart-5' }], alto: 230, unidadY: '°C', fmtY: f0, fmtTip: function (v) { return f1(v) + ' °C'; }, lineas: [{ valor: 0, texto: 'Helada', color: 'medio' }], maxX: 8 });
+  C.linea(g('c-a-suelo'), { rangos: [24, 48, 72], labels: H.lab, titulos: H.tit, series: [{ nombre: 'Superficie', datos: H.s0, color: 'chart-2' }, { nombre: '6 cm', datos: H.s6, color: 'chart-1' }, { nombre: '18 cm', datos: H.s18, color: 'chart-3' }, { nombre: '54 cm', datos: H.s54, color: 'chart-5' }], alto: 230, unidadY: '°C', fmtY: f0, fmtTip: function (v) { return f1(v) + ' °C'; }, lineas: [{ valor: 0, texto: 'Helada', color: 'medio' }], maxX: 8 });
   C.barras(g('c-a-sol'), { labels: D.lab, titulos: D.tit, series: [{ nombre: 'Horas de sol', datos: D.sol, color: 'chart-2' }], linea: { nombre: 'UV máximo', datos: D.uv, color: 'chart-4', max: 14, fmt: f1 }, alto: 220, unidadY: 'h', fmtY: f0, fmtTip: function (v) { return f1(v) + ' h'; }, maxX: 8 });
-  C.linea(g('c-a-vpd'), { labels: H.lab, titulos: H.tit, series: [{ nombre: 'VPD', datos: H.vpd, color: 'chart-3', area: true }], alto: 220, yMin: 0, unidadY: 'kPa', fmtY: f1, fmtTip: function (v) { return f1(v) + ' kPa'; }, lineas: [{ valor: 1.5, texto: 'Estrés hídrico', color: 'alto' }], maxX: 8 });
+  C.linea(g('c-a-vpd'), { rangos: [24, 48, 72], labels: H.lab, titulos: H.tit, series: [{ nombre: 'VPD', datos: H.vpd, color: 'chart-3', area: true }], alto: 220, yMin: 0, unidadY: 'kPa', fmtY: f1, fmtTip: function (v) { return f1(v) + ' kPa'; }, lineas: [{ valor: 1.5, texto: 'Estrés hídrico', color: 'alto' }], maxX: 8 });
 
   /* atmosfera */
   C.brujula(g('c-brujula'), { grados: {{ (int) $a['viento_dir'] }}, velocidad: {{ round($a['viento'] * 3.6, 1) }}, rafaga: {{ round(($a['rafaga'] ?? 0) * 3.6, 1) }}, unidad: 'km/h' });
   C.medidor(g('c-cape'), { valor: {{ (int) ($a['cape'] ?? 0) }}, min: 0, max: 2500, tam: 240, zonas: [{ hasta: 300, color: 'ok' }, { hasta: 1000, color: 'chart-2' }, { hasta: 2000, color: 'alto' }, { hasta: 2500, color: 'critico' }], texto: '{{ (int) ($a['cape'] ?? 0) }} J/kg' });
-  C.linea(g('c-t-iso'), { labels: H.lab, titulos: H.tit, series: [{ nombre: 'Nivel de 0 °C', datos: H.iso0, color: 'chart-5', area: true }], alto: 210, unidadY: 'm', fmtY: function (v) { return C.fnum(v, 0); }, fmtTip: function (v) { return C.fnum(v, 0) + ' m'; }, maxX: 8 });
-  C.linea(g('c-t-cape'), { labels: H.lab, titulos: H.tit, series: [{ nombre: 'CAPE', datos: H.cape, color: 'chart-4', area: true }], alto: 210, yMin: 0, unidadY: 'J/kg', fmtY: f0, fmtTip: function (v) { return f0(v) + ' J/kg'; }, maxX: 8 });
+  C.linea(g('c-t-iso'), { rangos: [24, 48, 72], labels: H.lab, titulos: H.tit, series: [{ nombre: 'Nivel de 0 °C', datos: H.iso0, color: 'chart-5', area: true }], alto: 210, unidadY: 'm', fmtY: function (v) { return C.fnum(v, 0); }, fmtTip: function (v) { return C.fnum(v, 0) + ' m'; }, maxX: 8 });
+  C.linea(g('c-t-cape'), { rangos: [24, 48, 72], labels: H.lab, titulos: H.tit, series: [{ nombre: 'CAPE', datos: H.cape, color: 'chart-4', area: true }], alto: 210, yMin: 0, unidadY: 'J/kg', fmtY: f0, fmtTip: function (v) { return f0(v) + ' J/kg'; }, maxX: 8 });
 
   /* historial */
   var I = S.hist;
   if (g('c-i-temp')) {
-    C.linea(g('c-i-temp'), { labels: I.lab, series: [{ nombre: 'Máxima', datos: I.tmax, color: 'chart-2', area: true }, { nombre: 'Mínima', datos: I.tmin, color: 'chart-1', area: true }], alto: 240, unidadY: '°C', fmtY: f0, fmtTip: function (v) { return f1(v) + ' °C'; }, lineas: [{ valor: 0, texto: 'Helada', color: 'medio' }], maxX: 8 });
-    C.barras(g('c-i-lluvia'), { labels: I.lab, series: [{ nombre: 'Lluvia', datos: I.lluvia, color: 'chart-1' }], linea: { nombre: 'Evapotranspiración', datos: I.et0, color: 'chart-2', fmt: f1 }, alto: 240, unidadY: 'mm', fmtY: f0, fmtTip: function (v) { return f1(v) + ' mm'; }, maxX: 8 });
+    C.linea(g('c-i-temp'), { rangos: [60, 30, 14], rangoTxt: function (n) { return n + ' días'; }, desdeFin: true, labels: I.lab, series: [{ nombre: 'Máxima', datos: I.tmax, color: 'chart-2', area: true }, { nombre: 'Mínima', datos: I.tmin, color: 'chart-1', area: true }], alto: 240, unidadY: '°C', fmtY: f0, fmtTip: function (v) { return f1(v) + ' °C'; }, lineas: [{ valor: 0, texto: 'Helada', color: 'medio' }], maxX: 8 });
+    C.barras(g('c-i-lluvia'), { rangos: [60, 30, 14], rangoTxt: function (n) { return n + ' días'; }, desdeFin: true, labels: I.lab, series: [{ nombre: 'Lluvia', datos: I.lluvia, color: 'chart-1' }], linea: { nombre: 'Evapotranspiración', datos: I.et0, color: 'chart-2', fmt: f1 }, alto: 240, unidadY: 'mm', fmtY: f0, fmtTip: function (v) { return f1(v) + ' mm'; }, maxX: 8 });
   }
   @endif
 });

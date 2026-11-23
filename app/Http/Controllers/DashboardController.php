@@ -98,7 +98,16 @@ class DashboardController extends Controller
         $h = array_slice($d['horas'], 0, 48);
         $z = $d['lugar']['zona'];
 
-        return response()->json(['success' => true, 'parcela' => $p->nombre, 'data' => [
+        $hoy = collect($d['dias'])->firstWhere('es_hoy', true) ?? [];
+        $suelo = collect($d['agro']['humedad_suelo'] ?? [])->take(3)->pluck('humedad')->filter(fn ($v) => $v !== null);
+
+        return response()->json(['success' => true, 'parcela' => $p->nombre, 'agro' => [
+            'et0' => $hoy['et0_fao_evapotranspiration'] ?? null,
+            'suelo' => $suelo->count() ? round($suelo->avg(), 1) : null,
+            'radiacion' => isset($hoy['shortwave_radiation_sum']) ? round($hoy['shortwave_radiation_sum'] / 3.6, 1) : null,
+            'prob' => $d['agro']['prob_lluvia_24h'] ?? null,
+            'lluvia' => $d['agro']['lluvia_24h'] ?? null,
+        ], 'data' => [
             'labels' => array_map(fn ($x) => Carbon::createFromTimestamp($x['ts'], $z)->format('H:i'), $h),
             'titulos' => array_map(fn ($x) => Carbon::createFromTimestamp($x['ts'], $z)->translatedFormat('D j, H:i'), $h),
             'temp' => array_column($h, 'temperature_2m'), 'lluvia' => array_column($h, 'precipitation'), 'prob' => array_column($h, 'precipitation_probability'),

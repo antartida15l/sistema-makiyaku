@@ -60,18 +60,19 @@ class PaginasTest extends TestCase
         }
     }
 
-    public function test_la_presentacion_aparece_al_entrar_y_se_puede_apagar(): void
+    public function test_la_presentacion_se_reproduce_siempre_al_iniciar_sesion(): void
     {
         $user = \App\Models\User::factory()->create();
 
         $this->post('/login', ['email' => $user->email, 'password' => 'password'])->assertRedirect('/dashboard');
-        $this->get('/dashboard')->assertOk()->assertSee('id="intro"', false);
-        $this->get('/dashboard')->assertOk()->assertDontSee('id="intro"', false); // solo una vez por entrada
+        $this->get('/dashboard')->assertOk()->assertSee('data-forzar="1"', false);
+        // en la misma sesion ya no se fuerza (el navegador la muestra una vez por sesion)
+        $this->get('/dashboard')->assertOk()->assertSee('data-forzar="0"', false);
 
-        $this->actingAs($user)->postJson('/preferencias', ['intro' => false])->assertOk();
         $this->post('/logout');
         $this->post('/login', ['email' => $user->email, 'password' => 'password']);
-        $this->get('/dashboard')->assertDontSee('id="intro"', false);
+        $this->get('/dashboard')->assertSee('data-forzar="1"', false);
+        $this->get('/dashboard')->assertDontSee('Ver la presentación');
     }
 
     public function test_preferencias_se_guardan_y_validan(): void

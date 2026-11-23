@@ -21,11 +21,10 @@
             <div class="stack">
                 <div class="row between"><div><div class="label">Tema</div><div class="t-sec muted">Claro para el día, oscuro para la noche.</div></div>
                     <div class="segmented" role="group" aria-label="Tema"><button type="button" data-tema="light">Claro</button><button type="button" data-tema="dark">Oscuro</button></div></div>
-                <label class="switch" style="justify-content:space-between;width:100%"><span><span class="label" style="display:block">Presentación al entrar</span><span class="t-sec muted">Un video corto con hojas y sonido cada vez que inicias sesión.</span></span><input type="checkbox" data-pref="intro" @checked($pref['intro'])><span class="track"></span></label>
                 <label class="switch" style="justify-content:space-between;width:100%"><span><span class="label" style="display:block">Hojas flotantes</span><span class="t-sec muted">Hojas suaves al fondo de la aplicación.</span></span><input type="checkbox" data-pref="hojas" @checked($pref['hojas'])><span class="track"></span></label>
                 <label class="switch" style="justify-content:space-between;width:100%"><span><span class="label" style="display:block">Sonido de alertas</span><span class="t-sec muted">Una señal distinta según el nivel de la alerta.</span></span><input type="checkbox" id="p-sonido" @checked($pref['sonido'])><span class="track"></span></label>
                 <div class="field"><label for="p-vol">Volumen</label><input id="p-vol" type="range" min="0" max="100" step="5" class="range" value="{{ (int) ($pref['volumen'] * 100) }}"></div>
-                <div class="row"><button type="button" class="btn btn-sm" data-probar="info">Probar informativa</button><button type="button" class="btn btn-sm" data-probar="alto">Probar alta</button><button type="button" class="btn btn-sm" data-probar="critico">Probar crítica</button><a href="{{ route('intro.ver') }}" class="btn btn-sm"><x-icono name="play" :size="16" />Ver la presentación</a></div>
+                <div class="row"><button type="button" class="btn btn-sm" data-probar="info">Probar informativa</button><button type="button" class="btn btn-sm" data-probar="alto">Probar alta</button><button type="button" class="btn btn-sm" data-probar="critico">Probar crítica</button></div>
             </div></div>
     </section>
 

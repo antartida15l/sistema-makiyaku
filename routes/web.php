@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Route;
 | Publico
 |--------------------------------------------------------------------------
 */
-Route::view('/', 'welcome')->name('inicio');
+Route::get('/', \App\Http\Controllers\InicioController::class)->name('inicio');
 
 /*
 |--------------------------------------------------------------------------
@@ -30,7 +30,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard/pronostico', [DashboardController::class, 'pronostico'])->name('dashboard.pronostico');
 
     // Presentacion animada y preferencias del usuario
-    Route::get('/presentacion', fn () => redirect()->route('dashboard')->with('intro', true))->name('intro.ver');
     Route::post('/preferencias', [PreferenciaController::class, 'guardar'])->name('preferencias.guardar');
 
     // Parcelas
